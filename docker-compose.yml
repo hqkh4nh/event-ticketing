@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: event_ticketing
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d event_ticketing']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      FRONTEND_URL: '*'
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/event_ticketing?schema=public
+      JWT_SECRET: change-me-in-production-with-a-long-secret
+      JWT_EXPIRES_IN: 1d
+      TICKET_HMAC_SECRET: change-me-in-production-ticket-hmac
+      ORDER_HOLD_MINUTES: 15
+    ports:
+      - '3000:3000'
+    # Apply migrations then start the server.
+    command: sh -c "npx prisma migrate deploy && node dist/main"
+
+volumes:
+  pgdata:
