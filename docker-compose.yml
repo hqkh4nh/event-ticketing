@@ -35,7 +35,7 @@ services:
     ports:
       - '3000:3000'
     # Apply migrations then start the server.
-    command: sh -c "npx prisma migrate deploy && node dist/main"
+    command: sh -c "npx prisma migrate deploy && node dist/src/main"
 
 volumes:
   pgdata:
