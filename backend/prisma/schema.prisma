@@ -1,13 +1,244 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// Prisma schema - Event Ticketing
+// Docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+// ---------- Enums ----------
+
+enum Role {
+  ATTENDEE
+  ORGANIZER
+  SCANNER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  PENDING
+  BLOCKED
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+  HIDDEN
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  EXPIRED
+  CANCELLED
+}
+
+enum PaymentProvider {
+  SEPAY
+}
+
+enum PaymentStatus {
+  MATCHED
+  UNMATCHED
+}
+
+enum TicketStatus {
+  ISSUED
+  USED
+  VOID
+}
+
+enum CheckinResult {
+  VALID
+  ALREADY_USED
+  INVALID
+  WRONG_EVENT
+}
+
+// ---------- Models ----------
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String
+  fullName     String
+  phone        String?
+  role         Role       @default(ATTENDEE)
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  events           Event[]        @relation("OrganizerEvents")
+  orders           Order[]
+  tickets          Ticket[]       @relation("TicketOwner")
+  scannedTickets   Ticket[]       @relation("TicketScanner")
+  staffAssignments EventStaff[]
+  checkins         CheckinLog[]
+  notifications    Notification[]
+
+  @@index([role])
+  @@index([status])
+}
+
+model Event {
+  id            String      @id @default(cuid())
+  organizerId   String
+  organizer     User        @relation("OrganizerEvents", fields: [organizerId], references: [id])
+  title         String
+  description   String
+  venue         String
+  startAt       DateTime
+  endAt         DateTime
+  coverImageUrl String?
+  status        EventStatus @default(DRAFT)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  ticketTypes TicketType[]
+  orders      Order[]
+  tickets     Ticket[]
+  staff       EventStaff[]
+  checkinLogs CheckinLog[]
+
+  @@index([status])
+  @@index([organizerId])
+}
+
+model TicketType {
+  id            String    @id @default(cuid())
+  eventId       String
+  event         Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name          String
+  priceVnd      Int
+  quantityTotal Int
+  salesStartAt  DateTime?
+  salesEndAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  orderItems OrderItem[]
+  tickets    Ticket[]
+
+  @@index([eventId])
+}
+
+model EventStaff {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([eventId, userId])
+  @@index([userId])
+}
+
+model Order {
+  id           String      @id @default(cuid())
+  buyerId      String
+  buyer        User        @relation(fields: [buyerId], references: [id])
+  eventId      String
+  event        Event       @relation(fields: [eventId], references: [id])
+  status       OrderStatus @default(PENDING)
+  totalVnd     Int
+  transferCode String      @unique
+  expiresAt    DateTime
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  items    OrderItem[]
+  payments Payment[]
+  tickets  Ticket[]
+
+  @@index([status])
+  @@index([expiresAt])
+  @@index([buyerId])
+}
+
+model OrderItem {
+  id           String     @id @default(cuid())
+  orderId      String
+  order        Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  ticketTypeId String
+  ticketType   TicketType @relation(fields: [ticketTypeId], references: [id])
+  quantity     Int
+  unitPriceVnd Int
+
+  @@index([orderId])
+}
+
+model Payment {
+  id              String          @id @default(cuid())
+  orderId         String?
+  order           Order?          @relation(fields: [orderId], references: [id])
+  provider        PaymentProvider @default(SEPAY)
+  sepayTxnId      String          @unique
+  amountVnd       Int
+  transferContent String?
+  status          PaymentStatus
+  rawPayload      Json
+  receivedAt      DateTime        @default(now())
+
+  @@index([orderId])
+}
+
+model Ticket {
+  id           String       @id @default(cuid())
+  orderId      String
+  order        Order        @relation(fields: [orderId], references: [id])
+  ticketTypeId String
+  ticketType   TicketType   @relation(fields: [ticketTypeId], references: [id])
+  eventId      String
+  event        Event        @relation(fields: [eventId], references: [id])
+  ownerId      String
+  owner        User         @relation("TicketOwner", fields: [ownerId], references: [id])
+  code         String       @unique
+  signature    String
+  status       TicketStatus @default(ISSUED)
+  issuedAt     DateTime     @default(now())
+  usedAt       DateTime?
+  usedByStaffId String?
+  usedByStaff  User?        @relation("TicketScanner", fields: [usedByStaffId], references: [id])
+
+  checkinLogs CheckinLog[]
+
+  @@index([eventId])
+  @@index([ownerId])
+  @@index([status])
+}
+
+model CheckinLog {
+  id         String        @id @default(cuid())
+  ticketId   String?
+  ticket     Ticket?       @relation(fields: [ticketId], references: [id])
+  eventId    String
+  event      Event         @relation(fields: [eventId], references: [id])
+  staffId    String
+  staff      User          @relation(fields: [staffId], references: [id])
+  result     CheckinResult
+  rawPayload String?
+  scannedAt  DateTime      @default(now())
+
+  @@index([eventId])
+  @@index([ticketId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String
+  title     String
+  body      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
