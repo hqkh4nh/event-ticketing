@@ -1,6 +1,32 @@
 import { NextFunction, Request, Response } from 'express';
 import { PinoLogger } from 'nestjs-pino';
 
+const ANSI_RESET = '\u001b[0m';
+const ANSI_GREEN = '\u001b[32m';
+const ANSI_CYAN = '\u001b[36m';
+const ANSI_YELLOW = '\u001b[33m';
+const ANSI_RED = '\u001b[31m';
+
+function colorStatusCode(statusCode: number): string {
+  if (process.env.NODE_ENV === 'production') {
+    return String(statusCode);
+  }
+
+  if (statusCode >= 500) {
+    return `${ANSI_RED}${statusCode}${ANSI_RESET}`;
+  }
+
+  if (statusCode >= 400) {
+    return `${ANSI_YELLOW}${statusCode}${ANSI_RESET}`;
+  }
+
+  if (statusCode >= 300) {
+    return `${ANSI_CYAN}${statusCode}${ANSI_RESET}`;
+  }
+
+  return `${ANSI_GREEN}${statusCode}${ANSI_RESET}`;
+}
+
 export function createRequestLoggingMiddleware(logger: PinoLogger) {
   logger.setContext('HTTP');
 
@@ -13,16 +39,19 @@ export function createRequestLoggingMiddleware(logger: PinoLogger) {
       url: request.originalUrl || request.url,
     };
 
-    logger.info(logContext, 'request received');
+    logger.info(logContext, 'Request received:');
 
     response.on('finish', () => {
+      const statusCode = response.statusCode;
+      const responseTimeMs = Date.now() - startedAt;
+
       logger.info(
         {
           ...logContext,
-          statusCode: response.statusCode,
-          responseTimeMs: Date.now() - startedAt,
+          statusCode,
+          responseTimeMs,
         },
-        'request completed',
+        `Request completed: ${request.method} ${request.originalUrl || request.url} ${colorStatusCode(statusCode)} ${responseTimeMs}ms`,
       );
     });
 
