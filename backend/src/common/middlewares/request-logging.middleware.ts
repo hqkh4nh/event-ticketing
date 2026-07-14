@@ -32,7 +32,9 @@ export function createRequestLoggingMiddleware(logger: PinoLogger) {
 
   return (request: Request, response: Response, next: NextFunction): void => {
     const startedAt = Date.now();
-    const requestId = request.header('x-request-id');
+    const requestId =
+      request.header('x-request-id') ??
+      (request as Request & { id?: string }).id;
     const logContext = {
       requestId,
       method: request.method,
