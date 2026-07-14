@@ -10,7 +10,13 @@ export const envValidationSchema = Joi.object({
   PORT: Joi.number().default(3000),
   FRONTEND_URL: Joi.string().allow('').default('*'),
 
-  DATABASE_URL: Joi.string().required(),
+  DATABASE_URL: Joi.string()
+    .pattern(/^postgres(ql)?:\/\//)
+    .required()
+    .messages({
+      'string.pattern.base':
+        'DATABASE_URL must start with postgres:// or postgresql://',
+    }),
 
   JWT_SECRET: Joi.string().min(16).required(),
   JWT_EXPIRES_IN: Joi.string().default('1d'),

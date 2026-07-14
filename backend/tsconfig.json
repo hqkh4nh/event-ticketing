@@ -13,18 +13,13 @@
     "target": "ES2023",
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
-    "noFallthroughCasesInSwitch": false,
-    "ignoreDeprecations": "5.0"
+    "noFallthroughCasesInSwitch": false
   },
-  "exclude": [
-    "dist",
-    "src/generated/prisma/**/*.ts"
-  ]
+  "exclude": ["dist", "src/generated/prisma/**/*.ts"]
 }
