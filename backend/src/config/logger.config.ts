@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { IncomingMessage } from 'node:http';
 import { Params } from 'nestjs-pino';
+import { RequestMethod } from '@nestjs/common';
 
 function getRequestId(request: IncomingMessage): string {
   const requestId = request.headers['x-request-id'];
@@ -16,6 +17,7 @@ export function createLoggerModuleOptions(nodeEnv = 'development'): Params {
   const isProduction = nodeEnv === 'production';
 
   return {
+    forRoutes: [{ path: '{*path}', method: RequestMethod.ALL }],
     pinoHttp: {
       level: isProduction ? 'info' : 'debug',
       autoLogging: true,
