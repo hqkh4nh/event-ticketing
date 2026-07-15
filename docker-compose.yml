@@ -34,8 +34,8 @@ services:
       ORDER_HOLD_MINUTES: 15
     ports:
       - '3000:3000'
-    # Apply migrations then start the server.
-    command: sh -c "npx prisma migrate deploy && node dist/src/main"
+    # Sync the schema, then start the server. This project currently uses db push instead of migrations.
+    command: sh -c "npx prisma db push && node dist/src/main"
 
 volumes:
   pgdata:

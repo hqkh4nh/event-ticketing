@@ -1,5 +1,4 @@
 // Prisma schema - Event Ticketing
-// Docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
@@ -9,8 +8,6 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
-
-// ---------- Enums ----------
 
 enum Role {
   ATTENDEE
@@ -46,6 +43,7 @@ enum PaymentProvider {
 enum PaymentStatus {
   MATCHED
   UNMATCHED
+  REVIEW_REQUIRED
 }
 
 enum TicketStatus {
@@ -61,184 +59,201 @@ enum CheckinResult {
   WRONG_EVENT
 }
 
-// ---------- Models ----------
-
 model User {
-  id           String     @id @default(cuid())
-  email        String     @unique
-  passwordHash String
-  fullName     String
-  phone        String?
-  role         Role       @default(ATTENDEE)
-  status       UserStatus @default(ACTIVE)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id              String     @id @default(uuid(7)) @db.Uuid
+  email           String
+  emailNormalized String     @unique
+  passwordHash    String
+  fullName        String
+  phone           String?
+  role            Role       @default(ATTENDEE)
+  status          UserStatus @default(ACTIVE)
+  createdAt       DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime   @updatedAt @db.Timestamptz(3)
 
   events           Event[]        @relation("OrganizerEvents")
   orders           Order[]
-  tickets          Ticket[]       @relation("TicketOwner")
   scannedTickets   Ticket[]       @relation("TicketScanner")
   staffAssignments EventStaff[]
   checkins         CheckinLog[]
   notifications    Notification[]
 
-  @@index([role])
-  @@index([status])
+  @@index([role, status])
 }
 
 model Event {
-  id            String      @id @default(cuid())
-  organizerId   String
+  id            String      @id @default(uuid(7)) @db.Uuid
+  organizerId   String      @db.Uuid
   organizer     User        @relation("OrganizerEvents", fields: [organizerId], references: [id])
   title         String
   description   String
   venue         String
-  startAt       DateTime
-  endAt         DateTime
+  startAt       DateTime    @db.Timestamptz(3)
+  endAt         DateTime    @db.Timestamptz(3)
   coverImageUrl String?
   status        EventStatus @default(DRAFT)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  createdAt     DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime    @updatedAt @db.Timestamptz(3)
 
   ticketTypes TicketType[]
   orders      Order[]
-  tickets     Ticket[]
   staff       EventStaff[]
   checkinLogs CheckinLog[]
 
-  @@index([status])
-  @@index([organizerId])
+  @@index([status, startAt])
+  @@index([organizerId, status, createdAt])
 }
 
 model TicketType {
-  id            String    @id @default(cuid())
-  eventId       String
+  id            String    @id @default(uuid(7)) @db.Uuid
+  eventId       String    @db.Uuid
   event         Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
   name          String
-  priceVnd      Int
+  priceVnd      BigInt
   quantityTotal Int
-  salesStartAt  DateTime?
-  salesEndAt    DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  salesStartAt  DateTime? @db.Timestamptz(3)
+  salesEndAt    DateTime? @db.Timestamptz(3)
+  createdAt     DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @db.Timestamptz(3)
 
   orderItems OrderItem[]
-  tickets    Ticket[]
 
-  @@index([eventId])
+  @@unique([id, eventId])
+  @@index([eventId, salesStartAt, salesEndAt])
 }
 
 model EventStaff {
-  id        String   @id @default(cuid())
-  eventId   String
+  id        String   @id @default(uuid(7)) @db.Uuid
+  eventId   String   @db.Uuid
   event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  userId    String
+  userId    String   @db.Uuid
   user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
 
   @@unique([eventId, userId])
-  @@index([userId])
+  @@index([userId, eventId])
 }
 
 model Order {
-  id           String      @id @default(cuid())
-  buyerId      String
-  buyer        User        @relation(fields: [buyerId], references: [id])
-  eventId      String
-  event        Event       @relation(fields: [eventId], references: [id])
-  status       OrderStatus @default(PENDING)
-  totalVnd     Int
-  transferCode String      @unique
-  expiresAt    DateTime
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  id              String      @id @default(uuid(7)) @db.Uuid
+  buyerId         String      @db.Uuid
+  buyer           User        @relation(fields: [buyerId], references: [id])
+  eventId         String      @db.Uuid
+  event           Event       @relation(fields: [eventId], references: [id])
+  status          OrderStatus @default(PENDING)
+  totalVnd        BigInt
+  transferCode    String      @unique
+  clientRequestId String?
+  expiresAt       DateTime    @db.Timestamptz(3)
+  paidAt          DateTime?   @db.Timestamptz(3)
+  expiredAt       DateTime?   @db.Timestamptz(3)
+  createdAt       DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime    @updatedAt @db.Timestamptz(3)
 
   items    OrderItem[]
   payments Payment[]
-  tickets  Ticket[]
 
-  @@index([status])
-  @@index([expiresAt])
-  @@index([buyerId])
+  @@unique([id, eventId])
+  @@unique([buyerId, clientRequestId])
+  @@index([status, expiresAt])
+  @@index([buyerId, createdAt])
 }
 
 model OrderItem {
-  id           String     @id @default(cuid())
-  orderId      String
-  order        Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  ticketTypeId String
-  ticketType   TicketType @relation(fields: [ticketTypeId], references: [id])
+  id           String     @id @default(uuid(7)) @db.Uuid
+  orderId      String     @db.Uuid
+  eventId      String     @db.Uuid
+  order        Order      @relation(fields: [orderId, eventId], references: [id, eventId], onDelete: Cascade)
+  ticketTypeId String     @db.Uuid
+  ticketType   TicketType @relation(fields: [ticketTypeId, eventId], references: [id, eventId])
   quantity     Int
-  unitPriceVnd Int
+  unitPriceVnd BigInt
 
+  tickets Ticket[]
+
+  @@unique([orderId, ticketTypeId])
   @@index([orderId])
 }
 
 model Payment {
-  id              String          @id @default(cuid())
-  orderId         String?
+  id              String          @id @default(uuid(7)) @db.Uuid
+  orderId         String?         @db.Uuid
   order           Order?          @relation(fields: [orderId], references: [id])
   provider        PaymentProvider @default(SEPAY)
   sepayTxnId      String          @unique
-  amountVnd       Int
+  amountVnd       BigInt
   transferContent String?
   status          PaymentStatus
+  reviewReason    String?
   rawPayload      Json
-  receivedAt      DateTime        @default(now())
+  receivedAt      DateTime        @default(now()) @db.Timestamptz(3)
+  matchedAt       DateTime?       @db.Timestamptz(3)
+  reviewedAt      DateTime?       @db.Timestamptz(3)
 
-  @@index([orderId])
+  @@index([orderId, status])
+  @@index([status, receivedAt])
 }
 
 model Ticket {
-  id           String       @id @default(cuid())
-  orderId      String
-  order        Order        @relation(fields: [orderId], references: [id])
-  ticketTypeId String
-  ticketType   TicketType   @relation(fields: [ticketTypeId], references: [id])
-  eventId      String
-  event        Event        @relation(fields: [eventId], references: [id])
-  ownerId      String
-  owner        User         @relation("TicketOwner", fields: [ownerId], references: [id])
-  code         String       @unique
-  signature    String
-  status       TicketStatus @default(ISSUED)
-  issuedAt     DateTime     @default(now())
-  usedAt       DateTime?
-  usedByStaffId String?
-  usedByStaff  User?        @relation("TicketScanner", fields: [usedByStaffId], references: [id])
+  id            String       @id @default(uuid(7)) @db.Uuid
+  orderItemId   String       @db.Uuid
+  orderItem     OrderItem    @relation(fields: [orderItemId], references: [id])
+  sequence      Int
+  code          String       @unique
+  signature     String
+  status        TicketStatus @default(ISSUED)
+  issuedAt      DateTime     @default(now()) @db.Timestamptz(3)
+  usedAt        DateTime?    @db.Timestamptz(3)
+  usedByStaffId String?      @db.Uuid
+  usedByStaff   User?        @relation("TicketScanner", fields: [usedByStaffId], references: [id])
 
   checkinLogs CheckinLog[]
 
-  @@index([eventId])
-  @@index([ownerId])
-  @@index([status])
+  @@unique([orderItemId, sequence])
+  @@index([orderItemId, status])
 }
 
 model CheckinLog {
-  id         String        @id @default(cuid())
-  ticketId   String?
+  id         String        @id @default(uuid(7)) @db.Uuid
+  ticketId   String?       @db.Uuid
   ticket     Ticket?       @relation(fields: [ticketId], references: [id])
-  eventId    String
+  eventId    String        @db.Uuid
   event      Event         @relation(fields: [eventId], references: [id])
-  staffId    String
+  staffId    String        @db.Uuid
   staff      User          @relation(fields: [staffId], references: [id])
   result     CheckinResult
   rawPayload String?
-  scannedAt  DateTime      @default(now())
+  scannedAt  DateTime      @default(now()) @db.Timestamptz(3)
 
-  @@index([eventId])
-  @@index([ticketId])
+  @@index([eventId, scannedAt])
+  @@index([ticketId, scannedAt])
 }
 
 model Notification {
-  id        String   @id @default(cuid())
-  userId    String
+  id        String   @id @default(uuid(7)) @db.Uuid
+  userId    String   @db.Uuid
   user      User     @relation(fields: [userId], references: [id])
   type      String
   title     String
   body      String
+  dedupeKey String?  @unique
   read      Boolean  @default(false)
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
 
-  @@index([userId])
+  @@index([userId, read, createdAt])
+}
+
+model OutboxEvent {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  eventType     String
+  aggregateType String
+  aggregateId   String    @db.Uuid
+  payload       Json
+  attempts      Int       @default(0)
+  availableAt   DateTime  @default(now()) @db.Timestamptz(3)
+  publishedAt   DateTime? @db.Timestamptz(3)
+  createdAt     DateTime  @default(now()) @db.Timestamptz(3)
+
+  @@index([publishedAt, availableAt])
+  @@index([aggregateType, aggregateId])
 }

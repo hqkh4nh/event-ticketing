@@ -1,0 +1,45 @@
+# dependencies
+node_modules/
+**/node_modules/
+
+# build outputs
+dist/
+build/
+coverage/
+**/dist/
+**/build/
+**/coverage/
+
+# Expo / React Native
+.expo/
+web-build/
+expo-env.d.ts
+**/.expo/
+**/web-build/
+**/expo-env.d.ts
+
+# environment files
+.env
+.env.*
+**/.env
+**/.env.*
+
+# logs
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+pnpm-debug.*
+
+# caches and temp files
+*.tsbuildinfo
+.nyc_output/
+**/.nyc_output/
+.temp/
+.tmp/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+
+/ref/
