@@ -20,35 +20,30 @@ if (process.env.NODE_ENV === 'production' && !seedPassword) {
 const users = [
   {
     email: 'admin@example.com',
-    emailNormalized: 'admin@example.com',
     fullName: 'System Admin',
     role: Role.ADMIN,
     status: UserStatus.ACTIVE,
   },
   {
     email: 'organizer@example.com',
-    emailNormalized: 'organizer@example.com',
     fullName: 'Active Organizer',
     role: Role.ORGANIZER,
     status: UserStatus.ACTIVE,
   },
   {
     email: 'pending.organizer@example.com',
-    emailNormalized: 'pending.organizer@example.com',
     fullName: 'Pending Organizer',
     role: Role.ORGANIZER,
     status: UserStatus.PENDING,
   },
   {
     email: 'scanner@example.com',
-    emailNormalized: 'scanner@example.com',
     fullName: 'Event Scanner',
     role: Role.SCANNER,
     status: UserStatus.ACTIVE,
   },
   {
     email: 'attendee@example.com',
-    emailNormalized: 'attendee@example.com',
     fullName: 'Event Attendee',
     role: Role.ATTENDEE,
     status: UserStatus.ACTIVE,
@@ -66,7 +61,7 @@ async function main(): Promise<void> {
   await prisma.$transaction(
     users.map((user) =>
       prisma.user.upsert({
-        where: { emailNormalized: user.emailNormalized },
+        where: { email: user.email },
         update: {
           fullName: user.fullName,
           passwordHash,
