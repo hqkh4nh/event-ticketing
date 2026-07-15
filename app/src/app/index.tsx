@@ -1,9 +1,17 @@
 import { Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuthStore } from '@/stores/auth-store';
+import { Redirect } from 'expo-router';
 
 export default function IndexScreen() {
+  const token = useAuthStore((s) => s.token);
+  const isLoading = useAuthStore((s) => s.isLoading);
+
   const { t } = useTranslation();
+
+  if (isLoading) return null;
+  if (!token) return <Redirect href="/auth/login" />;
 
   return (
     <SafeAreaView className="flex-1 bg-white">

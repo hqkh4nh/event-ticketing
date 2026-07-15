@@ -1,6 +1,80 @@
 export const en = {
   home: {
     title: 'Event Ticketing',
-    subtitle: 'App foundation is ready.',
+    subtitle: 'The application platform is ready.',
+  },
+  auth: {
+    brand: 'eTicket',
+    login: {
+      title: 'Login',
+      subtitle: 'Welcome back',
+      submit: 'Login',
+      noAccount: 'Don\'t have an account?',
+      goRegister: 'Register',
+      forgot: 'Forgot password?',
+    },
+    register: {
+      title: 'Create Account',
+      subtitle: 'It only takes a minute',
+      submit: 'Create Account',
+      hasAccount: 'Already have an account?',
+      goLogin: 'Login',
+      roleLabel: 'You are an',
+      roleAttendee: 'Attendee',
+      roleOrganizer: 'Organizer',
+      organizerNotice:
+        'Organizer accounts require administrator approval before you can create events.',
+    },
+    field: {
+      email: 'Email',
+      emailPlaceholder: 'you@example.com',
+      password: 'Password',
+      passwordPlaceholder: 'At least 8 characters',
+      fullName: 'Full Name',
+      fullNamePlaceholder: 'John Doe',
+    },
+    error: {
+      emailRequired: 'Please enter your email',
+      emailInvalid: 'Invalid email address',
+      passwordRequired: 'Please enter your password',
+      passwordShort: 'Password must be at least 8 characters',
+      fullNameRequired: 'Please enter your full name',
+    },
+    social: {
+      divider: 'Or',
+      google: 'Continue with Google',
+      comingSoon: 'Coming soon',
+    },
+  },
+
+  api: {
+    error: {
+      UNKNOWN: 'An error occurred. Please try again.',
+      NETWORK: 'Cannot connect to the server. Please check your network and try again.',
+      VALIDATION_FAILED: 'Invalid information provided. Please check again.',
+      EMAIL_ALREADY_REGISTERED: 'This email is already registered.',
+      INVALID_CREDENTIALS: 'Incorrect email or password.',
+      SESSION_INVALID: 'Invalid session. Please log in again.',
+      UNAUTHORIZED: 'Session has expired. Please log in again.',
+      ACCOUNT_BLOCKED: 'Your account has been blocked.',
+      ACCOUNT_PENDING_APPROVAL: 'Your account is pending administrator approval.',
+      FORBIDDEN_ROLE: 'You do not have permission to perform this action.',
+      FORBIDDEN: 'You do not have permission to perform this action.',
+      NOT_EVENT_STAFF: 'You are not assigned to this event.',
+      EVENT_ID_REQUIRED: 'Missing event information.',
+      NOT_FOUND: 'Content not found.',
+      CONFLICT: 'This action is duplicated or conflicted.',
+      INTERNAL_ERROR: 'The server encountered an issue. Please try again later.',
+    },
+
+    validation: {
+      isEmail: 'Invalid email address.',
+      isNotEmpty: 'This field is required.',
+      isString: 'Invalid value.',
+      isIn: 'Invalid value.',
+      minLength: 'Value is too short.',
+      maxLength: 'Value is too long.',
+      unknown: 'Invalid value.',
+    },
   },
 };

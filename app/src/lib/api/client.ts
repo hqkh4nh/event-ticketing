@@ -1,16 +1,26 @@
 import { tokenStorage } from '@/lib/auth/token-storage';
 import { config } from '@/lib/config';
 
+export type ApiFieldError = { field: string; rule: string };
+
 const API_BASE = `${config.apiUrl}/api`;
 
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
+    public readonly code: string,
     message: string,
+    public readonly fields?: ApiFieldError[],
   ) {
     super(message);
     this.name = 'ApiError';
   }
+}
+
+type ErrorBody = {
+  code?: string;
+  message?: string;
+  fields?: ApiFieldError[];
 }
 
 /**
@@ -29,18 +39,21 @@ export async function apiFetch<T>(
   const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
 
   if (!res.ok) {
+    let code = 'INTERNAL_ERROR';
     let message = res.statusText;
+    let fields: ApiFieldError[] | undefined;
+
     try {
-      const body = (await res.json()) as { message?: string | string[] };
-      if (body.message) {
-        message = Array.isArray(body.message)
-          ? body.message.join(', ')
-          : body.message;
-      }
+      const body = (await res.json()) as ErrorBody;
+      code = body.code ?? code;
+      message = body.message ?? message;
+      fields = body.fields;
     } catch {
-      // error body was not JSON; keep the status text
+      // Not JSON, which usually means a proxy or a crash below the app. Keep
+      // the status text and let the generic code stand.
     }
-    throw new ApiError(res.status, message);
+
+    throw new ApiError(res.status, code, message, fields);
   }
 
   if (res.status === 204) return undefined as T;

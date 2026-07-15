@@ -8,6 +8,18 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 
+import { ErrorCode } from '../errors/error-code';
+
+const FALLBACK_CODE: Record<number, string> = {
+  [HttpStatus.BAD_REQUEST]: ErrorCode.VALIDATION_FAILED,
+  [HttpStatus.UNAUTHORIZED]: ErrorCode.UNAUTHORIZED,
+  [HttpStatus.FORBIDDEN]: ErrorCode.FORBIDDEN,
+  [HttpStatus.NOT_FOUND]: ErrorCode.NOT_FOUND,
+  [HttpStatus.CONFLICT]: ErrorCode.CONFLICT,
+};
+
+type ErrorBody = { code?: string; message?: unknown; fields?: unknown };
+
 /**
  * Catches every unhandled exception and returns a consistent JSON error shape.
  * 5xx errors are logged with their stack; 4xx are passed through as-is.
@@ -26,15 +38,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const body =
-      exception instanceof HttpException
-        ? exception.getResponse()
-        : 'Internal server error';
+    const raw =
+      exception instanceof HttpException ? exception.getResponse() : null;
+    const body: ErrorBody =
+      raw !== null && typeof raw === 'object' ? (raw as ErrorBody) : {};
 
-    const message =
-      typeof body === 'string'
-        ? body
-        : ((body as { message?: unknown }).message ?? body);
+    const code = body.code ?? FALLBACK_CODE[status] ?? ErrorCode.INTERNAL_ERROR;
 
     if (status >= 500) {
       this.logger.error(
@@ -43,10 +52,21 @@ export class AllExceptionsFilter implements ExceptionFilter {
       );
     }
 
+    const message =
+      status >= 500
+        ? 'Internal server error.'
+        : typeof body.message === 'string'
+          ? body.message
+          : typeof raw === 'string'
+            ? raw
+            : 'Request failed.';
+
     response.status(status).json({
       statusCode: status,
       path: request.url,
+      code,
       message,
+      ...(body.fields ? { fields: body.fields } : {}),
     });
   }
 }
