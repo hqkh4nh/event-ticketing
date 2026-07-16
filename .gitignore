@@ -42,4 +42,19 @@ pnpm-debug.*
 .DS_Store
 Thumbs.db
 
+# AI agent files
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+.agents/
+.codex/
+.claude/
+.cursor/
+.continue/
+.windsurf/
+.aider*
+.cline/
+.roo/
+.opencode/
+
 /ref/
