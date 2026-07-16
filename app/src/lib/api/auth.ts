@@ -1,14 +1,8 @@
+import type { components } from '@/lib/api/schema';
 import { apiFetch } from "./client";
 
-export type AuthUser = {
-    id: string;
-    email: string;
-    fullName: string;
-    role: 'ATTENDEE' | 'ORGANIZER' | 'SCANNER' | 'ADMIN';
-    status: 'ACTIVE' | 'PENDING' | 'BLOCKED';
-}
-
-export type AuthResponse = { accessToken: string; user: AuthUser}
+export type AuthUser = components['schemas']['AuthUserDto'];
+export type AuthResponse = components['schemas']['AuthResponseDto'];
 
 export function login(body: { email: string; password: string }): Promise<AuthResponse> {
     return apiFetch<AuthResponse>('/auth/login', {
