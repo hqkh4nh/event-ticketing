@@ -6,10 +6,10 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
-import type { Role } from '../../generated/prisma';
+import type { Role } from '../../../generated/prisma';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 import type { CurrentUserData } from '../jwt.strategy';
-import { ErrorCode } from '../../common/errors/error-code';
+import { ErrorCode } from '../../../common/errors/error-code';
 
 @Injectable()
 export class RolesGuard implements CanActivate {

@@ -6,9 +6,9 @@ import {
   Injectable,
 } from '@nestjs/common';
 
-import { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 import type { CurrentUserData } from '../jwt.strategy';
-import { ErrorCode } from '../../common/errors/error-code';
+import { ErrorCode } from '../../../common/errors/error-code';
 
 @Injectable()
 export class EventStaffGuard implements CanActivate {
