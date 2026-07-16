@@ -16,9 +16,15 @@ const CONTENT_WIDTH = 800;
 type IconName = keyof typeof MaterialIcons.glyphMap;
 
 /**
- * The dot is the second channel for "you are here". Tint alone would leave the
- * current tab indistinguishable to anyone who cannot separate teal from grey,
- * which DESIGN.md rules out.
+ * The pill behind the icon is the second channel for "you are here". Tint alone
+ * would leave the current tab indistinguishable to anyone who cannot separate
+ * teal from grey, which DESIGN.md rules out.
+ *
+ * It is sized by padding rather than a fixed width, because the label is below
+ * the icon at phone width but beside it once the tabs move to the top, and the
+ * navigator leaves only about 8px between the two. Any fixed width wide enough
+ * to look right under a stacked label reaches under a beside-it label: a 64px
+ * pill overlapped "Khám phá" by 11.5px.
  */
 function TabIcon({
   name,
@@ -32,13 +38,8 @@ function TabIcon({
   focused: boolean;
 }) {
   return (
-    <View className="items-center justify-center">
+    <View className={`rounded-full p-1.5 ${focused ? 'bg-primary/10' : ''}`}>
       <MaterialIcons name={name} size={size} color={color} />
-      {/* Absolute, so the dot adds no height. Laid out in flow it grew the icon
-          box and pushed the dot down onto the label. */}
-      <View
-        className={`absolute -bottom-2 h-1 w-1 rounded-full ${focused ? 'bg-primary' : 'bg-transparent'}`}
-      />
     </View>
   );
 }
