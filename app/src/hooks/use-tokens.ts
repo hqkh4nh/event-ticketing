@@ -1,11 +1,11 @@
-import { useColorScheme } from 'react-native';
-
-import { tokens, type Tokens } from '@/constants/tokens';
+import { palette, type Palette } from '@/design/tokens';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 /**
- * Design tokens for the active colour scheme. Reach for this only where a
- * NativeWind class will not work, such as icon and navigator colours.
+ * Raw colour values for the few APIs that take a colour instead of a class
+ * name. Prefer a NativeWind class: `cssInterop` already covers icons, so what
+ * is left is React Navigation's theme, which is configured outside the tree.
  */
-export function useTokens(): Tokens {
-  return useColorScheme() === 'dark' ? tokens.dark : tokens.light;
+export function useTokens(): Palette {
+  return useColorScheme() === 'dark' ? palette.dark : palette.light;
 }

@@ -1,51 +1,39 @@
+import { MaterialIcons } from '@expo/vector-icons';
 import { Text, View } from 'react-native';
 
 type Props = {
   label: string;
-  tone?: 'primary' | 'secondary';
-  /** `tonal` tints the background; `filled` uses the solid brand colour. */
-  variant?: 'tonal' | 'filled';
+  /**
+   * `promo` is the only place the secondary colour is allowed to appear. Teal
+   * is the single accent; a second competing accent on ordinary labels is what
+   * made the reference screens read as generic.
+   */
+  tone?: 'neutral' | 'primary' | 'promo';
+  icon?: keyof typeof MaterialIcons.glyphMap;
 };
 
-const TONAL: Record<NonNullable<Props['tone']>, string> = {
-  primary: 'bg-primary/10 dark:bg-d-primary/15',
-  secondary: 'bg-secondary/10 dark:bg-secondary-container/15',
+const SURFACE: Record<NonNullable<Props['tone']>, string> = {
+  neutral: 'bg-surface-container',
+  primary: 'bg-primary/10',
+  promo: 'bg-secondary-container',
 };
 
-const TONAL_TEXT: Record<NonNullable<Props['tone']>, string> = {
-  primary: 'text-primary dark:text-d-primary',
-  secondary: 'text-secondary dark:text-secondary-container',
+const FOREGROUND: Record<NonNullable<Props['tone']>, string> = {
+  neutral: 'text-on-surface-variant',
+  primary: 'text-primary',
+  promo: 'text-on-secondary-container',
 };
 
-const FILLED: Record<NonNullable<Props['tone']>, string> = {
-  primary: 'bg-primary dark:bg-d-primary',
-  secondary: 'bg-secondary',
-};
-
-const FILLED_TEXT: Record<NonNullable<Props['tone']>, string> = {
-  primary: 'text-on-primary dark:text-d-on-primary',
-  secondary: 'text-on-secondary',
-};
-
-/** Small status or category label. See DESIGN.md, "Chips". */
-export function Chip({ label, tone = 'primary', variant = 'tonal' }: Props) {
-  const isFilled = variant === 'filled';
+/** Small category or status label. See DESIGN.md, "Chips". */
+export function Chip({ label, tone = 'neutral', icon }: Props) {
+  const foreground = FOREGROUND[tone];
 
   return (
     <View
-      className={[
-        'self-start rounded px-2 py-1',
-        isFilled ? FILLED[tone] : TONAL[tone],
-      ].join(' ')}
+      className={`flex-row items-center gap-1 self-start rounded-full px-2.5 py-1 ${SURFACE[tone]}`}
     >
-      <Text
-        className={[
-          'font-medium text-[12px] leading-4',
-          isFilled ? FILLED_TEXT[tone] : TONAL_TEXT[tone],
-        ].join(' ')}
-      >
-        {label}
-      </Text>
+      {icon ? <MaterialIcons name={icon} size={12} className={foreground} /> : null}
+      <Text className={`font-medium text-label-sm ${foreground}`}>{label}</Text>
     </View>
   );
 }

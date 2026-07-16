@@ -4,51 +4,68 @@ import { Link } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
-import { useTokens } from '@/hooks/use-tokens';
-import { formatDayMonth } from '@/lib/format';
+import { NumericText } from '@/components/ui/numeric-text';
+import { TicketSurface } from '@/components/ui/ticket-surface';
+import { formatDayMonth, formatVndAmount } from '@/lib/format';
 import type { EventSummary } from '@/lib/mock/events';
 
-/** Wide card for the horizontal "featured" carousel on the home screen. */
+/**
+ * Wide card for the horizontal "featured" carousel. Shaped as a ticket so the
+ * poster sits on the face and the details sit on the stub.
+ *
+ * The category label that used to sit above the title is gone on purpose: it
+ * repeated on every card in the same uppercase treatment, which is the loudest
+ * tell of a generated layout. The poster already says what kind of event it is.
+ */
 export function FeaturedEventCard({ event }: { event: EventSummary }) {
-  const { t } = useTranslation();
-  const tokens = useTokens();
+  const { t, i18n } = useTranslation();
+
+  const isFree = event.minPriceVnd === 0;
+  const priceLabel = isFree
+    ? t('event.free')
+    : t('event.priceFrom', { price: formatVndAmount(event.minPriceVnd, i18n.language) });
 
   return (
     <Link href={{ pathname: '/event/[id]', params: { id: event.id } }} asChild>
-      <Pressable
-        accessibilityRole="button"
-        className="w-[280px] overflow-hidden rounded-lg border border-outline-variant bg-surface-container-lowest active:opacity-90 dark:border-d-outline-variant dark:bg-d-surface-container"
-      >
-        <Image
-          source={event.coverImageUrl}
-          contentFit="cover"
-          transition={200}
-          style={{ width: '100%', height: 160 }}
-        />
+      <Pressable accessibilityRole="button" className="w-[280px] active:opacity-90">
+        <TicketSurface
+          stub={
+            <View className="gap-2 p-4">
+              <Text numberOfLines={2} className="font-bold text-body-lg text-on-surface">
+                {event.title}
+              </Text>
 
-        <View className="gap-2 p-4">
-          <Text className="font-medium text-[12px] uppercase leading-4 tracking-wider text-primary dark:text-d-primary">
-            {t(`event.category.${event.category}`)}
-          </Text>
+              {/* Date and price get a line each. Sharing one row cannot work at
+                  this card width: "22/08 · TP. Hồ Chí Minh" beside
+                  "From 500.000đ" either wraps or truncates the price, and the
+                  price is the last thing on the card that may be cut. */}
+              <View className="flex-row items-center gap-1">
+                <MaterialIcons
+                  name="calendar-today"
+                  size={14}
+                  className="text-on-surface-variant"
+                />
+                <Text
+                  numberOfLines={1}
+                  className="flex-1 font-sans text-label-md text-on-surface-variant"
+                >
+                  {formatDayMonth(event.startAt, i18n.language)} · {event.city}
+                </Text>
+              </View>
 
-          <Text
-            numberOfLines={2}
-            className="font-bold text-[18px] leading-6 text-on-surface dark:text-d-on-surface"
-          >
-            {event.title}
-          </Text>
-
-          <View className="flex-row items-center gap-1">
-            <MaterialIcons
-              name="calendar-today"
-              size={14}
-              color={tokens.onSurfaceVariant}
-            />
-            <Text className="font-medium text-[14px] leading-5 text-on-surface-variant dark:text-d-on-surface-variant">
-              {formatDayMonth(event.startAt)} · {event.city}
-            </Text>
-          </View>
-        </View>
+              <NumericText className="font-semibold text-label-md text-primary">
+                {priceLabel}
+              </NumericText>
+            </View>
+          }
+        >
+          <Image
+            source={event.coverImageUrl}
+            contentFit="cover"
+            transition={200}
+            style={{ width: '100%', height: 160 }}
+          />
+        </TicketSurface>
       </Pressable>
     </Link>
   );
