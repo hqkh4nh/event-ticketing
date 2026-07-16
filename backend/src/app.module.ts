@@ -9,6 +9,7 @@ import { envValidationSchema } from './config/env.validation';
 import { createLoggerModuleOptions } from './config/logger.config';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { EventsModule } from './modules/events/events.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 
@@ -27,6 +28,7 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
     ScheduleModule.forRoot(),
     PrismaModule,
     AuthModule,
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: JwtAuthGuard }],

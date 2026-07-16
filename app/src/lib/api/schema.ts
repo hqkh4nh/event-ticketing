@@ -71,6 +71,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List upcoming published events */
+        get: operations["EventsController_findAll"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a published event */
+        get: operations["EventsController_findOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -106,6 +140,47 @@ export interface components {
             email: string;
             /** @example matkhau-cua-toi */
             password: string;
+        };
+        EventSummaryDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            city: string;
+            /** Format: date-time */
+            startAt: string;
+            coverImageUrl: string | null;
+            /** @example 200000 */
+            minPriceVnd: number;
+            /** @enum {string} */
+            category: "MUSIC" | "TECH" | "ART" | "SPORT" | "WORKSHOP";
+            featured: boolean;
+        };
+        TicketTypeDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @example 200000 */
+            priceVnd: number;
+            quantityRemaining: number;
+        };
+        EventDetailDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            city: string;
+            /** Format: date-time */
+            startAt: string;
+            coverImageUrl: string | null;
+            /** @example 200000 */
+            minPriceVnd: number;
+            /** @enum {string} */
+            category: "MUSIC" | "TECH" | "ART" | "SPORT" | "WORKSHOP";
+            featured: boolean;
+            description: string;
+            venue: string;
+            /** Format: date-time */
+            endAt: string;
+            ticketTypes: components["schemas"]["TicketTypeDto"][];
         };
     };
     responses: never;
@@ -209,6 +284,58 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AuthResponseDto"];
                 };
+            };
+        };
+    };
+    EventsController_findAll: {
+        parameters: {
+            query?: {
+                search?: string;
+                city?: string;
+                category?: "MUSIC" | "TECH" | "ART" | "SPORT" | "WORKSHOP";
+                featured?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventSummaryDto"][];
+                };
+            };
+        };
+    };
+    EventsController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventDetailDto"];
+                };
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

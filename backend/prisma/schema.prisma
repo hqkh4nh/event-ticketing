@@ -29,6 +29,14 @@ enum EventStatus {
   HIDDEN
 }
 
+enum EventCategory {
+  MUSIC
+  TECH
+  ART
+  SPORT
+  WORKSHOP
+}
+
 enum OrderStatus {
   PENDING
   PAID
@@ -84,18 +92,21 @@ model User {
 }
 
 model Event {
-  id            String      @id @default(uuid(7)) @db.Uuid
-  organizerId   String      @db.Uuid
-  organizer     User        @relation("OrganizerEvents", fields: [organizerId], references: [id])
+  id            String        @id @default(uuid(7)) @db.Uuid
+  organizerId   String        @db.Uuid
+  organizer     User          @relation("OrganizerEvents", fields: [organizerId], references: [id])
   title         String
   description   String
   venue         String
-  startAt       DateTime    @db.Timestamptz(3)
-  endAt         DateTime    @db.Timestamptz(3)
+  city          String
+  category      EventCategory
+  featured      Boolean       @default(false)
+  startAt       DateTime      @db.Timestamptz(3)
+  endAt         DateTime      @db.Timestamptz(3)
   coverImageUrl String?
-  status        EventStatus @default(DRAFT)
-  createdAt     DateTime    @default(now()) @db.Timestamptz(3)
-  updatedAt     DateTime    @updatedAt @db.Timestamptz(3)
+  status        EventStatus   @default(DRAFT)
+  createdAt     DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime      @updatedAt @db.Timestamptz(3)
 
   ticketTypes TicketType[]
   orders      Order[]
@@ -103,6 +114,7 @@ model Event {
   checkinLogs CheckinLog[]
 
   @@index([status, startAt])
+  @@index([status, featured, startAt])
   @@index([organizerId, status, createdAt])
 }
 
