@@ -8,9 +8,9 @@ import configuration from './config/configuration';
 import { envValidationSchema } from './config/env.validation';
 import { createLoggerModuleOptions } from './config/logger.config';
 import { PrismaModule } from './prisma/prisma.module';
-import { AuthModule } from './auth/auth.module';
+import { AuthModule } from './modules/auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
-import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -26,12 +26,9 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     }),
     ScheduleModule.forRoot(),
     PrismaModule,
-    AuthModule
+    AuthModule,
   ],
   controllers: [AppController],
-  providers: [
-    AppService, 
-    { provide: APP_GUARD, useClass: JwtAuthGuard}
-  ],
+  providers: [AppService, { provide: APP_GUARD, useClass: JwtAuthGuard }],
 })
 export class AppModule {}

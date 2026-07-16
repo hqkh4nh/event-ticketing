@@ -40,8 +40,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     const raw =
       exception instanceof HttpException ? exception.getResponse() : null;
-    const body: ErrorBody =
-      raw !== null && typeof raw === 'object' ? (raw as ErrorBody) : {};
+    const body: ErrorBody = raw !== null && typeof raw === 'object' ? raw : {};
 
     const code = body.code ?? FALLBACK_CODE[status] ?? ErrorCode.INTERNAL_ERROR;
 

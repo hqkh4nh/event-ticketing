@@ -22,14 +22,15 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
-      exceptionFactory: (errors) => new BadRequestException({
-        code: ErrorCode.VALIDATION_FAILED,
-        message: 'Request validation failed.',
-        fields: errors.map((error) => ({
-          field: error.property,
-          rule: Object.keys(error.constraints ?? {})[0] ?? 'unknown',
-        })),
-      }),
+      exceptionFactory: (errors) =>
+        new BadRequestException({
+          code: ErrorCode.VALIDATION_FAILED,
+          message: 'Request validation failed.',
+          fields: errors.map((error) => ({
+            field: error.property,
+            rule: Object.keys(error.constraints ?? {})[0] ?? 'unknown',
+          })),
+        }),
     }),
   );
   app.useGlobalFilters(new AllExceptionsFilter());
