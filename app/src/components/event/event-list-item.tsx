@@ -16,12 +16,12 @@ import type { EventSummary } from '@/lib/mock/events';
  * lets the thumbnails line up as a column the eye can run down.
  */
 export function EventListItem({ event }: { event: EventSummary }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const isFree = event.minPriceVnd === 0;
   const priceLabel = isFree
     ? t('event.free')
-    : t('event.priceFrom', { price: formatVndAmount(event.minPriceVnd) });
+    : t('event.priceFrom', { price: formatVndAmount(event.minPriceVnd, i18n.language) });
 
   return (
     <Link href={{ pathname: '/event/[id]', params: { id: event.id } }} asChild>
@@ -42,7 +42,7 @@ export function EventListItem({ event }: { event: EventSummary }) {
           </Text>
 
           <Text className="font-sans text-label-md text-on-surface-variant">
-            {formatDayMonth(event.startAt)} · {event.city}
+            {formatDayMonth(event.startAt, i18n.language)} · {event.city}
           </Text>
 
           <NumericText className="font-medium text-label-md text-primary">

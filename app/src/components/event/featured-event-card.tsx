@@ -18,12 +18,12 @@ import type { EventSummary } from '@/lib/mock/events';
  * tell of a generated layout. The poster already says what kind of event it is.
  */
 export function FeaturedEventCard({ event }: { event: EventSummary }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const isFree = event.minPriceVnd === 0;
   const priceLabel = isFree
     ? t('event.free')
-    : t('event.priceFrom', { price: formatVndAmount(event.minPriceVnd) });
+    : t('event.priceFrom', { price: formatVndAmount(event.minPriceVnd, i18n.language) });
 
   return (
     <Link href={{ pathname: '/event/[id]', params: { id: event.id } }} asChild>
@@ -49,7 +49,7 @@ export function FeaturedEventCard({ event }: { event: EventSummary }) {
                   numberOfLines={1}
                   className="flex-1 font-sans text-label-md text-on-surface-variant"
                 >
-                  {formatDayMonth(event.startAt)} · {event.city}
+                  {formatDayMonth(event.startAt, i18n.language)} · {event.city}
                 </Text>
               </View>
 

@@ -14,7 +14,7 @@ import { findMockEvent, type TicketTypeSummary } from '@/lib/mock/events';
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const [quantities, setQuantities] = useState<Record<string, number>>({});
 
@@ -83,10 +83,10 @@ export default function EventDetailScreen() {
             <View className="gap-4">
               <InfoRow icon="calendar-today">
                 <Text className="font-medium text-body-md text-on-surface">
-                  {formatDateTime(event.startAt)}
+                  {formatDateTime(event.startAt, i18n.language)}
                 </Text>
                 <Text className="font-sans text-label-md text-on-surface-variant">
-                  {t('event.endsAt', { datetime: formatDateTime(event.endAt) })}
+                  {t('event.endsAt', { datetime: formatDateTime(event.endAt, i18n.language) })}
                 </Text>
               </InfoRow>
 
@@ -137,7 +137,7 @@ export default function EventDetailScreen() {
             <NumericText className="font-bold text-display-sm text-primary">
               {selectedCount > 0 && total === 0
                 ? t('event.free')
-                : t('event.price', { price: formatVndAmount(total) })}
+                : t('event.price', { price: formatVndAmount(total, i18n.language) })}
             </NumericText>
           </View>
 
@@ -175,7 +175,7 @@ function TicketTypeRow({
   quantity: number;
   onChange: (next: number) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const soldOut = ticketType.quantityRemaining === 0;
   const isSelected = quantity > 0;
@@ -201,7 +201,7 @@ function TicketTypeRow({
         <NumericText className="font-medium text-body-md text-primary">
           {ticketType.priceVnd === 0
             ? t('event.free')
-            : t('event.price', { price: formatVndAmount(ticketType.priceVnd) })}
+            : t('event.price', { price: formatVndAmount(ticketType.priceVnd, i18n.language) })}
         </NumericText>
 
         <Text className="font-sans text-label-sm text-on-surface-variant">
