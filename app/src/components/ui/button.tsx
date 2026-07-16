@@ -1,9 +1,4 @@
-import {
-  ActivityIndicator,
-  Pressable,
-  type PressableProps,
-  Text,
-} from 'react-native';
+import { ActivityIndicator, Pressable, type PressableProps, Text } from 'react-native';
 
 type Props = Omit<PressableProps, 'children'> & {
   label: string;
@@ -20,6 +15,7 @@ export function Button({
 }: Props) {
   const isDisabled = disabled === true || loading;
   const isPrimary = variant === 'primary';
+  const textTone = isPrimary ? 'text-on-primary' : 'text-primary';
 
   return (
     <Pressable
@@ -28,26 +24,17 @@ export function Button({
       disabled={isDisabled}
       className={[
         'h-cta-height flex-row items-center justify-center rounded-full px-6 active:scale-[0.98]',
-        isPrimary
-          ? 'bg-primary dark:bg-d-primary'
-          : 'border border-primary dark:border-d-primary',
+        isPrimary ? 'bg-primary' : 'border border-primary',
         isDisabled ? 'opacity-40' : '',
-      ].filter(Boolean).join(' ')} 
+      ]
+        .filter(Boolean)
+        .join(' ')}
       {...props}
     >
       {loading ? (
-        <ActivityIndicator color={isPrimary ? '#ffffff' : '#006b5f'} />
+        <ActivityIndicator className={textTone} />
       ) : (
-        <Text
-          className={[
-            'font-semibold text-[16px] leading-6',
-            isPrimary
-              ? 'text-on-primary dark:text-d-on-primary'
-              : 'text-primary dark:text-d-primary',
-          ].join(' ')}
-        >
-          {label}
-        </Text>
+        <Text className={`font-semibold text-body-md ${textTone}`}>{label}</Text>
       )}
     </Pressable>
   );

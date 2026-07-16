@@ -4,7 +4,8 @@ export const en = {
     upcoming: 'Upcoming',
     results: 'Results',
     searchPlaceholder: 'Search events',
-    noResults: 'No events found for "{{query}}".',
+    emptyTitle: 'No events found',
+    noResults: 'Nothing matches "{{query}}". Try a shorter keyword or a city name.',
   },
   tabs: {
     explore: 'Explore',
@@ -37,6 +38,7 @@ export const en = {
     back: 'Go back',
   },
   tickets: {
+    emptyAction: 'Browse events',
     emptyTitle: 'No tickets yet',
     emptyDescription: 'Tickets you book will appear here.',
   },

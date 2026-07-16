@@ -3,11 +3,18 @@ import { Link } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
-import { Chip } from '@/components/ui/chip';
+import { NumericText } from '@/components/ui/numeric-text';
 import { formatDayMonth, formatVndAmount } from '@/lib/format';
 import type { EventSummary } from '@/lib/mock/events';
 
-/** Compact row for the vertical event list on the home screen. */
+/**
+ * Compact row for the vertical event list.
+ *
+ * Deliberately not a card. The featured carousel above is already made of
+ * ticket-shaped cards, and boxing these rows too leaves the screen as one stack
+ * of identical containers. The list separates on a hairline instead, which also
+ * lets the thumbnails line up as a column the eye can run down.
+ */
 export function EventListItem({ event }: { event: EventSummary }) {
   const { t } = useTranslation();
 
@@ -20,28 +27,27 @@ export function EventListItem({ event }: { event: EventSummary }) {
     <Link href={{ pathname: '/event/[id]', params: { id: event.id } }} asChild>
       <Pressable
         accessibilityRole="button"
-        className="flex-row items-center gap-4 rounded-lg border border-outline-variant bg-surface-container-lowest p-3 active:opacity-90 dark:border-d-outline-variant dark:bg-d-surface-container"
+        className="flex-row items-center gap-4 py-3 active:opacity-60"
       >
         <Image
           source={event.coverImageUrl}
           contentFit="cover"
           transition={200}
-          style={{ width: 96, height: 96, borderRadius: 12 }}
+          style={{ width: 72, height: 72, borderRadius: 12 }}
         />
 
-        <View className="flex-1 gap-2">
-          <Text
-            numberOfLines={2}
-            className="font-bold text-[16px] leading-6 text-on-surface dark:text-d-on-surface"
-          >
+        <View className="flex-1 gap-1">
+          <Text numberOfLines={2} className="font-semibold text-body-md text-on-surface">
             {event.title}
           </Text>
 
-          <Text className="font-medium text-[12px] leading-4 text-on-surface-variant dark:text-d-on-surface-variant">
+          <Text className="font-sans text-label-md text-on-surface-variant">
             {formatDayMonth(event.startAt)} · {event.city}
           </Text>
 
-          <Chip label={priceLabel} variant={isFree ? 'filled' : 'tonal'} />
+          <NumericText className="font-medium text-label-md text-primary">
+            {priceLabel}
+          </NumericText>
         </View>
       </Pressable>
     </Link>

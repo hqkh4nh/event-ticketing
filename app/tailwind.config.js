@@ -1,55 +1,68 @@
+/**
+ * Holds no colour values. Every role below resolves to a CSS variable that
+ * `src/design/themes.ts` fills from `src/design/tokens.ts`, the single source
+ * of truth. That is why `dark:` never appears on a colour class: the variable
+ * already carries the active scheme.
+ */
+
+const COLOR_ROLES = [
+  'surface',
+  'surface-container-lowest',
+  'surface-container-low',
+  'surface-container',
+  'surface-container-high',
+  'on-surface',
+  'on-surface-variant',
+  'outline',
+  'outline-variant',
+  'primary',
+  'on-primary',
+  'primary-container',
+  'on-primary-container',
+  'secondary',
+  'on-secondary',
+  'secondary-container',
+  'on-secondary-container',
+  'tertiary',
+  'on-tertiary',
+  'tertiary-container',
+  'on-tertiary-container',
+  'error',
+  'on-error',
+  'error-container',
+  'on-error-container',
+  'success',
+  'on-success',
+  'success-container',
+  'on-success-container',
+  'warning',
+  'on-warning',
+  'warning-container',
+  'on-warning-container',
+];
+
+const colors = Object.fromEntries(
+  COLOR_ROLES.map((role) => [role, `rgb(var(--color-${role}) / <alpha-value>)`]),
+);
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ['./src/**/*.{js,jsx,ts,tsx}'],
   presets: [require('nativewind/preset')],
+  // Only for differences that are not colour, such as dropping shadows in dark.
   darkMode: 'media',
   theme: {
     extend: {
-      colors: {
-        primary: '#006b5f',
-        'on-primary': '#ffffff',
-        'primary-container': '#14b8a6',
-        'on-primary-container': '#00423b',
-        secondary: '#a93349',
-        'on-secondary': '#ffffff',
-        'secondary-container': '#fe7488',
-        'on-secondary-container': '#730425',
-        tertiary: '#9b4426',
-        'tertiary-container': '#f38764',
-        'on-tertiary-container': '#6c2106',
-        error: '#ba1a1a',
-        'on-error': '#ffffff',
-        'error-container': '#ffdad6',
-        'on-error-container': '#93000a',
-        success: '#0f7350',
-        'on-success': '#ffffff',
-        'success-container': '#a6f2ce',
-        'on-success-container': '#00382a',
-        warning: '#8a5300',
-        'on-warning': '#ffffff',
-        'warning-container': '#ffddb3',
-        'on-warning-container': '#2c1700',
-        surface: '#f8f9ff',
-        'surface-container-lowest': '#ffffff',
-        'surface-container-low': '#eff4ff',
-        'surface-container': '#e6eeff',
-        'surface-container-high': '#dee9fc',
-        'on-surface': '#121c2a',
-        'on-surface-variant': '#3c4947',
-        outline: '#6c7a77',
-        'outline-variant': '#bbcac6',
-
-        // Dark mode tokens. Mirror `colorsDark` in DESIGN.md.
-        'd-primary': '#4fdbc8',
-        'd-on-primary': '#00382f',
-        'd-surface': '#101720',
-        'd-surface-container': '#1d232c',
-        'd-surface-container-lowest': '#0b1119',
-        'd-on-surface': '#dfe3ec',
-        'd-on-surface-variant': '#bfc9c6',
-        'd-outline': '#899490',
-        'd-outline-variant': '#3c4947',
-        'd-error': '#ffb4ab',
+      colors,
+      fontSize: {
+        'display-lg': ['32px', { lineHeight: '40px', letterSpacing: '-0.02em' }],
+        'display-sm': ['24px', { lineHeight: '32px', letterSpacing: '-0.01em' }],
+        'headline-md': ['20px', { lineHeight: '28px' }],
+        'body-lg': ['18px', { lineHeight: '28px' }],
+        'body-md': ['16px', { lineHeight: '24px' }],
+        'label-md': ['14px', { lineHeight: '20px' }],
+        'label-sm': ['12px', { lineHeight: '16px', letterSpacing: '0.05em' }],
+        'numeric-lg': ['28px', { lineHeight: '36px' }],
       },
       borderRadius: {
         DEFAULT: '0.5rem',
@@ -63,6 +76,11 @@ module.exports = {
         gutter: '16px',
         'touch-target-min': '48px',
         'cta-height': '52px',
+        'bottom-nav-height': '80px',
+      },
+      maxWidth: {
+        // Reading width on desktop web. Native never reaches this.
+        content: '800px',
       },
       fontFamily: {
         sans: ['BeVietnamPro_400Regular'],

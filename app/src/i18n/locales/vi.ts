@@ -4,7 +4,8 @@ export const vi = {
     upcoming: 'Sắp diễn ra',
     results: 'Kết quả',
     searchPlaceholder: 'Tìm sự kiện',
-    noResults: 'Không tìm thấy sự kiện nào cho "{{query}}".',
+    emptyTitle: 'Không tìm thấy sự kiện',
+    noResults: 'Không có kết quả cho "{{query}}". Thử từ khoá ngắn hơn hoặc tên thành phố.',
   },
   tabs: {
     explore: 'Khám phá',
@@ -39,6 +40,7 @@ export const vi = {
   tickets: {
     emptyTitle: 'Chưa có vé nào',
     emptyDescription: 'Vé bạn đặt sẽ xuất hiện ở đây.',
+    emptyAction: 'Khám phá sự kiện',
   },
   notifications: {
     emptyTitle: 'Chưa có thông báo',
