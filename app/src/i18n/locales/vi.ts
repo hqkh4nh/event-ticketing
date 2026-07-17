@@ -50,6 +50,11 @@ export const vi = {
     title: 'Hồ sơ',
     signOut: 'Đăng xuất',
   },
+  launch: {
+    start: 'Bắt đầu',
+    title: 'Khoảnh khắc của bạn bắt đầu ở đây.',
+    body: 'Khám phá những sự kiện và cuộc hẹn đáng nhớ.',
+  },
   auth: {
     brand: 'eTicket',
     login: {

@@ -50,6 +50,11 @@ export const en = {
     title: 'Profile',
     signOut: 'Sign out',
   },
+  launch: {
+    start: 'Get started',
+    title: 'Your next moment starts here.',
+    body: 'Find nights out and plans worth remembering.',
+  },
   auth: {
     brand: 'eTicket',
     login: {

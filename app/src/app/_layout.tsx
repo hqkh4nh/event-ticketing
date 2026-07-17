@@ -13,10 +13,11 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { LaunchSplash } from '@/components/brand/launch-splash';
 import { themes } from '@/design/themes';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTokens } from '@/hooks/use-tokens';
@@ -32,6 +33,10 @@ export default function RootLayout() {
   const hydrateAuth = useAuthStore((state) => state.hydrate);
   const hydrateLanguage = useLanguageStore((state) => state.hydrate);
   const isAuthLoading = useAuthStore((s) => s.isLoading);
+  const token = useAuthStore((state) => state.token);
+  const [launchState, setLaunchState] = useState<'pending' | 'show' | 'complete'>(
+    'pending',
+  );
 
   const [fontsLoaded, fontError] = useFonts({
     BeVietnamPro_400Regular,
@@ -65,10 +70,24 @@ export default function RootLayout() {
   }, [hydrateAuth, hydrateLanguage]);
 
   useEffect(() => {
-    if ((fontsLoaded || fontError) && !isAuthLoading) {
+    if (
+      (fontsLoaded || fontError) &&
+      !isAuthLoading &&
+      launchState === 'pending'
+    ) {
+      setLaunchState(token ? 'complete' : 'show');
+    }
+  }, [fontError, fontsLoaded, isAuthLoading, launchState, token]);
+
+  useEffect(() => {
+    if (
+      (fontsLoaded || fontError) &&
+      !isAuthLoading &&
+      launchState !== 'pending'
+    ) {
       void SplashScreen.hideAsync();
-    } 
-  }, [fontsLoaded, fontError, isAuthLoading]);
+    }
+  }, [fontError, fontsLoaded, isAuthLoading, launchState]);
 
   if (!fontsLoaded && !fontError) return null;
 
@@ -80,7 +99,11 @@ export default function RootLayout() {
               resolves variables through context, so anything rendered outside
               this View, such as a portal, would see no theme at all. */}
           <View style={themes[colorScheme]} className="flex-1 bg-surface">
-            <Stack screenOptions={{ headerShown: false }} />
+            {launchState === 'show' ? (
+              <LaunchSplash onComplete={() => setLaunchState('complete')} />
+            ) : launchState === 'complete' ? (
+              <Stack screenOptions={{ headerShown: false }} />
+            ) : null}
           </View>
         </ThemeProvider>
       </SafeAreaProvider>
