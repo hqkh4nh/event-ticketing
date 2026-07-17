@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <mask id="notch">
+    <rect width="512" height="512" fill="#fff"/>
+    <circle cx="33" cy="256" r="48" fill="#000"/>
+    <circle cx="479" cy="256" r="48" fill="#000"/>
+  </mask>
+  <rect x="52" y="52" width="408" height="408" rx="82" fill="none" stroke="#006B5F" stroke-width="38" stroke-linejoin="round" mask="url(#notch)"/>
+  <rect x="137" y="137" width="238" height="238" rx="50" fill="none" stroke="#006B5F" stroke-width="34" stroke-linejoin="round"/>
+  <path fill="#006B5F" transform="translate(183.3503 317.9422) scale(.105442 -.105442)" d="M1290 563V461H453Q466 335 544 272Q622 209 762 209Q875 209 993.5 242.5Q1112 276 1237 344V68Q1110 20 983 -4.5Q856 -29 729 -29Q425 -29 256.5 125.5Q88 280 88 559Q88 833 253.5 990Q419 1147 709 1147Q973 1147 1131.5 988Q1290 829 1290 563ZM922 682Q922 784 862.5 846.5Q803 909 707 909Q603 909 538 850.5Q473 792 457 682Z"/>
+</svg>
