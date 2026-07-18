@@ -18,6 +18,9 @@ export const ErrorCode = {
   NOT_FOUND: 'NOT_FOUND',
   CONFLICT: 'CONFLICT',
   INTERNAL_ERROR: 'INTERNAL_ERROR',
+  EVENT_NOT_PUBLISHABLE: 'EVENT_NOT_PUBLISHABLE',
+  INVALID_STATE_TRANSITION: 'INVALID_STATE_TRANSITION',
+  LAST_TICKET_TYPE: 'LAST_TICKET_TYPE',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
