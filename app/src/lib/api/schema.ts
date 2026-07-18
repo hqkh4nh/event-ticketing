@@ -105,6 +105,129 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/organizer/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List my events (any status) */
+        get: operations["EventsOrganizerController_list"];
+        put?: never;
+        /** Create a draft event */
+        post: operations["EventsOrganizerController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/organizer/events/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get one of my events */
+        get: operations["EventsOrganizerController_get"];
+        put?: never;
+        post?: never;
+        /** Delete a draft event */
+        delete: operations["EventsOrganizerController_remove"];
+        options?: never;
+        head?: never;
+        /** Edit an event (draft or published) */
+        patch: operations["EventsOrganizerController_update"];
+        trace?: never;
+    };
+    "/api/organizer/events/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish an event (needs >= 1 ticket type) */
+        post: operations["EventsOrganizerController_publish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/organizer/events/{id}/unpublish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Move a published event back to draft */
+        post: operations["EventsOrganizerController_unpublish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/organizer/events/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel a published event */
+        post: operations["EventsOrganizerController_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/organizer/events/{id}/ticket-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a ticket type */
+        post: operations["EventsOrganizerController_addTicketType"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/organizer/events/{id}/ticket-types/{typeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a ticket type */
+        delete: operations["EventsOrganizerController_removeTicketType"];
+        options?: never;
+        head?: never;
+        /** Edit a ticket type */
+        patch: operations["EventsOrganizerController_updateTicketType"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -181,6 +304,134 @@ export interface components {
             /** Format: date-time */
             endAt: string;
             ticketTypes: components["schemas"]["TicketTypeDto"][];
+        };
+        OrganizerEventSummaryDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            city: string;
+            /** @enum {string} */
+            category: "MUSIC" | "TECH" | "ART" | "SPORT" | "WORKSHOP";
+            /** @enum {string} */
+            status: "DRAFT" | "PUBLISHED" | "CANCELLED" | "HIDDEN";
+            featured: boolean;
+            /** Format: date-time */
+            startAt: string;
+            coverImageUrl: string | null;
+            ticketTypeCount: number;
+        };
+        CreateEventDto: {
+            /** @example Live Concert 2026 */
+            title: string;
+            description: string;
+            /** @example Hoa Binh Theatre */
+            venue: string;
+            /** @example Ha Noi */
+            city: string;
+            /** @enum {string} */
+            category: "MUSIC" | "TECH" | "ART" | "SPORT" | "WORKSHOP";
+            /**
+             * Format: date-time
+             * @example 2026-09-01T12:00:00.000Z
+             */
+            startAt: string;
+            /**
+             * Format: date-time
+             * @example 2026-09-01T15:00:00.000Z
+             */
+            endAt: string;
+            coverImageUrl?: string | null;
+            /** @default false */
+            featured: boolean;
+        };
+        OrganizerTicketTypeDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @example 200000 */
+            priceVnd: number;
+            quantityTotal: number;
+            /** @description Tickets already sold (0 in this slice) */
+            soldCount: number;
+            /** Format: date-time */
+            salesStartAt: string | null;
+            /** Format: date-time */
+            salesEndAt: string | null;
+        };
+        OrganizerEventDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            organizerId: string;
+            title: string;
+            description: string;
+            venue: string;
+            city: string;
+            /** @enum {string} */
+            category: "MUSIC" | "TECH" | "ART" | "SPORT" | "WORKSHOP";
+            /** @enum {string} */
+            status: "DRAFT" | "PUBLISHED" | "CANCELLED" | "HIDDEN";
+            featured: boolean;
+            /** Format: date-time */
+            startAt: string;
+            /** Format: date-time */
+            endAt: string;
+            coverImageUrl: string | null;
+            ticketTypes: components["schemas"]["OrganizerTicketTypeDto"][];
+        };
+        UpdateEventDto: {
+            /** @example Live Concert 2026 */
+            title?: string;
+            description?: string;
+            /** @example Hoa Binh Theatre */
+            venue?: string;
+            /** @example Ha Noi */
+            city?: string;
+            /** @enum {string} */
+            category?: "MUSIC" | "TECH" | "ART" | "SPORT" | "WORKSHOP";
+            /**
+             * Format: date-time
+             * @example 2026-09-01T12:00:00.000Z
+             */
+            startAt?: string;
+            /**
+             * Format: date-time
+             * @example 2026-09-01T15:00:00.000Z
+             */
+            endAt?: string;
+            coverImageUrl?: string | null;
+            /** @default false */
+            featured: boolean;
+        };
+        CreateTicketTypeDto: {
+            /** @example General Admission */
+            name: string;
+            /**
+             * @description VND, integer
+             * @example 200000
+             */
+            priceVnd: number;
+            /** @example 500 */
+            quantityTotal: number;
+            /** Format: date-time */
+            salesStartAt?: Record<string, never> | null;
+            /** Format: date-time */
+            salesEndAt?: Record<string, never> | null;
+        };
+        UpdateTicketTypeDto: {
+            /** @example General Admission */
+            name?: string;
+            /**
+             * @description VND, integer
+             * @example 200000
+             */
+            priceVnd?: number;
+            /** @example 500 */
+            quantityTotal?: number;
+            /** Format: date-time */
+            salesStartAt?: Record<string, never> | null;
+            /** Format: date-time */
+            salesEndAt?: Record<string, never> | null;
         };
     };
     responses: never;
@@ -329,6 +580,403 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["EventDetailDto"];
                 };
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EventsOrganizerController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizerEventSummaryDto"][];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE | ACCOUNT_PENDING_APPROVAL */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EventsOrganizerController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateEventDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizerEventDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE | ACCOUNT_PENDING_APPROVAL */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EventsOrganizerController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizerEventDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE | ACCOUNT_PENDING_APPROVAL */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EventsOrganizerController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: FORBIDDEN_ROLE | ACCOUNT_PENDING_APPROVAL */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: INVALID_STATE_TRANSITION */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EventsOrganizerController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateEventDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizerEventDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE | ACCOUNT_PENDING_APPROVAL */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EventsOrganizerController_publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizerEventDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE | ACCOUNT_PENDING_APPROVAL */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: EVENT_NOT_PUBLISHABLE | INVALID_STATE_TRANSITION */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EventsOrganizerController_unpublish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizerEventDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE | ACCOUNT_PENDING_APPROVAL */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: INVALID_STATE_TRANSITION */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EventsOrganizerController_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizerEventDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE | ACCOUNT_PENDING_APPROVAL */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: INVALID_STATE_TRANSITION */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EventsOrganizerController_addTicketType: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTicketTypeDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizerEventDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE | ACCOUNT_PENDING_APPROVAL */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EventsOrganizerController_removeTicketType: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                typeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizerEventDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE | ACCOUNT_PENDING_APPROVAL */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: LAST_TICKET_TYPE */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EventsOrganizerController_updateTicketType: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                typeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTicketTypeDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizerEventDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE | ACCOUNT_PENDING_APPROVAL */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description code: NOT_FOUND */
             404: {

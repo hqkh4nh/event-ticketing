@@ -55,6 +55,7 @@ function TabIcon({
 export default function AttendeeLayout() {
   const token = useAuthStore((state) => state.token);
   const isLoading = useAuthStore((state) => state.isLoading);
+  const role = useAuthStore((state) => state.user?.role);
   const { t } = useTranslation();
   const tokens = useTokens();
   const insets = useSafeAreaInsets();
@@ -62,6 +63,10 @@ export default function AttendeeLayout() {
 
   if (isLoading) return null;
   if (!token) return <Redirect href="/auth/login" />;
+  // Organizers own a separate area. Both route groups would otherwise resolve
+  // "/" to their own index, so an organizer landing on the attendee root is
+  // sent on to theirs.
+  if (role === 'ORGANIZER') return <Redirect href="/organizer" />;
 
   // A bar pinned to the bottom of a 1440px desktop window is a phone habit, not
   // a layout. Past `md` the tabs move up top where a pointer expects them.
