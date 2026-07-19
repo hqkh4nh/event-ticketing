@@ -10,6 +10,8 @@ import { createLoggerModuleOptions } from './config/logger.config';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { EventsModule } from './modules/events/events.module';
+import { TicketsModule } from './modules/tickets/tickets.module';
+import { OrdersModule } from './modules/orders/orders.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 
@@ -29,6 +31,8 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
     PrismaModule,
     AuthModule,
     EventsModule,
+    TicketsModule,
+    OrdersModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: JwtAuthGuard }],
