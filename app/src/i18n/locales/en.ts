@@ -112,6 +112,34 @@ export const en = {
     create: 'Create event',
     ticketTypeCount_one: '{{count}} ticket type',
     ticketTypeCount_other: '{{count}} ticket types',
+    tabs: {
+      overview: 'Overview',
+      events: 'Events',
+      notifications: 'Notifications',
+      account: 'Account',
+    },
+    overview: {
+      title: 'Overview',
+      salesAnalytics: 'Ticket sales analytics',
+      noSalesTitle: 'No sales data yet',
+      noSalesDescription:
+        'Revenue and ticket sales will appear after the system records paid orders.',
+    },
+    notifications: {
+      title: 'Notifications',
+      emptyTitle: 'No notifications',
+      emptyDescription:
+        'Updates about events, orders, and payments will appear here.',
+    },
+    account: {
+      title: 'Account',
+      role: 'Organizer',
+      language: 'Language',
+      languages: {
+        vi: 'Tiếng Việt',
+        en: 'English',
+      },
+    },
     dashboard: {
       total: 'Total events',
       published: 'Published',

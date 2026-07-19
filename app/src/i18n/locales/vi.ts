@@ -113,6 +113,34 @@ export const vi = {
     create: 'Tạo sự kiện',
     ticketTypeCount_one: '{{count}} hạng vé',
     ticketTypeCount_other: '{{count}} hạng vé',
+    tabs: {
+      overview: 'Tổng quan',
+      events: 'Sự kiện',
+      notifications: 'Thông báo',
+      account: 'Tài khoản',
+    },
+    overview: {
+      title: 'Tổng quan',
+      salesAnalytics: 'Phân tích bán vé',
+      noSalesTitle: 'Chưa có dữ liệu bán vé',
+      noSalesDescription:
+        'Doanh thu và số vé bán sẽ xuất hiện khi hệ thống ghi nhận đơn thanh toán.',
+    },
+    notifications: {
+      title: 'Thông báo',
+      emptyTitle: 'Chưa có thông báo',
+      emptyDescription:
+        'Cập nhật về sự kiện, đơn hàng và thanh toán sẽ xuất hiện tại đây.',
+    },
+    account: {
+      title: 'Tài khoản',
+      role: 'Nhà tổ chức',
+      language: 'Ngôn ngữ',
+      languages: {
+        vi: 'Tiếng Việt',
+        en: 'English',
+      },
+    },
     dashboard: {
       total: 'Tổng sự kiện',
       published: 'Đã xuất bản',

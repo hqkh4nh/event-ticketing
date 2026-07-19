@@ -9,7 +9,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { OrganizerEventCard } from '@/components/organizer/organizer-event-card';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { NumericText } from '@/components/ui/numeric-text';
 import {
   listMyEvents,
   type OrganizerEventSummary,
@@ -37,7 +36,6 @@ export default function OrganizerEventsScreen() {
   });
 
   const events = eventsQuery.data ?? EMPTY_EVENTS;
-  const counts = useMemo(() => summarize(events), [events]);
   const visibleEvents = useMemo(
     () =>
       filter === 'ALL'
@@ -48,8 +46,6 @@ export default function OrganizerEventsScreen() {
 
   const listHeader = (
     <View className="gap-5 pb-5 pt-5">
-      <DashboardSummary counts={counts} />
-
       {eventsQuery.isRefetchError ? (
         <View className="min-h-touch-target-min flex-row items-center gap-3 rounded border border-error/30 bg-error-container px-3">
           <MaterialIcons name="cloud-off" size={20} className="text-on-error-container" />
@@ -164,79 +160,6 @@ export default function OrganizerEventsScreen() {
   );
 }
 
-function DashboardSummary({ counts }: { counts: ReturnType<typeof summarize> }) {
-  const { t } = useTranslation();
-
-  return (
-    <View className="overflow-hidden rounded-lg border border-outline-variant bg-surface-container-lowest">
-      <View className="flex-row border-b border-outline-variant">
-        <View className="flex-1 border-r border-outline-variant">
-          <DashboardMetric
-            icon="event-note"
-            label={t('organizer.dashboard.total')}
-            value={counts.total}
-          />
-        </View>
-        <View className="flex-1">
-          <DashboardMetric
-            icon="check-circle"
-            label={t('organizer.dashboard.published')}
-            value={counts.PUBLISHED}
-            tone="primary"
-          />
-        </View>
-      </View>
-      <View className="flex-row">
-        <View className="flex-1 border-r border-outline-variant">
-          <DashboardMetric
-            icon="edit-note"
-            label={t('organizer.dashboard.draft')}
-            value={counts.DRAFT}
-          />
-        </View>
-        <View className="flex-1">
-          <DashboardMetric
-            icon="cancel"
-            label={t('organizer.dashboard.cancelled')}
-            value={counts.CANCELLED}
-          />
-        </View>
-      </View>
-    </View>
-  );
-}
-
-function DashboardMetric({
-  icon,
-  label,
-  value,
-  tone = 'neutral',
-}: {
-  icon: keyof typeof MaterialIcons.glyphMap;
-  label: string;
-  value: number;
-  tone?: 'neutral' | 'primary';
-}) {
-  const iconTone = tone === 'primary' ? 'text-primary' : 'text-on-surface-variant';
-  const iconSurface = tone === 'primary' ? 'bg-primary/10' : 'bg-surface-container';
-
-  return (
-    <View className="h-24 flex-row items-center gap-3 px-4">
-      <View className={`h-10 w-10 items-center justify-center rounded ${iconSurface}`}>
-        <MaterialIcons name={icon} size={20} className={iconTone} />
-      </View>
-      <View className="min-w-0 flex-1">
-        <NumericText className="font-bold text-numeric-lg text-on-surface">
-          {value}
-        </NumericText>
-        <Text numberOfLines={1} className="font-sans text-label-sm text-on-surface-variant">
-          {label}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
 function StatusFilter({
   value,
   onChange,
@@ -281,22 +204,5 @@ function StatusFilter({
         );
       })}
     </View>
-  );
-}
-
-function summarize(events: OrganizerEventSummary[]) {
-  return events.reduce(
-    (counts, event) => {
-      counts.total += 1;
-      counts[event.status] += 1;
-      return counts;
-    },
-    {
-      total: 0,
-      DRAFT: 0,
-      PUBLISHED: 0,
-      CANCELLED: 0,
-      HIDDEN: 0,
-    },
   );
 }

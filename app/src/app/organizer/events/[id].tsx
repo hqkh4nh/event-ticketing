@@ -84,7 +84,7 @@ export default function EditEventScreen() {
     mutationFn: () => deleteEvent(id),
     onSuccess: () => {
       invalidate();
-      router.replace('/organizer');
+      router.replace('/organizer/events');
     },
     onError: (err) => setActionError(toUserMessage(err, t)),
   });
@@ -103,7 +103,10 @@ export default function EditEventScreen() {
         <Text className="font-semibold text-body-md text-on-surface">
           {t('api.error.NOT_FOUND')}
         </Text>
-        <Button label={t('event.back')} onPress={() => router.replace('/organizer')} />
+        <Button
+          label={t('event.back')}
+          onPress={() => router.replace('/organizer/events')}
+        />
       </SafeAreaView>
     );
   }
