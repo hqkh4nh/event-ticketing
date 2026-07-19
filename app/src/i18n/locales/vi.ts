@@ -42,11 +42,22 @@ export const vi = {
     notFound: 'Không tìm thấy sự kiện',
     loadErrorTitle: 'Không tải được sự kiện',
     back: 'Quay lại',
+    paymentComingSoon: 'Thanh toán sắp có. Hiện chỉ đặt được vé miễn phí.',
   },
   tickets: {
     emptyTitle: 'Chưa có vé nào',
     emptyDescription: 'Vé bạn đặt sẽ xuất hiện ở đây.',
     emptyAction: 'Khám phá sự kiện',
+    loadErrorTitle: 'Không tải được vé',
+    close: 'Đóng',
+  },
+  order: {
+    confirmedTitle: 'Đặt vé thành công!',
+    confirmedBody: 'Vé của bạn đã sẵn sàng. Xuất trình mã QR ở cửa vào.',
+    yourTickets: '{{count}} vé',
+    viewTickets: 'Xem vé của tôi',
+    backHome: 'Về trang chủ',
+    loadErrorTitle: 'Không tải được đơn hàng',
   },
   notifications: {
     emptyTitle: 'Chưa có thông báo',

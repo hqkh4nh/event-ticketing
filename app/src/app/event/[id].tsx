@@ -1,8 +1,8 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,19 +12,28 @@ import { Chip } from '@/components/ui/chip';
 import { EmptyState } from '@/components/ui/empty-state';
 import { NumericText } from '@/components/ui/numeric-text';
 import { ApiError } from '@/lib/api/client';
+import { toUserMessage } from '@/lib/api/error-message';
 import {
   eventsKeys,
   getEvent,
   type TicketTypeSummary,
 } from '@/lib/api/events';
-import { toUserMessage } from '@/lib/api/error-message';
+import { createOrder, ticketsKeys } from '@/lib/api/orders';
 import { formatDateTime, formatVndAmount } from '@/lib/format';
+
+/** A per-purchase idempotency key so a retried Buy never orders twice. */
+function newRequestId(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
 
 export default function EventDetailScreen() {
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [orderError, setOrderError] = useState<string | null>(null);
+  const requestId = useRef<string | null>(null);
   const eventId = Array.isArray(params.id) ? params.id[0] : (params.id ?? '');
 
   const eventQuery = useQuery({
@@ -36,7 +45,31 @@ export default function EventDetailScreen() {
 
   useEffect(() => {
     setQuantities({});
+    setOrderError(null);
+    requestId.current = null;
   }, [eventId]);
+
+  const orderMutation = useMutation({
+    mutationFn: () => {
+      requestId.current ??= newRequestId();
+      const items = Object.entries(quantities)
+        .filter(([, quantity]) => quantity > 0)
+        .map(([ticketTypeId, quantity]) => ({ ticketTypeId, quantity }));
+      return createOrder({ eventId, items, clientRequestId: requestId.current });
+    },
+    onSuccess: (order) => {
+      requestId.current = null;
+      void queryClient.invalidateQueries({ queryKey: ticketsKeys.mine() });
+      router.replace({ pathname: '/order/[id]', params: { id: order.id } });
+    },
+    onError: (error) => {
+      setOrderError(toUserMessage(error, t));
+      // A sold-out race means our remaining counts are stale; pull fresh ones.
+      if (error instanceof ApiError && error.code === 'SOLD_OUT') {
+        void eventQuery.refetch();
+      }
+    },
+  });
 
   const total = useMemo(() => {
     if (!event) return 0;
@@ -48,6 +81,9 @@ export default function EventDetailScreen() {
   }, [event, quantities]);
 
   const selectedCount = Object.values(quantities).reduce((sum, n) => sum + n, 0);
+  // Any priced ticket in the cart makes this a paid order, which slice B cannot
+  // fulfil yet — the total is what the free-only pipeline checks server-side.
+  const hasPaid = total > 0;
 
   const goBack = () => {
     if (router.canGoBack()) router.back();
@@ -181,25 +217,45 @@ export default function EventDetailScreen() {
         </ScrollView>
 
         <View
-          className="flex-row items-center justify-between gap-4 border-t border-outline-variant bg-surface-container-lowest px-container-padding pt-4"
+          className="gap-3 border-t border-outline-variant bg-surface-container-lowest px-container-padding pt-4"
           style={{ paddingBottom: insets.bottom + 16 }}
         >
-          <View>
+          {orderError ? (
+            <Text className="font-sans text-label-md text-error">{orderError}</Text>
+          ) : null}
+          {/* Paid checkout arrives with SePay (slice C); until then only free
+              orders go through, so a paid selection is blocked here. */}
+          {hasPaid ? (
             <Text className="font-sans text-label-md text-on-surface-variant">
-              {t('event.total')}
+              {t('event.paymentComingSoon')}
             </Text>
-            {/* "Free" is a claim about the order, so it may only appear once
-                something is actually in it. With nothing selected the total is
-                zero, and zero is what it has to say. */}
-            <NumericText className="font-bold text-display-sm text-primary">
-              {selectedCount > 0 && total === 0
-                ? t('event.free')
-                : t('event.price', { price: formatVndAmount(total, i18n.language) })}
-            </NumericText>
-          </View>
+          ) : null}
 
-          {/* TODO: create the order (AC-5, AC-6) once POST /api/orders exists. */}
-          <Button label={t('event.buy')} disabled={selectedCount === 0} />
+          <View className="flex-row items-center justify-between gap-4">
+            <View>
+              <Text className="font-sans text-label-md text-on-surface-variant">
+                {t('event.total')}
+              </Text>
+              {/* "Free" is a claim about the order, so it may only appear once
+                  something is actually in it. With nothing selected the total is
+                  zero, and zero is what it has to say. */}
+              <NumericText className="font-bold text-display-sm text-primary">
+                {selectedCount > 0 && total === 0
+                  ? t('event.free')
+                  : t('event.price', { price: formatVndAmount(total, i18n.language) })}
+              </NumericText>
+            </View>
+
+            <Button
+              label={t('event.buy')}
+              loading={orderMutation.isPending}
+              disabled={selectedCount === 0 || hasPaid}
+              onPress={() => {
+                setOrderError(null);
+                orderMutation.mutate();
+              }}
+            />
+          </View>
         </View>
       </View>
     </View>

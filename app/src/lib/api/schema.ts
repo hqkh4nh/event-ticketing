@@ -228,6 +228,57 @@ export interface paths {
         patch: operations["EventsOrganizerController_updateTicketType"];
         trace?: never;
     };
+    "/api/me/tickets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the current user's issued tickets. */
+        get: operations["TicketsController_listMine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a free order and issue its signed tickets. */
+        post: operations["OrdersController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orders/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get one of the current user's orders. */
+        get: operations["OrdersController_getOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -432,6 +483,68 @@ export interface components {
             salesStartAt?: Record<string, never> | null;
             /** Format: date-time */
             salesEndAt?: Record<string, never> | null;
+        };
+        MyTicketDto: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            signature: string;
+            /** @description QR payload rendered by the client: `code.signature`. */
+            qrPayload: string;
+            /** @enum {string} */
+            status: "ISSUED" | "USED" | "VOID";
+            /** Format: date-time */
+            issuedAt: string;
+            ticketTypeName: string;
+            /** Format: uuid */
+            eventId: string;
+            eventTitle: string;
+            eventVenue: string;
+            /** Format: date-time */
+            eventStartAt: string;
+        };
+        CreateOrderItemDto: {
+            /** Format: uuid */
+            ticketTypeId: string;
+            /** @example 2 */
+            quantity: number;
+        };
+        CreateOrderDto: {
+            /** Format: uuid */
+            eventId: string;
+            items: components["schemas"]["CreateOrderItemDto"][];
+            /** @description Idempotency key so a retried submission does not order twice. */
+            clientRequestId?: string;
+        };
+        OrderEventDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            venue: string;
+            /** Format: date-time */
+            startAt: string;
+        };
+        IssuedTicketDto: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            signature: string;
+            /** @description QR payload rendered by the client: `code.signature`. */
+            qrPayload: string;
+            ticketTypeName: string;
+            /** @enum {string} */
+            status: "ISSUED" | "USED" | "VOID";
+        };
+        OrderResponseDto: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "PENDING" | "PAID" | "EXPIRED" | "CANCELLED";
+            totalVnd: number;
+            /** Format: date-time */
+            createdAt: string;
+            event: components["schemas"]["OrderEventDto"];
+            tickets: components["schemas"]["IssuedTicketDto"][];
         };
     };
     responses: never;
@@ -979,6 +1092,83 @@ export interface operations {
                 content?: never;
             };
             /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TicketsController_listMine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyTicketDto"][];
+                };
+            };
+        };
+    };
+    OrdersController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOrderDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderResponseDto"];
+                };
+            };
+            /** @description EVENT_NOT_PURCHASABLE | PAYMENT_NOT_AVAILABLE | SOLD_OUT */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    OrdersController_getOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderResponseDto"];
+                };
+            };
+            /** @description NOT_FOUND */
             404: {
                 headers: {
                     [name: string]: unknown;

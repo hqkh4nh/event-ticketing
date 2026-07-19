@@ -42,11 +42,23 @@ export const en = {
     notFound: 'Event not found',
     loadErrorTitle: 'Unable to load event',
     back: 'Go back',
+    paymentComingSoon: 'Paid checkout is coming soon. Only free tickets can be booked for now.',
   },
   tickets: {
     emptyAction: 'Browse events',
     emptyTitle: 'No tickets yet',
     emptyDescription: 'Tickets you book will appear here.',
+    loadErrorTitle: 'Unable to load tickets',
+    close: 'Close',
+  },
+  order: {
+    confirmedTitle: 'You\'re all set!',
+    confirmedBody: 'Your tickets are booked. Show the QR code at the entrance.',
+    yourTickets: '{{count}} ticket',
+    yourTickets_other: '{{count}} tickets',
+    viewTickets: 'View my tickets',
+    backHome: 'Back to home',
+    loadErrorTitle: 'Unable to load order',
   },
   notifications: {
     emptyTitle: 'No notifications',
@@ -248,6 +260,9 @@ export const en = {
       INVALID_STATE_TRANSITION: 'This action is not allowed in the current state.',
       LAST_TICKET_TYPE:
         'A published event must keep at least one ticket type. Unpublish it first.',
+      EVENT_NOT_PURCHASABLE: 'This event is not on sale.',
+      PAYMENT_NOT_AVAILABLE: 'Paid tickets are not available yet.',
+      SOLD_OUT: 'Not enough tickets remaining. Please try a smaller quantity.',
     },
 
     validation: {
