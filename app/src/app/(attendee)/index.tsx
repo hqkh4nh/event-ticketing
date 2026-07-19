@@ -1,17 +1,23 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FlatList, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EventListItem } from '@/components/event/event-list-item';
 import { FeaturedEventCard } from '@/components/event/featured-event-card';
+import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { MOCK_EVENT_SUMMARIES } from '@/lib/mock/events';
-
-const FEATURED = MOCK_EVENT_SUMMARIES.filter((event) => event.featured);
+import {
+  eventsKeys,
+  listEvents,
+  type ListEventsQuery,
+} from '@/lib/api/events';
+import { toUserMessage } from '@/lib/api/error-message';
 
 const CONTAINER_PADDING = 20;
+const SEARCH_DEBOUNCE_MS = 300;
 
 // Bleeds past the list padding so the carousel runs to the screen edge.
 const FEATURED_LIST_STYLE = { marginHorizontal: -CONTAINER_PADDING } as const;
@@ -25,46 +31,77 @@ function Separator() {
 export default function HomeScreen() {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
 
-  const needle = query.trim().toLowerCase();
-  const isSearching = needle.length > 0;
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebouncedQuery(query.trim()), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timeout);
+  }, [query]);
 
-  // Filtering the mock list stands in for the search parameters of
-  // `GET /api/events` (AC-4). Swap this for a query once the endpoint exists.
-  const results = useMemo(() => {
-    if (!isSearching) return MOCK_EVENT_SUMMARIES;
+  const isSearching = debouncedQuery.length > 0;
+  const queryParams = useMemo<ListEventsQuery>(
+    () => (isSearching ? { search: debouncedQuery } : {}),
+    [debouncedQuery, isSearching],
+  );
 
-    return MOCK_EVENT_SUMMARIES.filter(
-      (event) =>
-        event.title.toLowerCase().includes(needle) ||
-        event.city.toLowerCase().includes(needle),
+  const eventsQuery = useQuery({
+    queryKey: eventsKeys.list(queryParams),
+    queryFn: () => listEvents(queryParams),
+  });
+
+  const events = eventsQuery.data ?? [];
+  const featured = events.filter((event) => event.featured);
+
+  const listHeader =
+    eventsQuery.isPending || (eventsQuery.isError && events.length === 0) ? null : (
+      <View className="gap-4">
+        {isSearching || featured.length === 0 ? null : (
+          <>
+            <Text className="font-semibold text-headline-md text-on-surface">
+              {t('home.featured')}
+            </Text>
+
+            <FlatList
+              horizontal
+              data={featured}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => <FeaturedEventCard event={item} />}
+              showsHorizontalScrollIndicator={false}
+              style={FEATURED_LIST_STYLE}
+              contentContainerStyle={FEATURED_CONTENT_STYLE}
+            />
+          </>
+        )}
+
+        <Text className="font-semibold text-headline-md text-on-surface">
+          {isSearching ? t('home.results') : t('home.upcoming')}
+        </Text>
+      </View>
     );
-  }, [isSearching, needle]);
 
-  const listHeader = (
-    <View className="gap-4">
-      {isSearching ? null : (
-        <>
-          <Text className="font-semibold text-headline-md text-on-surface">
-            {t('home.featured')}
-          </Text>
-
-          <FlatList
-            horizontal
-            data={FEATURED}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <FeaturedEventCard event={item} />}
-            showsHorizontalScrollIndicator={false}
-            style={FEATURED_LIST_STYLE}
-            contentContainerStyle={FEATURED_CONTENT_STYLE}
-          />
-        </>
-      )}
-
-      <Text className="font-semibold text-headline-md text-on-surface">
-        {isSearching ? t('home.results') : t('home.upcoming')}
-      </Text>
+  const listEmpty = eventsQuery.isPending ? (
+    <View className="items-center py-16">
+      <ActivityIndicator className="text-primary" />
     </View>
+  ) : eventsQuery.isError ? (
+    <EmptyState
+      icon="cloud-off"
+      title={t('home.loadErrorTitle')}
+      description={toUserMessage(eventsQuery.error, t)}
+      action={
+        <Button label={t('common.retry')} onPress={() => void eventsQuery.refetch()} />
+      }
+    />
+  ) : (
+    <EmptyState
+      icon={isSearching ? 'search-off' : 'event-busy'}
+      title={t('home.emptyTitle')}
+      description={
+        isSearching
+          ? t('home.noResults', { query: debouncedQuery })
+          : t('home.emptyDescription')
+      }
+    />
   );
 
   return (
@@ -96,18 +133,14 @@ export default function HomeScreen() {
         </View>
 
         <FlatList
-          data={results}
+          data={events}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <EventListItem event={item} />}
           ItemSeparatorComponent={Separator}
           ListHeaderComponent={listHeader}
-          ListEmptyComponent={
-            <EmptyState
-              icon="search-off"
-              title={t('home.emptyTitle')}
-              description={t('home.noResults', { query: query.trim() })}
-            />
-          }
+          ListEmptyComponent={listEmpty}
+          refreshing={eventsQuery.isRefetching}
+          onRefresh={() => void eventsQuery.refetch()}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={LIST_CONTENT_STYLE}

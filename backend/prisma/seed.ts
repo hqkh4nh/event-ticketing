@@ -113,6 +113,100 @@ const events = [
       },
     ],
   },
+  {
+    id: '0198a1f0-0000-7000-8000-000000000003',
+    title: 'Contemporary Art Exhibition 2026',
+    description:
+      'An exhibition of contemporary paintings and installations by emerging Vietnamese artists.',
+    venue: 'Da Nang Fine Arts Museum',
+    city: 'Da Nang',
+    category: EventCategory.ART,
+    featured: false,
+    startAt: new Date('2026-09-01T02:00:00.000Z'),
+    endAt: new Date('2026-09-01T11:00:00.000Z'),
+    coverImageUrl: 'https://picsum.photos/seed/eticket-art-exhibition/800/600',
+    status: EventStatus.PUBLISHED,
+    ticketTypes: [
+      {
+        id: '0198a1f0-1000-7000-8000-000000000005',
+        name: 'General Admission',
+        priceVnd: 0n,
+        quantityTotal: 200,
+      },
+    ],
+  },
+  {
+    id: '0198a1f0-0000-7000-8000-000000000004',
+    title: 'Autumn City Marathon 2026',
+    description:
+      'A community running event with 5 km, 10 km, and half-marathon routes through the city center.',
+    venue: 'Nguyen Hue Walking Street, District 1',
+    city: 'Ho Chi Minh City',
+    category: EventCategory.SPORT,
+    featured: true,
+    startAt: new Date('2026-09-15T22:00:00.000Z'),
+    endAt: new Date('2026-09-16T04:00:00.000Z'),
+    coverImageUrl: 'https://picsum.photos/seed/eticket-marathon/800/600',
+    status: EventStatus.PUBLISHED,
+    ticketTypes: [
+      {
+        id: '0198a1f0-1000-7000-8000-000000000006',
+        name: '5 km',
+        priceVnd: 200_000n,
+        quantityTotal: 500,
+      },
+      {
+        id: '0198a1f0-1000-7000-8000-000000000007',
+        name: 'Half Marathon',
+        priceVnd: 450_000n,
+        quantityTotal: 250,
+      },
+    ],
+  },
+  {
+    id: '0198a1f0-0000-7000-8000-000000000005',
+    title: 'Bat Trang Pottery Workshop',
+    description:
+      'A hands-on pottery workshop where participants shape, decorate, and finish their own ceramic piece.',
+    venue: 'Bat Trang Pottery Village, Gia Lam',
+    city: 'Ha Noi',
+    category: EventCategory.WORKSHOP,
+    featured: false,
+    startAt: new Date('2026-08-20T07:00:00.000Z'),
+    endAt: new Date('2026-08-20T10:00:00.000Z'),
+    coverImageUrl: 'https://picsum.photos/seed/eticket-pottery/800/600',
+    status: EventStatus.PUBLISHED,
+    ticketTypes: [
+      {
+        id: '0198a1f0-1000-7000-8000-000000000008',
+        name: 'Individual',
+        priceVnd: 150_000n,
+        quantityTotal: 30,
+      },
+    ],
+  },
+  {
+    id: '0198a1f0-0000-7000-8000-000000000006',
+    title: 'Saigon Acoustic Night',
+    description:
+      'An intimate acoustic performance featuring local singer-songwriters and a limited audience.',
+    venue: 'Yoko Cafe, District 3',
+    city: 'Ho Chi Minh City',
+    category: EventCategory.MUSIC,
+    featured: false,
+    startAt: new Date('2026-10-05T13:00:00.000Z'),
+    endAt: new Date('2026-10-05T15:30:00.000Z'),
+    coverImageUrl: 'https://picsum.photos/seed/eticket-acoustic/800/600',
+    status: EventStatus.PUBLISHED,
+    ticketTypes: [
+      {
+        id: '0198a1f0-1000-7000-8000-000000000009',
+        name: 'Admission',
+        priceVnd: 120_000n,
+        quantityTotal: 60,
+      },
+    ],
+  },
 ];
 
 const prisma = new PrismaClient({ adapter: new PrismaPg(databaseUrl) });

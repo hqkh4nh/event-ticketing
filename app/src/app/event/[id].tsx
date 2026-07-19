@@ -1,24 +1,42 @@
 import { MaterialIcons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
 import { Chip } from '@/components/ui/chip';
+import { EmptyState } from '@/components/ui/empty-state';
 import { NumericText } from '@/components/ui/numeric-text';
+import { ApiError } from '@/lib/api/client';
+import {
+  eventsKeys,
+  getEvent,
+  type TicketTypeSummary,
+} from '@/lib/api/events';
+import { toUserMessage } from '@/lib/api/error-message';
 import { formatDateTime, formatVndAmount } from '@/lib/format';
-import { findMockEvent, type TicketTypeSummary } from '@/lib/mock/events';
 
 export default function EventDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id?: string | string[] }>();
   const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const eventId = Array.isArray(params.id) ? params.id[0] : (params.id ?? '');
 
-  const event = findMockEvent(id);
+  const eventQuery = useQuery({
+    queryKey: eventsKeys.detail(eventId),
+    queryFn: () => getEvent(eventId),
+    enabled: eventId.length > 0,
+  });
+  const event = eventQuery.data;
+
+  useEffect(() => {
+    setQuantities({});
+  }, [eventId]);
 
   const total = useMemo(() => {
     if (!event) return 0;
@@ -36,7 +54,19 @@ export default function EventDetailScreen() {
     else router.replace('/');
   };
 
-  if (!event) {
+  if (eventQuery.isPending && eventId) {
+    return (
+      <View className="flex-1 items-center justify-center bg-surface">
+        <ActivityIndicator className="text-primary" />
+      </View>
+    );
+  }
+
+  const notFound =
+    !eventId ||
+    (eventQuery.error instanceof ApiError && eventQuery.error.status === 404);
+
+  if (notFound) {
     return (
       <View className="flex-1 items-center justify-center gap-4 bg-surface px-container-padding">
         <Text className="font-semibold text-headline-md text-on-surface">
@@ -47,16 +77,43 @@ export default function EventDetailScreen() {
     );
   }
 
+  if (eventQuery.isError || !event) {
+    return (
+      <View className="flex-1 justify-center bg-surface">
+        <EmptyState
+          icon="cloud-off"
+          title={t('event.loadErrorTitle')}
+          description={toUserMessage(eventQuery.error, t)}
+          action={
+            <View className="gap-3">
+              <Button
+                label={t('common.retry')}
+                onPress={() => void eventQuery.refetch()}
+              />
+              <Button variant="outline" label={t('event.back')} onPress={goBack} />
+            </View>
+          }
+        />
+      </View>
+    );
+  }
+
   return (
     <View className="flex-1 bg-surface">
       <View className="w-full max-w-content flex-1 self-center">
         <ScrollView showsVerticalScrollIndicator={false}>
-          <Image
-            source={event.coverImageUrl}
-            contentFit="cover"
-            transition={200}
-            style={{ width: '100%', height: 280 }}
-          />
+          {event.coverImageUrl ? (
+            <Image
+              source={event.coverImageUrl}
+              contentFit="cover"
+              transition={200}
+              style={{ width: '100%', height: 280 }}
+            />
+          ) : (
+            <View className="h-[280px] items-center justify-center bg-surface-container-low">
+              <MaterialIcons name="image-not-supported" size={40} className="text-outline" />
+            </View>
+          )}
 
           <Pressable
             accessibilityRole="button"

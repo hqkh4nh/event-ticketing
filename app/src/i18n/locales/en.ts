@@ -1,11 +1,16 @@
 export const en = {
+  common: {
+    retry: 'Try again',
+  },
   home: {
     featured: 'Featured',
     upcoming: 'Upcoming',
     results: 'Results',
     searchPlaceholder: 'Search events',
     emptyTitle: 'No events found',
+    emptyDescription: 'There are no upcoming events yet.',
     noResults: 'Nothing matches "{{query}}". Try a shorter keyword or a city name.',
+    loadErrorTitle: 'Unable to load events',
   },
   tabs: {
     explore: 'Explore',
@@ -35,6 +40,7 @@ export const en = {
     increase: 'Add one {{name}}',
     decrease: 'Remove one {{name}}',
     notFound: 'Event not found',
+    loadErrorTitle: 'Unable to load event',
     back: 'Go back',
   },
   tickets: {

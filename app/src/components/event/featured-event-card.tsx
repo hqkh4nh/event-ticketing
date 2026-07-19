@@ -6,8 +6,8 @@ import { Pressable, Text, View } from 'react-native';
 
 import { NumericText } from '@/components/ui/numeric-text';
 import { TicketSurface } from '@/components/ui/ticket-surface';
+import type { EventSummary } from '@/lib/api/events';
 import { formatDayMonth, formatVndAmount } from '@/lib/format';
-import type { EventSummary } from '@/lib/mock/events';
 
 /**
  * Wide card for the horizontal "featured" carousel. Shaped as a ticket so the
@@ -59,12 +59,18 @@ export function FeaturedEventCard({ event }: { event: EventSummary }) {
             </View>
           }
         >
-          <Image
-            source={event.coverImageUrl}
-            contentFit="cover"
-            transition={200}
-            style={{ width: '100%', height: 160 }}
-          />
+          {event.coverImageUrl ? (
+            <Image
+              source={event.coverImageUrl}
+              contentFit="cover"
+              transition={200}
+              style={{ width: '100%', height: 160 }}
+            />
+          ) : (
+            <View className="h-40 items-center justify-center bg-surface-container-low">
+              <MaterialIcons name="image-not-supported" size={32} className="text-outline" />
+            </View>
+          )}
         </TicketSurface>
       </Pressable>
     </Link>

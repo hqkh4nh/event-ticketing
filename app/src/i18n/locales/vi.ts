@@ -1,11 +1,16 @@
 export const vi = {
+  common: {
+    retry: 'Thử lại',
+  },
   home: {
     featured: 'Nổi bật',
     upcoming: 'Sắp diễn ra',
     results: 'Kết quả',
     searchPlaceholder: 'Tìm sự kiện',
     emptyTitle: 'Không tìm thấy sự kiện',
+    emptyDescription: 'Hiện chưa có sự kiện nào sắp diễn ra.',
     noResults: 'Không có kết quả cho "{{query}}". Thử từ khoá ngắn hơn hoặc tên thành phố.',
+    loadErrorTitle: 'Không tải được sự kiện',
   },
   tabs: {
     explore: 'Khám phá',
@@ -35,6 +40,7 @@ export const vi = {
     increase: 'Thêm một {{name}}',
     decrease: 'Bớt một {{name}}',
     notFound: 'Không tìm thấy sự kiện',
+    loadErrorTitle: 'Không tải được sự kiện',
     back: 'Quay lại',
   },
   tickets: {

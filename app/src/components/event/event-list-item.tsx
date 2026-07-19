@@ -1,11 +1,12 @@
+import { MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
 import { NumericText } from '@/components/ui/numeric-text';
+import type { EventSummary } from '@/lib/api/events';
 import { formatDayMonth, formatVndAmount } from '@/lib/format';
-import type { EventSummary } from '@/lib/mock/events';
 
 /**
  * Compact row for the vertical event list.
@@ -29,12 +30,18 @@ export function EventListItem({ event }: { event: EventSummary }) {
         accessibilityRole="button"
         className="flex-row items-center gap-4 py-3 active:opacity-60"
       >
-        <Image
-          source={event.coverImageUrl}
-          contentFit="cover"
-          transition={200}
-          style={{ width: 72, height: 72, borderRadius: 12 }}
-        />
+        {event.coverImageUrl ? (
+          <Image
+            source={event.coverImageUrl}
+            contentFit="cover"
+            transition={200}
+            style={{ width: 72, height: 72, borderRadius: 12 }}
+          />
+        ) : (
+          <View className="h-[72px] w-[72px] items-center justify-center rounded-lg bg-surface-container-low">
+            <MaterialIcons name="image-not-supported" size={22} className="text-outline" />
+          </View>
+        )}
 
         <View className="flex-1 gap-1">
           <Text numberOfLines={2} className="font-semibold text-body-md text-on-surface">
