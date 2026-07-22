@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/text-field';
 import type { CreateEventBody } from '@/lib/api/events-organizer';
 
+import { DateTimeField, nextWholeHour } from './date-time-field';
+
 const CATEGORIES: CreateEventBody['category'][] = [
   'MUSIC',
   'TECH',
@@ -20,38 +22,29 @@ export type EventFormValues = {
   venue: string;
   city: string;
   category: CreateEventBody['category'];
-  /** Local input form "YYYY-MM-DD HH:mm". */
-  startAt: string;
-  endAt: string;
+  startAt: Date;
+  endAt: Date;
   coverImageUrl: string;
   featured: boolean;
 };
 
-/** Renders an ISO timestamp as the "YYYY-MM-DD HH:mm" the inputs expect. */
-export function isoToLocalInput(iso: string): string {
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(
-    d.getHours(),
-  )}:${pad(d.getMinutes())}`;
-}
+const ONE_HOUR_MS = 60 * 60 * 1000;
 
-function parseLocalInput(value: string): Date | null {
-  const parsed = new Date(value.trim().replace(' ', 'T'));
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
+function createEmptyValues(): EventFormValues {
+  const startAt = nextWholeHour();
 
-const EMPTY: EventFormValues = {
-  title: '',
-  description: '',
-  venue: '',
-  city: '',
-  category: 'MUSIC',
-  startAt: '',
-  endAt: '',
-  coverImageUrl: '',
-  featured: false,
-};
+  return {
+    title: '',
+    description: '',
+    venue: '',
+    city: '',
+    category: 'MUSIC',
+    startAt,
+    endAt: new Date(startAt.getTime() + ONE_HOUR_MS),
+    coverImageUrl: '',
+    featured: false,
+  };
+}
 
 type Props = {
   initial?: Partial<EventFormValues>;
@@ -70,16 +63,27 @@ export function EventForm({
   onSubmit,
 }: Props) {
   const { t } = useTranslation();
-  const [values, setValues] = useState<EventFormValues>({
-    ...EMPTY,
+  const [values, setValues] = useState<EventFormValues>(() => ({
+    ...createEmptyValues(),
     ...initial,
-  });
+  }));
   const [errors, setErrors] = useState<Partial<Record<keyof EventFormValues, string>>>(
     {},
   );
 
   function set<K extends keyof EventFormValues>(key: K, value: EventFormValues[K]) {
     setValues((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function setStartAt(startAt: Date) {
+    setValues((prev) => ({
+      ...prev,
+      startAt,
+      endAt:
+        prev.endAt.getTime() > startAt.getTime()
+          ? prev.endAt
+          : new Date(startAt.getTime() + ONE_HOUR_MS),
+    }));
   }
 
   function submit() {
@@ -90,15 +94,15 @@ export function EventForm({
     if (!values.venue.trim()) next.venue = t('organizer.error.venueRequired');
     if (!values.city.trim()) next.city = t('organizer.error.cityRequired');
 
-    const start = parseLocalInput(values.startAt);
-    const end = parseLocalInput(values.endAt);
-    if (!start) next.startAt = t('organizer.error.startInvalid');
-    if (!end) next.endAt = t('organizer.error.endInvalid');
-    if (start && end && start.getTime() >= end.getTime())
+    const startValid = !Number.isNaN(values.startAt.getTime());
+    const endValid = !Number.isNaN(values.endAt.getTime());
+    if (!startValid) next.startAt = t('organizer.error.startInvalid');
+    if (!endValid) next.endAt = t('organizer.error.endInvalid');
+    if (startValid && endValid && values.startAt.getTime() >= values.endAt.getTime())
       next.endAt = t('organizer.error.endBeforeStart');
 
     setErrors(next);
-    if (Object.keys(next).length > 0 || !start || !end) return;
+    if (Object.keys(next).length > 0 || !startValid || !endValid) return;
 
     onSubmit({
       title: values.title.trim(),
@@ -106,8 +110,8 @@ export function EventForm({
       venue: values.venue.trim(),
       city: values.city.trim(),
       category: values.category,
-      startAt: start.toISOString(),
-      endAt: end.toISOString(),
+      startAt: values.startAt.toISOString(),
+      endAt: values.endAt.toISOString(),
       coverImageUrl: values.coverImageUrl.trim() || null,
       featured: values.featured,
     });
@@ -181,24 +185,28 @@ export function EventForm({
         </View>
       </View>
 
-      <TextField
-        label={t('organizer.form.startAt')}
-        placeholder="2026-09-01 19:00"
-        helper={t('organizer.form.dateHint')}
-        value={values.startAt}
-        onChangeText={(v) => set('startAt', v)}
-        error={errors.startAt}
-        autoCapitalize="none"
-      />
-      <TextField
-        label={t('organizer.form.endAt')}
-        placeholder="2026-09-01 22:00"
-        helper={t('organizer.form.dateHint')}
-        value={values.endAt}
-        onChangeText={(v) => set('endAt', v)}
-        error={errors.endAt}
-        autoCapitalize="none"
-      />
+      <View className="flex-row items-start gap-3">
+        <View className="min-w-0 flex-1">
+          <DateTimeField
+            label={t('organizer.form.startAt')}
+            helper={t('organizer.form.dateHint')}
+            value={values.startAt}
+            onChange={setStartAt}
+            error={errors.startAt}
+            disabled={submitting}
+          />
+        </View>
+        <View className="min-w-0 flex-1">
+          <DateTimeField
+            label={t('organizer.form.endAt')}
+            helper={t('organizer.form.dateHint')}
+            value={values.endAt}
+            onChange={(v) => set('endAt', v)}
+            error={errors.endAt}
+            disabled={submitting}
+          />
+        </View>
+      </View>
       <TextField
         label={t('organizer.form.coverImageUrl')}
         placeholder={t('organizer.form.coverImageUrlPlaceholder')}

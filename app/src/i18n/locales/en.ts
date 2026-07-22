@@ -1,5 +1,7 @@
 export const en = {
   common: {
+    cancel: 'Cancel',
+    done: 'Done',
     retry: 'Try again',
   },
   home: {
@@ -205,7 +207,7 @@ export const en = {
       category: 'Category',
       startAt: 'Starts at',
       endAt: 'Ends at',
-      dateHint: 'Format: YYYY-MM-DD HH:mm',
+      dateHint: 'Select date and time',
       coverImageUrl: 'Cover image URL',
       coverImageUrlPlaceholder: 'https://…',
       featured: 'Feature this event',

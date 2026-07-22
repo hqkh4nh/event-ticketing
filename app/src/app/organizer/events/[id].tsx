@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { EventForm, isoToLocalInput } from '@/components/organizer/event-form';
+import { EventForm } from '@/components/organizer/event-form';
 import { Button } from '@/components/ui/button';
 import { Chip } from '@/components/ui/chip';
 import { TextField } from '@/components/ui/text-field';
@@ -165,8 +165,8 @@ export default function EditEventScreen() {
                 venue: event.venue,
                 city: event.city,
                 category: event.category,
-                startAt: isoToLocalInput(event.startAt),
-                endAt: isoToLocalInput(event.endAt),
+                startAt: new Date(event.startAt),
+                endAt: new Date(event.endAt),
                 coverImageUrl: event.coverImageUrl ?? '',
                 featured: event.featured,
               }}

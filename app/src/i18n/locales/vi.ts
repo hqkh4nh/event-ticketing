@@ -1,5 +1,7 @@
 export const vi = {
   common: {
+    cancel: 'Huỷ',
+    done: 'Xong',
     retry: 'Thử lại',
   },
   home: {
@@ -205,7 +207,7 @@ export const vi = {
       category: 'Thể loại',
       startAt: 'Bắt đầu',
       endAt: 'Kết thúc',
-      dateHint: 'Định dạng: YYYY-MM-DD HH:mm',
+      dateHint: 'Chọn ngày và giờ',
       coverImageUrl: 'Ảnh bìa (URL)',
       coverImageUrlPlaceholder: 'https://…',
       featured: 'Đưa vào nổi bật',
