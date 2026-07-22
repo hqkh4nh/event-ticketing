@@ -4,6 +4,7 @@ import { apiFetch } from './client';
 
 export type OrderResponse = components['schemas']['OrderResponseDto'];
 export type IssuedTicket = components['schemas']['IssuedTicketDto'];
+export type PaymentInfo = components['schemas']['PaymentInfoDto'];
 export type MyTicket = components['schemas']['MyTicketDto'];
 export type CreateOrderBody = components['schemas']['CreateOrderDto'];
 

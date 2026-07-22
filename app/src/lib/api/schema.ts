@@ -254,7 +254,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Create a free order and issue its signed tickets. */
+        /** Create an order. Free orders are paid and issued immediately; paid orders return PENDING with VietQR payment details. */
         post: operations["OrdersController_create"];
         delete?: never;
         options?: never;
@@ -273,6 +273,23 @@ export interface paths {
         get: operations["OrdersController_getOne"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/payments/sepay/webhook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** SePay transaction webhook. Idempotently issues tickets on payment. */
+        post: operations["PaymentsController_sepayWebhook"];
         delete?: never;
         options?: never;
         head?: never;
@@ -535,6 +552,18 @@ export interface components {
             /** @enum {string} */
             status: "ISSUED" | "USED" | "VOID";
         };
+        PaymentInfoDto: {
+            /** @description Bank short code of the receiving account. */
+            bank: string;
+            accountNumber: string;
+            amountVnd: number;
+            /** @description Transfer content the buyer must send verbatim. */
+            transferCode: string;
+            /** @description VietQR image URL rendered on the checkout screen. */
+            qrImageUrl: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
         OrderResponseDto: {
             /** Format: uuid */
             id: string;
@@ -545,6 +574,27 @@ export interface components {
             createdAt: string;
             event: components["schemas"]["OrderEventDto"];
             tickets: components["schemas"]["IssuedTicketDto"][];
+            /** @description Present only while the order is PENDING payment. */
+            payment?: components["schemas"]["PaymentInfoDto"];
+        };
+        SepayWebhookDto: {
+            /** @description SePay transaction id; stable across retries. */
+            id: number;
+            /** @description Amount transferred, in VND. */
+            transferAmount: number;
+            /** @description Payment code SePay parsed from the transfer content. */
+            code?: Record<string, never> | null;
+            /** @description Raw transfer content from the bank. */
+            content: string;
+            /** @description Transfer direction: 'in' or 'out'. */
+            transferType: string;
+            gateway?: string;
+            transactionDate?: string;
+            accountNumber?: string;
+            accumulated?: number;
+            subAccount?: Record<string, never> | null;
+            referenceCode?: string;
+            description?: string;
         };
     };
     responses: never;
@@ -1140,7 +1190,7 @@ export interface operations {
                     "application/json": components["schemas"]["OrderResponseDto"];
                 };
             };
-            /** @description EVENT_NOT_PURCHASABLE | PAYMENT_NOT_AVAILABLE | SOLD_OUT */
+            /** @description EVENT_NOT_PURCHASABLE | SOLD_OUT */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1170,6 +1220,34 @@ export interface operations {
             };
             /** @description NOT_FOUND */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PaymentsController_sepayWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SepayWebhookDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description UNAUTHORIZED */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -81,9 +81,6 @@ export default function EventDetailScreen() {
   }, [event, quantities]);
 
   const selectedCount = Object.values(quantities).reduce((sum, n) => sum + n, 0);
-  // Any priced ticket in the cart makes this a paid order, which slice B cannot
-  // fulfil yet — the total is what the free-only pipeline checks server-side.
-  const hasPaid = total > 0;
 
   const goBack = () => {
     if (router.canGoBack()) router.back();
@@ -223,13 +220,6 @@ export default function EventDetailScreen() {
           {orderError ? (
             <Text className="font-sans text-label-md text-error">{orderError}</Text>
           ) : null}
-          {/* Paid checkout arrives with SePay (slice C); until then only free
-              orders go through, so a paid selection is blocked here. */}
-          {hasPaid ? (
-            <Text className="font-sans text-label-md text-on-surface-variant">
-              {t('event.paymentComingSoon')}
-            </Text>
-          ) : null}
 
           <View className="flex-row items-center justify-between gap-4">
             <View>
@@ -249,7 +239,7 @@ export default function EventDetailScreen() {
             <Button
               label={t('event.buy')}
               loading={orderMutation.isPending}
-              disabled={selectedCount === 0 || hasPaid}
+              disabled={selectedCount === 0}
               onPress={() => {
                 setOrderError(null);
                 orderMutation.mutate();
