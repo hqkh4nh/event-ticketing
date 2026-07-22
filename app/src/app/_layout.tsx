@@ -24,6 +24,7 @@ import { useTokens } from '@/hooks/use-tokens';
 import { queryClient } from '@/lib/query/query-client';
 import { useAuthStore } from '@/stores/auth-store';
 import { useLanguageStore } from '@/stores/language-store';
+import { useThemeStore } from '@/stores/theme-store';
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -32,7 +33,9 @@ export default function RootLayout() {
   const tokens = useTokens();
   const hydrateAuth = useAuthStore((state) => state.hydrate);
   const hydrateLanguage = useLanguageStore((state) => state.hydrate);
+  const hydrateTheme = useThemeStore((state) => state.hydrate);
   const isAuthLoading = useAuthStore((s) => s.isLoading);
+  const isThemeLoading = useThemeStore((state) => state.isLoading);
   const token = useAuthStore((state) => state.token);
   const [launchState, setLaunchState] = useState<'pending' | 'show' | 'complete'>(
     'pending',
@@ -67,27 +70,30 @@ export default function RootLayout() {
   useEffect(() => {
     void hydrateAuth();
     void hydrateLanguage();
-  }, [hydrateAuth, hydrateLanguage]);
+    void hydrateTheme();
+  }, [hydrateAuth, hydrateLanguage, hydrateTheme]);
 
   useEffect(() => {
     if (
       (fontsLoaded || fontError) &&
       !isAuthLoading &&
+      !isThemeLoading &&
       launchState === 'pending'
     ) {
       setLaunchState(token ? 'complete' : 'show');
     }
-  }, [fontError, fontsLoaded, isAuthLoading, launchState, token]);
+  }, [fontError, fontsLoaded, isAuthLoading, isThemeLoading, launchState, token]);
 
   useEffect(() => {
     if (
       (fontsLoaded || fontError) &&
       !isAuthLoading &&
+      !isThemeLoading &&
       launchState !== 'pending'
     ) {
       void SplashScreen.hideAsync();
     }
-  }, [fontError, fontsLoaded, isAuthLoading, launchState]);
+  }, [fontError, fontsLoaded, isAuthLoading, isThemeLoading, launchState]);
 
   if (!fontsLoaded && !fontError) return null;
 
