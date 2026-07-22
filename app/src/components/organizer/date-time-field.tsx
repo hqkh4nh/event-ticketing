@@ -3,9 +3,18 @@ import DateTimePicker, {
   DateTimePickerAndroid,
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, Platform, Pressable, Text, View } from 'react-native';
+import {
+  Animated,
+  Easing,
+  Modal,
+  Platform,
+  Pressable,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { themes } from '@/design/themes';
@@ -61,16 +70,42 @@ export function DateTimeField({
   const { i18n, t } = useTranslation();
   const tokens = useTokens();
   const colorScheme = useColorScheme() === 'dark' ? 'dark' : 'light';
+  const { height: windowHeight } = useWindowDimensions();
   const [iosPickerOpen, setIosPickerOpen] = useState(false);
   const [draftValue, setDraftValue] = useState(value);
+  const iosAnimation = useRef(new Animated.Value(0)).current;
   const locale = localeFor(i18n.resolvedLanguage);
   const hasError = Boolean(error);
+  const sheetHeight = windowHeight * 0.55;
+  const sheetTranslateY = iosAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [sheetHeight, 0],
+  });
+
+  function animateIosPickerIn() {
+    Animated.timing(iosAnimation, {
+      toValue: 1,
+      duration: 240,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }
+
+  function closeIosPicker() {
+    Animated.timing(iosAnimation, {
+      toValue: 0,
+      duration: 200,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    }).start(() => setIosPickerOpen(false));
+  }
 
   function openPicker() {
     if (disabled) return;
 
     if (Platform.OS === 'ios') {
       setDraftValue(value);
+      iosAnimation.setValue(0);
       setIosPickerOpen(true);
       return;
     }
@@ -155,19 +190,28 @@ export function DateTimeField({
         <Modal
           visible={iosPickerOpen}
           transparent
-          animationType="slide"
-          onRequestClose={() => setIosPickerOpen(false)}
+          animationType="none"
+          onShow={animateIosPickerIn}
+          onRequestClose={closeIosPicker}
         >
-          <View className="flex-1 justify-end bg-black/40">
-            <View
-              style={[themes[colorScheme], { height: '55%' }]}
+          <View className="flex-1 justify-end">
+            <Animated.View
+              pointerEvents="none"
+              style={{ opacity: iosAnimation }}
+              className="absolute inset-0 bg-black/40"
+            />
+            <Animated.View
+              style={[
+                themes[colorScheme],
+                { height: sheetHeight, transform: [{ translateY: sheetTranslateY }] },
+              ]}
               className="overflow-hidden rounded-t-xl bg-surface"
             >
               <SafeAreaView edges={['bottom']} className="flex-1">
                 <View className="flex-row items-center justify-between border-b border-outline-variant px-container-padding py-3">
                   <Pressable
                     accessibilityRole="button"
-                    onPress={() => setIosPickerOpen(false)}
+                    onPress={closeIosPicker}
                     className="min-h-touch-target-min justify-center pr-4 active:opacity-60"
                   >
                     <Text className="font-medium text-label-md text-on-surface-variant">
@@ -179,7 +223,7 @@ export function DateTimeField({
                     accessibilityRole="button"
                     onPress={() => {
                       onChange(draftValue);
-                      setIosPickerOpen(false);
+                      closeIosPicker();
                     }}
                     className="min-h-touch-target-min justify-center pl-4 active:opacity-60"
                   >
@@ -203,7 +247,7 @@ export function DateTimeField({
                   />
                 </View>
               </SafeAreaView>
-            </View>
+            </Animated.View>
           </View>
         </Modal>
       ) : null}
