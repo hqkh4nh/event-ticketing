@@ -50,6 +50,13 @@ export const vi = {
     emptyDescription: 'Vé bạn đặt sẽ xuất hiện ở đây.',
     emptyAction: 'Khám phá sự kiện',
     loadErrorTitle: 'Không tải được vé',
+    viewQr: 'Xem mã QR',
+    openQrForEvent: 'Xem mã QR vé {{event}}',
+    status: {
+      issued: 'Còn hiệu lực',
+      used: 'Đã sử dụng',
+      void: 'Không còn hiệu lực',
+    },
     close: 'Đóng',
   },
   order: {

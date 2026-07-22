@@ -50,6 +50,13 @@ export const en = {
     emptyTitle: 'No tickets yet',
     emptyDescription: 'Tickets you book will appear here.',
     loadErrorTitle: 'Unable to load tickets',
+    viewQr: 'View QR code',
+    openQrForEvent: 'View QR code for {{event}}',
+    status: {
+      issued: 'Valid',
+      used: 'Used',
+      void: 'No longer valid',
+    },
     close: 'Close',
   },
   order: {

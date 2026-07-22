@@ -13,6 +13,21 @@ import { toUserMessage } from '@/lib/api/error-message';
 import { getMyTickets, ticketsKeys, type MyTicket } from '@/lib/api/orders';
 import { formatDateTime } from '@/lib/format';
 
+const STATUS_STYLES: Record<MyTicket['status'], { container: string; text: string }> = {
+  ISSUED: {
+    container: 'bg-primary-container',
+    text: 'text-on-primary-container',
+  },
+  USED: {
+    container: 'bg-surface-container-high',
+    text: 'text-on-surface-variant',
+  },
+  VOID: {
+    container: 'bg-error-container',
+    text: 'text-on-error-container',
+  },
+};
+
 export default function TicketsScreen() {
   const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -75,28 +90,67 @@ export default function TicketsScreen() {
       >
         <Text className="font-bold text-headline-md text-on-surface">{t('tabs.tickets')}</Text>
 
-        {tickets.map((ticket) => (
-          <Pressable
-            key={ticket.id}
-            accessibilityRole="button"
-            onPress={() => setActive(ticket)}
-            className="flex-row items-center gap-4 rounded-lg border border-outline-variant bg-surface-container-lowest p-4 active:opacity-80"
-          >
-            <TicketQr value={ticket.qrPayload} size={72} />
-            <View className="flex-1 gap-1">
-              <Text className="font-semibold text-body-lg text-on-surface">
-                {ticket.eventTitle}
-              </Text>
-              <Text className="font-sans text-label-md text-on-surface-variant">
-                {ticket.ticketTypeName}
-              </Text>
-              <Text className="font-sans text-label-sm text-on-surface-variant">
-                {formatDateTime(ticket.eventStartAt, i18n.language)}
-              </Text>
-            </View>
-            <MaterialIcons name="chevron-right" size={22} className="text-outline" />
-          </Pressable>
-        ))}
+        {tickets.map((ticket) => {
+          const statusStyle = STATUS_STYLES[ticket.status];
+
+          return (
+            <Pressable
+              key={ticket.id}
+              accessibilityLabel={t('tickets.openQrForEvent', { event: ticket.eventTitle })}
+              accessibilityRole="button"
+              onPress={() => setActive(ticket)}
+              className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest active:bg-surface-container-low"
+            >
+              <View className="gap-3 p-4">
+                <View className={`self-start rounded-full px-3 py-1 ${statusStyle.container}`}>
+                  <Text className={`font-medium text-label-sm ${statusStyle.text}`}>
+                    {t(`tickets.status.${ticket.status.toLowerCase()}`)}
+                  </Text>
+                </View>
+
+                <Text
+                  numberOfLines={2}
+                  className="font-semibold text-body-lg text-on-surface"
+                >
+                  {ticket.eventTitle}
+                </Text>
+
+                <View className="gap-2">
+                  <View className="flex-row items-start gap-2">
+                    <MaterialIcons name="event" size={19} className="text-primary" />
+                    <Text className="flex-1 font-sans text-label-md text-on-surface-variant">
+                      {formatDateTime(ticket.eventStartAt, i18n.language)}
+                    </Text>
+                  </View>
+                  <View className="flex-row items-start gap-2">
+                    <MaterialIcons name="location-on" size={19} className="text-primary" />
+                    <Text
+                      numberOfLines={2}
+                      className="flex-1 font-sans text-label-md text-on-surface-variant"
+                    >
+                      {ticket.eventVenue}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              <View className="min-h-touch-target-min flex-row items-center justify-between gap-3 border-t border-outline-variant px-4 py-2">
+                <Text
+                  numberOfLines={1}
+                  className="min-w-0 flex-1 font-medium text-label-md text-on-surface"
+                >
+                  {ticket.ticketTypeName}
+                </Text>
+                <View className="flex-row items-center gap-2">
+                  <MaterialIcons name="qr-code-2" size={20} className="text-primary" />
+                  <Text className="font-semibold text-label-md text-primary">
+                    {t('tickets.viewQr')}
+                  </Text>
+                </View>
+              </View>
+            </Pressable>
+          );
+        })}
       </ScrollView>
 
       <Modal
