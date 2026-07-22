@@ -106,6 +106,8 @@ export const en = {
     comingSoonDescription: 'This feature is currently under development.',
     version: 'Version {{version}}',
     signOut: 'Sign out',
+    signOutConfirmTitle: 'Sign out of your account?',
+    signOutConfirmDescription: 'You will need to sign in again to continue using the app.',
   },
   launch: {
     start: 'Get started',

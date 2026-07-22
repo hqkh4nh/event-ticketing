@@ -105,6 +105,8 @@ export const vi = {
     comingSoonDescription: 'Tính năng này đang được phát triển.',
     version: 'Phiên bản {{version}}',
     signOut: 'Đăng xuất',
+    signOutConfirmTitle: 'Đăng xuất khỏi tài khoản?',
+    signOutConfirmDescription: 'Bạn sẽ cần đăng nhập lại để tiếp tục sử dụng ứng dụng.',
   },
   launch: {
     start: 'Bắt đầu',

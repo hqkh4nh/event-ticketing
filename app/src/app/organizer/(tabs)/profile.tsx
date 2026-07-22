@@ -1,9 +1,11 @@
 import { MaterialIcons } from '@expo/vector-icons';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import type { Language } from '@/i18n';
 import { useAuthStore } from '@/stores/auth-store';
 import { useLanguageStore } from '@/stores/language-store';
@@ -68,6 +70,7 @@ export default function OrganizerAccountScreen() {
   const setLanguage = useLanguageStore((state) => state.setLanguage);
   const theme = useThemeStore((state) => state.preference);
   const setTheme = useThemeStore((state) => state.setPreference);
+  const [signOutDialogVisible, setSignOutDialogVisible] = useState(false);
 
   function showComingSoon() {
     Alert.alert(
@@ -272,7 +275,7 @@ export default function OrganizerAccountScreen() {
               icon="logout"
               variant="outline"
               label={t('profile.signOut')}
-              onPress={() => void signOut()}
+              onPress={() => setSignOutDialogVisible(true)}
             />
           </View>
 
@@ -281,6 +284,20 @@ export default function OrganizerAccountScreen() {
           </Text>
         </ScrollView>
       </View>
+
+      <ConfirmDialog
+        visible={signOutDialogVisible}
+        icon="logout"
+        title={t('profile.signOutConfirmTitle')}
+        description={t('profile.signOutConfirmDescription')}
+        cancelLabel={t('common.cancel')}
+        confirmLabel={t('profile.signOut')}
+        onCancel={() => setSignOutDialogVisible(false)}
+        onConfirm={() => {
+          setSignOutDialogVisible(false);
+          void signOut();
+        }}
+      />
     </SafeAreaView>
   );
 }
