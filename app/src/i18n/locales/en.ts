@@ -52,6 +52,16 @@ export const en = {
     loadErrorTitle: 'Unable to load tickets',
     viewQr: 'View QR code',
     openQrForEvent: 'View QR code for {{event}}',
+    detailTitle: 'Ticket details',
+    ticketCode: 'Ticket code',
+    securityWarning: 'Do not share this QR code. Anyone with it may use the ticket to check in.',
+    saveImage: 'Save to Photos',
+    openSettings: 'Open Settings',
+    saveFeedback: {
+      success: 'Ticket saved to your photo library.',
+      permission: 'Photo access is required. Allow access in Settings to continue.',
+      error: 'Unable to save the ticket image. Please try again.',
+    },
     status: {
       issued: 'Valid',
       used: 'Used',

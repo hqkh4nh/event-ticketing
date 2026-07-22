@@ -1,37 +1,46 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
+import * as MediaLibrary from 'expo-media-library';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Linking,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ViewShot from 'react-native-view-shot';
 
-import { TicketQr } from '@/components/ticket/ticket-qr';
+import { TicketImageCard } from '@/components/ticket/ticket-image-card';
+import { TicketStatusBadge } from '@/components/ticket/ticket-status-badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
+import { themes } from '@/design/themes';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { toUserMessage } from '@/lib/api/error-message';
 import { getMyTickets, ticketsKeys, type MyTicket } from '@/lib/api/orders';
 import { formatDateTime } from '@/lib/format';
 
-const STATUS_STYLES: Record<MyTicket['status'], { container: string; text: string }> = {
-  ISSUED: {
-    container: 'bg-primary-container',
-    text: 'text-on-primary-container',
-  },
-  USED: {
-    container: 'bg-surface-container-high',
-    text: 'text-on-surface-variant',
-  },
-  VOID: {
-    container: 'bg-error-container',
-    text: 'text-on-error-container',
-  },
-};
+type SaveFeedback = 'success' | 'permission' | 'error' | null;
 
 export default function TicketsScreen() {
   const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
+  const colorScheme = useColorScheme() ?? 'light';
   const [active, setActive] = useState<MyTicket | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveFeedback, setSaveFeedback] = useState<SaveFeedback>(null);
+  const ticketImageRef = useRef<ViewShot>(null);
+  const [mediaPermission, requestMediaPermission] = MediaLibrary.usePermissions({
+    writeOnly: true,
+    granularPermissions: [],
+  });
 
   const ticketsQuery = useQuery({
     queryKey: ticketsKeys.mine(),
@@ -60,6 +69,48 @@ export default function TicketsScreen() {
   }
 
   const tickets = ticketsQuery.data;
+
+  function openTicket(ticket: MyTicket) {
+    setSaveFeedback(null);
+    setActive(ticket);
+  }
+
+  function closeTicket() {
+    if (isSaving) return;
+    setSaveFeedback(null);
+    setActive(null);
+  }
+
+  async function saveTicketImage() {
+    if (isSaving) return;
+    if (Platform.OS === 'web') {
+      setSaveFeedback('error');
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveFeedback(null);
+
+    try {
+      const permission = mediaPermission?.granted
+        ? mediaPermission
+        : await requestMediaPermission();
+      if (!permission.granted) {
+        setSaveFeedback('permission');
+        return;
+      }
+
+      const uri = await ticketImageRef.current?.capture?.();
+      if (!uri) throw new Error('Ticket image capture returned no file.');
+
+      await MediaLibrary.saveToLibraryAsync(uri);
+      setSaveFeedback('success');
+    } catch {
+      setSaveFeedback('error');
+    } finally {
+      setIsSaving(false);
+    }
+  }
 
   if (tickets.length === 0) {
     return (
@@ -91,22 +142,19 @@ export default function TicketsScreen() {
         <Text className="font-bold text-headline-md text-on-surface">{t('tabs.tickets')}</Text>
 
         {tickets.map((ticket) => {
-          const statusStyle = STATUS_STYLES[ticket.status];
-
           return (
             <Pressable
               key={ticket.id}
               accessibilityLabel={t('tickets.openQrForEvent', { event: ticket.eventTitle })}
               accessibilityRole="button"
-              onPress={() => setActive(ticket)}
+              onPress={() => openTicket(ticket)}
               className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest active:bg-surface-container-low"
             >
               <View className="gap-3 p-4">
-                <View className={`self-start rounded-full px-3 py-1 ${statusStyle.container}`}>
-                  <Text className={`font-medium text-label-sm ${statusStyle.text}`}>
-                    {t(`tickets.status.${ticket.status.toLowerCase()}`)}
-                  </Text>
-                </View>
+                <TicketStatusBadge
+                  status={ticket.status}
+                  label={t(`tickets.status.${ticket.status.toLowerCase()}`)}
+                />
 
                 <Text
                   numberOfLines={2}
@@ -157,28 +205,112 @@ export default function TicketsScreen() {
         visible={active !== null}
         transparent
         animationType="fade"
-        onRequestClose={() => setActive(null)}
+        statusBarTranslucent
+        onRequestClose={closeTicket}
       >
-        <Pressable
-          onPress={() => setActive(null)}
-          className="flex-1 items-center justify-center bg-black/60 px-container-padding"
-        >
+        <View className="flex-1 items-center justify-center px-container-padding py-6">
+          <Pressable
+            accessibilityLabel={t('tickets.close')}
+            accessibilityRole="button"
+            className="absolute inset-0 bg-black/60"
+            disabled={isSaving}
+            onPress={closeTicket}
+          />
+
           {active ? (
-            <View className="w-full max-w-content items-center gap-4 rounded-xl bg-surface p-6">
-              <Text className="text-center font-semibold text-headline-md text-on-surface">
-                {active.eventTitle}
-              </Text>
-              <Text className="font-sans text-label-md text-on-surface-variant">
-                {active.ticketTypeName}
-              </Text>
-              <TicketQr value={active.qrPayload} size={240} />
-              <Text className="font-sans text-label-sm text-on-surface-variant">
-                {active.code}
-              </Text>
-              <Button variant="outline" label={t('tickets.close')} onPress={() => setActive(null)} />
+            <View
+              accessibilityViewIsModal
+              className="w-full overflow-hidden rounded-xl border border-outline-variant bg-surface"
+              style={[themes[colorScheme], { maxWidth: 440, maxHeight: '92%' }]}
+            >
+              <View className="min-h-touch-target-min flex-row items-center justify-between border-b border-outline-variant px-4 py-2">
+                <Text className="font-semibold text-body-lg text-on-surface">
+                  {t('tickets.detailTitle')}
+                </Text>
+                <Pressable
+                  accessibilityLabel={t('tickets.close')}
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: isSaving }}
+                  className="h-touch-target-min w-touch-target-min items-center justify-center rounded-full active:bg-surface-container-high"
+                  disabled={isSaving}
+                  onPress={closeTicket}
+                >
+                  <MaterialIcons name="close" size={24} className="text-on-surface" />
+                </Pressable>
+              </View>
+
+              <ScrollView
+                contentContainerClassName="gap-4 p-4"
+                showsVerticalScrollIndicator={false}
+              >
+                <ViewShot
+                  ref={ticketImageRef}
+                  options={{ format: 'png', quality: 1, result: 'tmpfile' }}
+                  style={{ width: '100%' }}
+                >
+                  <TicketImageCard ticket={active} />
+                </ViewShot>
+
+                {saveFeedback ? (
+                  <View
+                    accessibilityLiveRegion="polite"
+                    accessibilityRole="alert"
+                    className={[
+                      'flex-row items-start gap-2 rounded-lg p-3',
+                      saveFeedback === 'success' ? 'bg-success-container' : 'bg-error-container',
+                    ].join(' ')}
+                  >
+                    <MaterialIcons
+                      name={saveFeedback === 'success' ? 'check-circle' : 'error-outline'}
+                      size={20}
+                      className={
+                        saveFeedback === 'success' ? 'text-on-success-container' : 'text-on-error-container'
+                      }
+                    />
+                    <View className="min-w-0 flex-1 gap-1">
+                      <Text
+                        className={[
+                          'font-sans text-label-md',
+                          saveFeedback === 'success'
+                            ? 'text-on-success-container'
+                            : 'text-on-error-container',
+                        ].join(' ')}
+                      >
+                        {t(`tickets.saveFeedback.${saveFeedback}`)}
+                      </Text>
+                      {saveFeedback === 'permission' ? (
+                        <Pressable
+                          accessibilityRole="button"
+                          className="self-start py-1"
+                          onPress={() => void Linking.openSettings()}
+                        >
+                          <Text className="font-semibold text-label-md text-on-error-container underline">
+                            {t('tickets.openSettings')}
+                          </Text>
+                        </Pressable>
+                      ) : null}
+                    </View>
+                  </View>
+                ) : null}
+
+                <View className="gap-3">
+                  <Button
+                    icon="download"
+                    label={t('tickets.saveImage')}
+                    loading={isSaving}
+                    onPress={() => void saveTicketImage()}
+                  />
+                  <Button
+                    variant="outline"
+                    label={t('tickets.close')}
+                    disabled={isSaving}
+                    onPress={closeTicket}
+                  />
+                </View>
+              </ScrollView>
             </View>
           ) : null}
-        </Pressable>
+        </View>
       </Modal>
     </View>
   );

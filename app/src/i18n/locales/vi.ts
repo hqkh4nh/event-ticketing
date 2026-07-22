@@ -52,6 +52,16 @@ export const vi = {
     loadErrorTitle: 'Không tải được vé',
     viewQr: 'Xem mã QR',
     openQrForEvent: 'Xem mã QR vé {{event}}',
+    detailTitle: 'Chi tiết vé',
+    ticketCode: 'Mã vé',
+    securityWarning: 'Không chia sẻ mã QR này. Người có mã có thể sử dụng vé để check-in.',
+    saveImage: 'Lưu vào ảnh',
+    openSettings: 'Mở Cài đặt',
+    saveFeedback: {
+      success: 'Đã lưu vé vào thư viện ảnh.',
+      permission: 'Cần quyền lưu ảnh. Hãy cấp quyền trong Cài đặt để tiếp tục.',
+      error: 'Không thể lưu ảnh vé. Vui lòng thử lại.',
+    },
     status: {
       issued: 'Còn hiệu lực',
       used: 'Đã sử dụng',
