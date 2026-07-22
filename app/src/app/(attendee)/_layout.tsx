@@ -28,6 +28,7 @@ export default function AttendeeLayout() {
   // "/" to their own index, so an organizer landing on the attendee root is
   // sent on to theirs.
   if (role === 'ORGANIZER') return <Redirect href="/organizer" />;
+  if (role === 'SCANNER') return <Redirect href="/scanner" />;
 
   return (
     <Tabs screenOptions={screenOptions}>

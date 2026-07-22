@@ -13,6 +13,8 @@ import { EventsModule } from './modules/events/events.module';
 import { TicketsModule } from './modules/tickets/tickets.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { RealtimeModule } from './modules/realtime/realtime.module';
+import { CheckinModule } from './modules/checkin/checkin.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 
@@ -35,6 +37,8 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
     TicketsModule,
     OrdersModule,
     PaymentsModule,
+    RealtimeModule,
+    CheckinModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: JwtAuthGuard }],

@@ -146,6 +146,11 @@ export const en = {
       noSalesDescription:
         'Revenue and ticket sales will appear after the system records paid orders.',
     },
+    checkin: {
+      heading: 'Live check-in',
+      checkedIn: 'Guests checked in',
+      waiting: 'Waiting for scans…',
+    },
     notifications: {
       title: 'Notifications',
       emptyTitle: 'No notifications',
@@ -244,6 +249,32 @@ export const en = {
       ticketNameRequired: 'Please enter a name',
       priceInvalid: 'Enter a price of 0 or more',
       quantityInvalid: 'Enter a quantity of 1 or more',
+    },
+  },
+
+  scanner: {
+    title: 'Check-in',
+    subtitle: 'Select an event to scan.',
+    emptyTitle: 'No assigned events',
+    emptyDescription: 'You have not been assigned to scan any events yet.',
+    loadErrorTitle: 'Unable to load events',
+    signOut: 'Sign out',
+    scanTitle: 'Scan tickets',
+    checkedIn: 'In: {{count}}',
+    cameraPermission: 'Camera access is needed to scan QR codes.',
+    grantCamera: 'Grant camera access',
+    cameraUnavailable:
+      'Camera scanning is unavailable here. Paste the code below.',
+    manualLabel: 'Enter code manually',
+    manualPlaceholder: 'code.signature',
+    manualSubmit: 'Check in',
+    scanNext: 'Scan next',
+    back: 'Back',
+    result: {
+      VALID: 'Valid — admit',
+      ALREADY_USED: 'Already used',
+      INVALID: 'Invalid ticket',
+      WRONG_EVENT: 'Wrong event',
     },
   },
 

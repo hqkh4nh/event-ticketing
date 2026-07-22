@@ -146,6 +146,11 @@ export const vi = {
       noSalesDescription:
         'Doanh thu và số vé bán sẽ xuất hiện khi hệ thống ghi nhận đơn thanh toán.',
     },
+    checkin: {
+      heading: 'Check-in trực tiếp',
+      checkedIn: 'Khách đã vào',
+      waiting: 'Đang chờ quét…',
+    },
     notifications: {
       title: 'Thông báo',
       emptyTitle: 'Chưa có thông báo',
@@ -244,6 +249,32 @@ export const vi = {
       ticketNameRequired: 'Vui lòng nhập tên',
       priceInvalid: 'Nhập giá từ 0 trở lên',
       quantityInvalid: 'Nhập số lượng từ 1 trở lên',
+    },
+  },
+
+  scanner: {
+    title: 'Soát vé',
+    subtitle: 'Chọn sự kiện để soát.',
+    emptyTitle: 'Chưa được gán sự kiện',
+    emptyDescription: 'Bạn chưa được gán soát vé cho sự kiện nào.',
+    loadErrorTitle: 'Không tải được sự kiện',
+    signOut: 'Đăng xuất',
+    scanTitle: 'Quét vé',
+    checkedIn: 'Đã vào: {{count}}',
+    cameraPermission: 'Cần quyền camera để quét mã QR.',
+    grantCamera: 'Cấp quyền camera',
+    cameraUnavailable:
+      'Không quét được bằng camera ở đây. Dán mã bên dưới.',
+    manualLabel: 'Nhập mã thủ công',
+    manualPlaceholder: 'code.signature',
+    manualSubmit: 'Soát vé',
+    scanNext: 'Quét tiếp',
+    back: 'Quay lại',
+    result: {
+      VALID: 'Hợp lệ — cho vào',
+      ALREADY_USED: 'Vé đã dùng',
+      INVALID: 'Vé không hợp lệ',
+      WRONG_EVENT: 'Sai sự kiện',
     },
   },
 

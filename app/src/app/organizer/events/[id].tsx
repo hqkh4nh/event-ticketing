@@ -5,7 +5,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -36,6 +36,8 @@ import {
 } from '@/lib/api/events-organizer';
 import { toUserMessage } from '@/lib/api/error-message';
 import { formatVndAmount } from '@/lib/format';
+import { createSocket } from '@/lib/socket/socket';
+import type { Socket } from 'socket.io-client';
 
 export default function EditEventScreen() {
   const { t, i18n } = useTranslation();
@@ -182,6 +184,11 @@ export default function EditEventScreen() {
               onError={setActionError}
             />
 
+            <CheckinLiveSection
+              eventId={id}
+              initialCount={event.checkedInCount}
+            />
+
             <View className="gap-3 border-t border-outline-variant pt-6">
               {event.status === 'DRAFT' ? (
                 <Button
@@ -275,6 +282,63 @@ export default function EditEventScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+/**
+ * Live guest count for the check-in dashboard. Seeds from the event detail,
+ * then subscribes to the event's Socket.IO room so each gate scan bumps the
+ * number without a refetch.
+ */
+function CheckinLiveSection({
+  eventId,
+  initialCount,
+}: {
+  eventId: string;
+  initialCount: number;
+}) {
+  const { t } = useTranslation();
+  const [count, setCount] = useState(initialCount);
+
+  useEffect(() => {
+    let socket: Socket | undefined;
+    let cancelled = false;
+
+    void createSocket('/realtime').then((connected) => {
+      if (cancelled) {
+        connected.close();
+        return;
+      }
+      socket = connected;
+      connected.on('connect', () => connected.emit('subscribe', { eventId }));
+      connected.on('checkin', (payload: { checkedInCount: number }) => {
+        setCount(payload.checkedInCount);
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      socket?.close();
+    };
+  }, [eventId]);
+
+  return (
+    <View className="gap-3 border-t border-outline-variant pt-6">
+      <Text className="font-semibold text-headline-md text-on-surface">
+        {t('organizer.checkin.heading')}
+      </Text>
+      <View className="flex-row items-center gap-3 rounded-md bg-surface-container px-4 py-4">
+        <MaterialIcons name="how-to-reg" size={28} className="text-primary" />
+        <View className="flex-1">
+          <Text className="font-bold text-display-sm text-on-surface">
+            {count}
+          </Text>
+          <Text className="font-sans text-label-md text-on-surface-variant">
+            {t('organizer.checkin.checkedIn')}
+          </Text>
+        </View>
+      </View>
+    </View>
   );
 }
 

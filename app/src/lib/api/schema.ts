@@ -296,6 +296,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/events/{eventId}/checkin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Scan a ticket QR at the gate. Returns VALID / ALREADY_USED / INVALID / WRONG_EVENT (always HTTP 200). */
+        post: operations["CheckinController_scan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/scanner/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List events the current scanner is assigned to. */
+        get: operations["ScannerController_listAssigned"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -446,6 +480,8 @@ export interface components {
             endAt: string;
             coverImageUrl: string | null;
             ticketTypes: components["schemas"]["OrganizerTicketTypeDto"][];
+            /** @description Guests admitted so far (USED tickets of the event). */
+            checkedInCount: number;
         };
         UpdateEventDto: {
             /** @example Live Concert 2026 */
@@ -595,6 +631,37 @@ export interface components {
             subAccount?: Record<string, never> | null;
             referenceCode?: string;
             description?: string;
+        };
+        CheckinDto: {
+            /** @description Ticket QR payload rendered by the client: `code.signature`. */
+            qr: string;
+        };
+        CheckedInTicketDto: {
+            /** Format: uuid */
+            id: string;
+            ticketTypeName: string;
+            sequence: number;
+        };
+        CheckinResponseDto: {
+            /**
+             * @description Outcome of the scan; every outcome is a 200 response.
+             * @enum {string}
+             */
+            result: "VALID" | "ALREADY_USED" | "INVALID" | "WRONG_EVENT";
+            /** @description Present only when result is VALID. */
+            ticket?: components["schemas"]["CheckedInTicketDto"];
+            /** @description Guests admitted so far (USED tickets of the event). */
+            checkedInCount: number;
+        };
+        ScannerEventDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            venue: string;
+            /** Format: date-time */
+            startAt: string;
+            /** @enum {string} */
+            status: "DRAFT" | "PUBLISHED" | "CANCELLED" | "HIDDEN";
         };
     };
     responses: never;
@@ -1252,6 +1319,50 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    CheckinController_scan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CheckinDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CheckinResponseDto"];
+                };
+            };
+        };
+    };
+    ScannerController_listAssigned: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScannerEventDto"][];
+                };
             };
         };
     };

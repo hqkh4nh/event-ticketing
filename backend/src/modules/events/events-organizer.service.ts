@@ -386,6 +386,10 @@ export class EventsOrganizerService {
       });
     }
 
+    const checkedInCount = await this.prisma.ticket.count({
+      where: { status: 'USED', orderItem: { order: { eventId: id } } },
+    });
+
     return {
       id: event.id,
       organizerId: event.organizerId,
@@ -400,6 +404,7 @@ export class EventsOrganizerService {
       endAt: event.endAt.toISOString(),
       coverImageUrl: event.coverImageUrl,
       ticketTypes: event.ticketTypes.map(toTicketTypeDto),
+      checkedInCount,
     };
   }
 }

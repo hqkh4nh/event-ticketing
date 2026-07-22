@@ -45,4 +45,9 @@ export class OrganizerEventDto {
   @ApiProperty({ type: String, nullable: true }) coverImageUrl!: string | null;
   @ApiProperty({ type: [OrganizerTicketTypeDto] })
   ticketTypes!: OrganizerTicketTypeDto[];
+  @ApiProperty({
+    minimum: 0,
+    description: 'Guests admitted so far (USED tickets of the event).',
+  })
+  checkedInCount!: number;
 }
