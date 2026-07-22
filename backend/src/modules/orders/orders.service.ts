@@ -5,18 +5,21 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 import { ErrorCode } from '../../common/errors/error-code';
+import { Order } from '../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 import { TicketsService } from '../tickets/tickets.service';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { OrderResponseDto } from './dto/order-response.dto';
+import { OrderResponseDto, PaymentInfoDto } from './dto/order-response.dto';
 
 @Injectable()
 export class OrdersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tickets: TicketsService,
+    private readonly config: ConfigService,
   ) {}
 
   /**
@@ -78,12 +81,9 @@ export class OrdersService {
           message: 'Ticket type does not belong to this event.',
         });
       }
-      if (types.some((type) => type.priceVnd > 0n)) {
-        throw new ConflictException({
-          code: ErrorCode.PAYMENT_NOT_AVAILABLE,
-          message: 'Paid tickets are not available yet.',
-        });
-      }
+      const priceByType = new Map(
+        types.map((type) => [type.id, type.priceVnd]),
+      );
 
       const reserved = await tx.orderItem.groupBy({
         by: ['ticketTypeId'],
@@ -107,17 +107,29 @@ export class OrdersService {
         }
       }
 
+      let totalVnd = 0n;
+      for (const [ticketTypeId, quantity] of wanted) {
+        totalVnd += (priceByType.get(ticketTypeId) ?? 0n) * BigInt(quantity);
+      }
+      const isPaid = totalVnd > 0n;
+
       const now = new Date();
+      const holdMinutes = this.config.get<number>('order.holdMinutes') ?? 15;
       const order = await tx.order.create({
         data: {
           buyerId,
           eventId: dto.eventId,
-          status: 'PAID',
-          totalVnd: 0n,
+          // A paid order stays PENDING until the SePay webhook confirms payment;
+          // the PENDING row itself is the inventory hold. A free order is paid
+          // and issued immediately.
+          status: isPaid ? 'PENDING' : 'PAID',
+          totalVnd,
           transferCode: this.newTransferCode(),
           clientRequestId: dto.clientRequestId ?? null,
-          expiresAt: now,
-          paidAt: now,
+          expiresAt: isPaid
+            ? new Date(now.getTime() + holdMinutes * 60_000)
+            : now,
+          paidAt: isPaid ? null : now,
         },
         select: { id: true },
       });
@@ -129,11 +141,14 @@ export class OrdersService {
             eventId: dto.eventId,
             ticketTypeId,
             quantity,
-            unitPriceVnd: 0n,
+            unitPriceVnd: priceByType.get(ticketTypeId) ?? 0n,
           },
           select: { id: true },
         });
-        await this.tickets.issue(tx, orderItem.id, quantity);
+        // Tickets for a paid order are issued only when payment lands.
+        if (!isPaid) {
+          await this.tickets.issue(tx, orderItem.id, quantity);
+        }
       }
 
       return order.id;
@@ -185,6 +200,27 @@ export class OrdersService {
           status: ticket.status,
         })),
       ),
+      payment: this.buildPayment(order),
+    };
+  }
+
+  /** VietQR details for the checkout screen; only meaningful while PENDING. */
+  private buildPayment(order: Order): PaymentInfoDto | undefined {
+    if (order.status !== 'PENDING') return undefined;
+    const bank = this.config.get<string>('sepay.bank') ?? '';
+    const accountNumber = this.config.get<string>('sepay.accountNumber') ?? '';
+    const amountVnd = Number(order.totalVnd);
+    const qrImageUrl =
+      `https://qr.sepay.vn/img?acc=${encodeURIComponent(accountNumber)}` +
+      `&bank=${encodeURIComponent(bank)}&amount=${amountVnd}` +
+      `&des=${encodeURIComponent(order.transferCode)}`;
+    return {
+      bank,
+      accountNumber,
+      amountVnd,
+      transferCode: order.transferCode,
+      qrImageUrl,
+      expiresAt: order.expiresAt.toISOString(),
     };
   }
 

@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 import { OrderStatus, TicketStatus } from '../../../generated/prisma';
 
@@ -21,6 +21,22 @@ export class OrderEventDto {
   @ApiProperty({ format: 'date-time' }) startAt!: string;
 }
 
+export class PaymentInfoDto {
+  @ApiProperty({ description: 'Bank short code of the receiving account.' })
+  bank!: string;
+  @ApiProperty() accountNumber!: string;
+  @ApiProperty({ minimum: 0 }) amountVnd!: number;
+  @ApiProperty({
+    description: 'Transfer content the buyer must send verbatim.',
+  })
+  transferCode!: string;
+  @ApiProperty({
+    description: 'VietQR image URL rendered on the checkout screen.',
+  })
+  qrImageUrl!: string;
+  @ApiProperty({ format: 'date-time' }) expiresAt!: string;
+}
+
 export class OrderResponseDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty({ enum: OrderStatus }) status!: OrderStatus;
@@ -28,4 +44,9 @@ export class OrderResponseDto {
   @ApiProperty({ format: 'date-time' }) createdAt!: string;
   @ApiProperty({ type: OrderEventDto }) event!: OrderEventDto;
   @ApiProperty({ type: [IssuedTicketDto] }) tickets!: IssuedTicketDto[];
+  @ApiPropertyOptional({
+    type: PaymentInfoDto,
+    description: 'Present only while the order is PENDING payment.',
+  })
+  payment?: PaymentInfoDto;
 }

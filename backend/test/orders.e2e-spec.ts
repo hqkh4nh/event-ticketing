@@ -12,6 +12,7 @@ import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { AllExceptionsFilter } from '../src/common/filters/all-exceptions.filter';
 import { ErrorCode } from '../src/common/errors/error-code';
+import { OrdersExpiryService } from '../src/modules/orders/orders-expiry.service';
 import { PrismaService } from '../src/prisma/prisma.service';
 
 function configureApp(app: INestApplication): void {
@@ -213,7 +214,7 @@ describe('Orders / free ticket booking (e2e)', () => {
     expect(issued).toBe(1);
   });
 
-  it('rejects an order containing a paid ticket type', async () => {
+  it('creates a PENDING order with VietQR for a paid ticket type', async () => {
     const { eventId, idByName } = await createPublishedEvent([
       { name: 'Paid', priceVnd: 200000, quantityTotal: 50 },
     ]);
@@ -223,10 +224,74 @@ describe('Orders / free ticket booking (e2e)', () => {
       .set(auth(buyerAToken))
       .send({
         eventId,
-        items: [{ ticketTypeId: idByName['Paid'], quantity: 1 }],
+        items: [{ ticketTypeId: idByName['Paid'], quantity: 2 }],
       })
+      .expect(201);
+
+    expect(res.body.status).toBe('PENDING');
+    expect(res.body.totalVnd).toBe(400000);
+    expect(res.body.tickets).toHaveLength(0);
+    expect(res.body.payment).toBeDefined();
+    expect(res.body.payment.amountVnd).toBe(400000);
+    expect(typeof res.body.payment.transferCode).toBe('string');
+    expect(res.body.payment.transferCode.length).toBeGreaterThan(0);
+    expect(new Date(res.body.payment.expiresAt).getTime()).toBeGreaterThan(
+      Date.now(),
+    );
+    expect(res.body.payment.qrImageUrl).toContain(
+      res.body.payment.transferCode,
+    );
+    expect(res.body.payment.qrImageUrl).toContain('400000');
+
+    const issued = await prisma.ticket.count({
+      where: { orderItem: { ticketTypeId: idByName['Paid'] } },
+    });
+    expect(issued).toBe(0);
+  });
+
+  it('expires a stale PENDING order and releases its held seats', async () => {
+    const { eventId, idByName } = await createPublishedEvent([
+      { name: 'Last Paid', priceVnd: 150000, quantityTotal: 1 },
+    ]);
+    const body = {
+      eventId,
+      items: [{ ticketTypeId: idByName['Last Paid'], quantity: 1 }],
+    };
+
+    const held = await request(app.getHttpServer())
+      .post('/api/orders')
+      .set(auth(buyerAToken))
+      .send(body)
+      .expect(201);
+    expect(held.body.status).toBe('PENDING');
+
+    // A second buyer cannot take the seat while the hold is live.
+    await request(app.getHttpServer())
+      .post('/api/orders')
+      .set(auth(buyerBToken))
+      .send(body)
       .expect(409);
-    expect(res.body.code).toBe(ErrorCode.PAYMENT_NOT_AVAILABLE);
+
+    // Force the hold past its window, then run the sweep.
+    await prisma.order.update({
+      where: { id: held.body.id as string },
+      data: { expiresAt: new Date(Date.now() - 60_000) },
+    });
+    await app.get(OrdersExpiryService).sweepExpired();
+
+    const expired = await prisma.order.findUnique({
+      where: { id: held.body.id as string },
+      select: { status: true, expiredAt: true },
+    });
+    expect(expired?.status).toBe('EXPIRED');
+    expect(expired?.expiredAt).not.toBeNull();
+
+    // The released seat is now bookable again.
+    await request(app.getHttpServer())
+      .post('/api/orders')
+      .set(auth(buyerBToken))
+      .send(body)
+      .expect(201);
   });
 
   it('rejects ordering from an unpublished event', async () => {

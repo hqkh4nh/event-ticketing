@@ -21,6 +21,8 @@ export default () => ({
   },
   sepay: {
     webhookApiKey: process.env.SEPAY_WEBHOOK_API_KEY ?? '',
+    bank: process.env.SEPAY_BANK ?? '',
+    accountNumber: process.env.SEPAY_ACCOUNT_NUMBER ?? '',
   },
   mail: {
     host: process.env.SMTP_HOST ?? '',

@@ -24,11 +24,12 @@ export class OrdersController {
 
   @Post()
   @ApiOperation({
-    summary: 'Create a free order and issue its signed tickets.',
+    summary:
+      'Create an order. Free orders are paid and issued immediately; paid orders return PENDING with VietQR payment details.',
   })
   @ApiCreatedResponse({ type: OrderResponseDto })
   @ApiConflictResponse({
-    description: 'EVENT_NOT_PURCHASABLE | PAYMENT_NOT_AVAILABLE | SOLD_OUT',
+    description: 'EVENT_NOT_PURCHASABLE | SOLD_OUT',
   })
   create(
     @CurrentUser() user: CurrentUserData,
