@@ -26,3 +26,11 @@ export function register(body: {
 export function me() {
     return apiFetch<AuthUser>('/auth/me');
 }
+
+/** Redeems a one-time connect code for a scanner-device session. */
+export function staffConnect(body: { code: string }): Promise<AuthResponse> {
+    return apiFetch<AuthResponse>('/auth/staff-connect', {
+        method: 'POST',
+        body: JSON.stringify(body)
+    })
+}

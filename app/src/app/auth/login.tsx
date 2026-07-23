@@ -139,6 +139,15 @@ export default function LoginScreen() {
                 {t('auth.login.goRegister')}
               </Link>
             </View>
+
+            <View className="flex-row justify-center">
+              <Link
+                href="/auth/staff-connect"
+                className="font-semibold text-body-md text-primary"
+              >
+                {t('auth.login.goStaffConnect')}
+              </Link>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

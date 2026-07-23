@@ -54,6 +54,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/staff-connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Redeem a one-time connect code for a scanner-device session */
+        post: operations["AuthController_staffConnect"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/me": {
         parameters: {
             query?: never;
@@ -330,6 +347,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/organizer/events/{eventId}/staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List scanner devices assigned to my event. */
+        get: operations["StaffController_list"];
+        put?: never;
+        /** Create a scanner device for my event; returns its one-time connect code. */
+        post: operations["StaffController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/organizer/staff/{id}/reconnect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Issue a fresh one-time connect code for a device; any unredeemed code dies. */
+        post: operations["StaffController_reconnect"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/organizer/staff/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Block/unblock a device or rename its label. */
+        patch: operations["StaffController_update"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -349,7 +418,7 @@ export interface components {
         };
         AuthUserDto: {
             id: string;
-            email: string;
+            email: string | null;
             fullName: string;
             /** @enum {string} */
             role: "ATTENDEE" | "ORGANIZER" | "SCANNER" | "ADMIN";
@@ -365,6 +434,13 @@ export interface components {
             email: string;
             /** @example matkhau-cua-toi */
             password: string;
+        };
+        StaffConnectDto: {
+            /**
+             * @description One-time connect code
+             * @example K7WMPX2Q
+             */
+            code: string;
         };
         EventSummaryDto: {
             /** Format: uuid */
@@ -663,6 +739,40 @@ export interface components {
             /** @enum {string} */
             status: "DRAFT" | "PUBLISHED" | "CANCELLED" | "HIDDEN";
         };
+        CreateStaffDto: {
+            /** @example Gate 1 */
+            label: string;
+        };
+        StaffDeviceDto: {
+            /** Format: uuid */
+            id: string;
+            /** @example Gate 1 */
+            label: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "BLOCKED";
+            /** Format: date-time */
+            lastScanAt: string | null;
+            hasActiveCode: boolean;
+        };
+        CreateStaffResponseDto: {
+            staff: components["schemas"]["StaffDeviceDto"];
+            /** @example K7WMPX2Q */
+            connectCode: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        ReconnectResponseDto: {
+            /** @example K7WMPX2Q */
+            connectCode: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        UpdateStaffDto: {
+            /** @enum {string} */
+            status?: "ACTIVE" | "BLOCKED";
+            /** @example Gate 1 */
+            label?: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -741,6 +851,36 @@ export interface operations {
                 };
             };
             /** @description code: INVALID_CREDENTIALS | ACCOUNT_BLOCKED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_staffConnect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StaffConnectDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthResponseDto"];
+                };
+            };
+            /** @description code: INVALID_CONNECT_CODE */
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -1363,6 +1503,154 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ScannerEventDto"][];
                 };
+            };
+        };
+    };
+    StaffController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffDeviceDto"][];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE | ACCOUNT_PENDING_APPROVAL */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StaffController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateStaffDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateStaffResponseDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE | ACCOUNT_PENDING_APPROVAL */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StaffController_reconnect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReconnectResponseDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE | ACCOUNT_PENDING_APPROVAL */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StaffController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateStaffDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffDeviceDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE | ACCOUNT_PENDING_APPROVAL */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

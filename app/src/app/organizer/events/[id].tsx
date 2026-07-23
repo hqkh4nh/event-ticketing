@@ -19,6 +19,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EventForm } from '@/components/organizer/event-form';
+import { StaffDevicesSection } from '@/components/organizer/staff-devices-section';
 import { Button } from '@/components/ui/button';
 import { Chip } from '@/components/ui/chip';
 import { TextField } from '@/components/ui/text-field';
@@ -187,6 +188,12 @@ export default function EditEventScreen() {
             <CheckinLiveSection
               eventId={id}
               initialCount={event.checkedInCount}
+            />
+
+            <StaffDevicesSection
+              eventId={id}
+              locale={i18n.language}
+              onError={setActionError}
             />
 
             <View className="gap-3 border-t border-outline-variant pt-6">
