@@ -29,6 +29,7 @@ export default function AttendeeLayout() {
   // sent on to theirs.
   if (role === 'ORGANIZER') return <Redirect href="/organizer" />;
   if (role === 'SCANNER') return <Redirect href="/scanner" />;
+  if (role === 'ADMIN') return <Redirect href="/admin" />;
 
   return (
     <Tabs screenOptions={screenOptions}>
