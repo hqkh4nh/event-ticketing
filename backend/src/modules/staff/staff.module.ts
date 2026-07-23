@@ -8,6 +8,5 @@ import { StaffService } from './staff.service';
   imports: [AuthModule],
   controllers: [StaffController],
   providers: [StaffService],
-  exports: [StaffService],
 })
 export class StaffModule {}

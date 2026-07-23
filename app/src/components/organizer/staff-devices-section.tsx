@@ -41,6 +41,9 @@ export function StaffDevicesSection({
   const [label, setLabel] = useState('');
   const [labelError, setLabelError] = useState<string | undefined>();
   const [issued, setIssued] = useState<IssuedCode | null>(null);
+  const [editing, setEditing] = useState<{ id: string; draft: string } | null>(
+    null,
+  );
 
   const { data: devices = [], isLoading } = useQuery({
     queryKey: staffKeys.byEvent(eventId),
@@ -86,6 +89,16 @@ export function StaffDevicesSection({
         status: device.status === 'BLOCKED' ? 'ACTIVE' : 'BLOCKED',
       }),
     onSuccess: () => invalidate(),
+    onError: (err) => onError(toUserMessage(err, t)),
+  });
+
+  const rename = useMutation({
+    mutationFn: ({ id, draft }: { id: string; draft: string }) =>
+      updateStaff(id, { label: draft }),
+    onSuccess: () => {
+      setEditing(null);
+      invalidate();
+    },
     onError: (err) => onError(toUserMessage(err, t)),
   });
 
@@ -141,59 +154,105 @@ export function StaffDevicesSection({
         </Text>
       ) : (
         <View className="gap-2">
-          {devices.map((device) => (
-            <View
-              key={device.id}
-              className="flex-row items-center gap-3 rounded-md bg-surface-container px-4 py-3"
-            >
-              <View className="flex-1 gap-0.5">
-                <View className="flex-row items-center gap-2">
-                  <Text className="font-semibold text-body-md text-on-surface">
-                    {device.label}
-                  </Text>
-                  <Chip
-                    label={t(`organizer.staff.status.${device.status}`)}
-                    tone={device.status === 'ACTIVE' ? 'primary' : 'neutral'}
-                  />
-                </View>
-                <Text className="font-sans text-label-md text-on-surface-variant">
-                  {device.lastScanAt
-                    ? t('organizer.staff.lastScan', {
-                        date: formatDateTime(device.lastScanAt, locale),
-                      })
-                    : t('organizer.staff.neverScanned')}
-                </Text>
-              </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t('organizer.staff.reconnect')}
-                disabled={reconnect.isPending}
-                onPress={() => reconnect.mutate(device)}
-                className="active:opacity-60"
+          {devices.map((device) =>
+            editing?.id === device.id ? (
+              <View
+                key={device.id}
+                className="gap-3 rounded-md bg-surface-container px-4 py-3"
               >
-                <MaterialIcons name="qr-code-2" size={22} className="text-primary" />
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t(
-                  device.status === 'BLOCKED'
-                    ? 'organizer.staff.unblock'
-                    : 'organizer.staff.block',
-                )}
-                disabled={toggleBlock.isPending}
-                onPress={() => toggleBlock.mutate(device)}
-                className="active:opacity-60"
-              >
-                <MaterialIcons
-                  name={device.status === 'BLOCKED' ? 'lock-open' : 'block'}
-                  size={22}
-                  className={
-                    device.status === 'BLOCKED' ? 'text-primary' : 'text-error'
-                  }
+                <TextField
+                  label={t('organizer.staff.labelField')}
+                  value={editing.draft}
+                  onChangeText={(draft) => setEditing({ id: device.id, draft })}
+                  autoFocus
                 />
-              </Pressable>
-            </View>
-          ))}
+                <View className="flex-row gap-3">
+                  <View className="flex-1">
+                    <Button
+                      variant="outline"
+                      label={t('organizer.staff.renameCancel')}
+                      onPress={() => setEditing(null)}
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Button
+                      label={t('organizer.staff.renameSave')}
+                      loading={rename.isPending}
+                      onPress={() => {
+                        const draft = editing.draft.trim();
+                        if (draft) rename.mutate({ id: device.id, draft });
+                      }}
+                    />
+                  </View>
+                </View>
+              </View>
+            ) : (
+              <View
+                key={device.id}
+                className="flex-row items-center gap-3 rounded-md bg-surface-container px-4 py-3"
+              >
+                <View className="flex-1 gap-0.5">
+                  <View className="flex-row items-center gap-2">
+                    <Text className="font-semibold text-body-md text-on-surface">
+                      {device.label}
+                    </Text>
+                    <Chip
+                      label={t(`organizer.staff.status.${device.status}`)}
+                      tone={device.status === 'ACTIVE' ? 'primary' : 'neutral'}
+                    />
+                  </View>
+                  <Text className="font-sans text-label-md text-on-surface-variant">
+                    {device.lastScanAt
+                      ? t('organizer.staff.lastScan', {
+                          date: formatDateTime(device.lastScanAt, locale),
+                        })
+                      : t('organizer.staff.neverScanned')}
+                  </Text>
+                  <Text className="font-sans text-label-sm text-on-surface-variant">
+                    {device.hasActiveCode
+                      ? t('organizer.staff.codePending')
+                      : t('organizer.staff.codeRedeemed')}
+                  </Text>
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('organizer.staff.rename')}
+                  onPress={() => setEditing({ id: device.id, draft: device.label })}
+                  className="active:opacity-60"
+                >
+                  <MaterialIcons name="edit" size={22} className="text-on-surface-variant" />
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('organizer.staff.reconnect')}
+                  disabled={reconnect.isPending}
+                  onPress={() => reconnect.mutate(device)}
+                  className="active:opacity-60"
+                >
+                  <MaterialIcons name="qr-code-2" size={22} className="text-primary" />
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t(
+                    device.status === 'BLOCKED'
+                      ? 'organizer.staff.unblock'
+                      : 'organizer.staff.block',
+                  )}
+                  disabled={toggleBlock.isPending}
+                  onPress={() => toggleBlock.mutate(device)}
+                  className="active:opacity-60"
+                >
+                  <MaterialIcons
+                    name={device.status === 'BLOCKED' ? 'lock-open' : 'block'}
+                    size={22}
+                    className={
+                      device.status === 'BLOCKED' ? 'text-primary' : 'text-error'
+                    }
+                  />
+                </Pressable>
+              </View>
+            ),
+          )}
         </View>
       )}
 

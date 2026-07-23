@@ -270,7 +270,11 @@ async function main(): Promise<void> {
 
   // Demo scanner device: owned by the seed organizer, assigned to the Summer
   // Music Festival, reachable with a known connect code for local testing.
-  const connectCode = seedConnectCode ?? defaultDevelopmentConnectCode;
+  // Redemption normalizes with trim().toUpperCase(); hash the same form or a
+  // lowercase env value would seed a code that can never be redeemed.
+  const connectCode = (seedConnectCode ?? defaultDevelopmentConnectCode)
+    .trim()
+    .toUpperCase();
   const codeHash = createHash('sha256').update(connectCode).digest('hex');
   const codeExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const gateEventId = events[0].id;

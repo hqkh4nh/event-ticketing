@@ -80,7 +80,9 @@ export class StaffService {
     await this.loadOwnedEvent(organizerId, eventId);
 
     const assignments = await this.prisma.eventStaff.findMany({
-      where: { eventId, user: { role: 'SCANNER' } },
+      // managedById keeps list consistent with PATCH/reconnect ownership: a
+      // legacy staff row another path created would list but 404 on mutate.
+      where: { eventId, user: { role: 'SCANNER', managedById: organizerId } },
       orderBy: { createdAt: 'desc' },
       select: {
         user: { select: { id: true, fullName: true, status: true } },
@@ -159,6 +161,14 @@ export class StaffService {
       },
       select: { id: true, fullName: true, status: true },
     });
+
+    // Blocking also kills any unredeemed code: a circulating one-time secret
+    // must not come back to life when the device is later unblocked.
+    if (dto.status === 'BLOCKED') {
+      await this.prisma.staffConnectCode.deleteMany({
+        where: { staffId, redeemedAt: null },
+      });
+    }
 
     const [lastScan, activeCode] = await Promise.all([
       this.prisma.checkinLog.findFirst({

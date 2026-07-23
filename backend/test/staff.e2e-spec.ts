@@ -397,6 +397,12 @@ describe('Staff device onboarding (e2e)', () => {
         .set(auth(scannerToken))
         .send({ qr })
         .expect(200);
+
+      // The leaked code stays dead after unblock — it must not come back to life.
+      await request(app.getHttpServer())
+        .post('/api/auth/staff-connect')
+        .send({ code: reconnect.body.connectCode as string })
+        .expect(401);
     });
 
     it('reconnect invalidates the old unredeemed code and issues a working one', async () => {
