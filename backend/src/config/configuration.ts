@@ -12,6 +12,9 @@ export default () => ({
   jwt: {
     secret: process.env.JWT_SECRET,
     expiresIn: process.env.JWT_EXPIRES_IN ?? '1d',
+    // Scanner devices hold their token for a whole event cycle; revocation is
+    // instant anyway because role/status is read from the DB per request.
+    scannerExpiresIn: process.env.SCANNER_JWT_EXPIRES_IN ?? '30d',
   },
   ticket: {
     hmacSecret: process.env.TICKET_HMAC_SECRET,

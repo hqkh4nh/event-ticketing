@@ -2,7 +2,8 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class AuthUserDto {
   @ApiProperty() id!: string;
-  @ApiProperty() email!: string;
+  // Null for SCANNER device accounts, which have no login identity.
+  @ApiProperty({ type: String, nullable: true }) email!: string | null;
   @ApiProperty() fullName!: string;
   @ApiProperty({ enum: ['ATTENDEE', 'ORGANIZER', 'SCANNER', 'ADMIN'] })
   role!: string;

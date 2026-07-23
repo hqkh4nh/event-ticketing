@@ -20,6 +20,7 @@ export const envValidationSchema = Joi.object({
 
   JWT_SECRET: Joi.string().min(16).required(),
   JWT_EXPIRES_IN: Joi.string().default('1d'),
+  SCANNER_JWT_EXPIRES_IN: Joi.string().default('30d'),
 
   TICKET_HMAC_SECRET: Joi.string().min(16).required(),
 

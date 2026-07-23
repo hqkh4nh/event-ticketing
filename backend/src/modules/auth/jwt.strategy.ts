@@ -10,7 +10,8 @@ export type JwtPayload = { sub: string };
 
 export type CurrentUserData = {
   id: string;
-  email: string;
+  // Null for SCANNER device accounts, which have no login identity.
+  email: string | null;
   fullName: string;
   role: Role;
   status: UserStatus;

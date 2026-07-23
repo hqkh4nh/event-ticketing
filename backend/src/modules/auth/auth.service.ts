@@ -1,3 +1,5 @@
+import { createHash } from 'crypto';
+
 import {
   ConflictException,
   Injectable,
@@ -111,14 +113,77 @@ export class AuthService {
     return this.buildSession(safeUser);
   }
 
-  private buildSession(user: {
-    id: string;
-    email: string;
-    fullName: string;
-    role: Role;
-    status: UserStatus;
-  }): AuthResponseDto {
-    const expiresIn = this.config.get<StringValue>('jwt.expiresIn') ?? '1d';
+  /**
+   * Redeems a one-time connect code for a scanner-device session. Every failure
+   * mode maps to the single INVALID_CONNECT_CODE so a probe cannot learn
+   * whether a code exists, expired, or was already used.
+   */
+  async staffConnect(rawCode: string): Promise<AuthResponseDto> {
+    const codeHash = createHash('sha256')
+      .update(rawCode.trim().toUpperCase())
+      .digest('hex');
+
+    const record = await this.prisma.staffConnectCode.findUnique({
+      where: { codeHash },
+      select: {
+        id: true,
+        expiresAt: true,
+        staff: {
+          select: {
+            id: true,
+            email: true,
+            fullName: true,
+            role: true,
+            status: true,
+          },
+        },
+      },
+    });
+
+    if (
+      !record ||
+      record.expiresAt <= new Date() ||
+      record.staff.status === 'BLOCKED'
+    ) {
+      throw this.invalidConnectCode();
+    }
+
+    // Conditional update is the single-use guard: two devices racing on one
+    // code get exactly one session.
+    const redeemed = await this.prisma.staffConnectCode.updateMany({
+      where: { id: record.id, redeemedAt: null },
+      data: { redeemedAt: new Date() },
+    });
+    if (redeemed.count !== 1) {
+      throw this.invalidConnectCode();
+    }
+
+    const expiresIn =
+      this.config.get<StringValue>('jwt.scannerExpiresIn') ?? '30d';
+    return this.buildSession(record.staff, expiresIn);
+  }
+
+  private invalidConnectCode(): UnauthorizedException {
+    return new UnauthorizedException({
+      code: ErrorCode.INVALID_CONNECT_CODE,
+      message: 'Connect code is invalid.',
+    });
+  }
+
+  private buildSession(
+    user: {
+      id: string;
+      email: string | null;
+      fullName: string;
+      role: Role;
+      status: UserStatus;
+    },
+    expiresInOverride?: StringValue,
+  ): AuthResponseDto {
+    const expiresIn =
+      expiresInOverride ??
+      this.config.get<StringValue>('jwt.expiresIn') ??
+      '1d';
     const accessToken = this.jwt.sign(
       { sub: user.id },
       {

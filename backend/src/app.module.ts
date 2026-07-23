@@ -15,6 +15,7 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
 import { CheckinModule } from './modules/checkin/checkin.module';
+import { StaffModule } from './modules/staff/staff.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 
@@ -39,6 +40,7 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
     PaymentsModule,
     RealtimeModule,
     CheckinModule,
+    StaffModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: JwtAuthGuard }],

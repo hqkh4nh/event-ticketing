@@ -19,6 +19,7 @@ import { Public } from './decorators/public.decorator';
 import { AuthResponseDto, AuthUserDto } from './dto/auth-response.dto';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { StaffConnectDto } from './dto/staff-connect.dto';
 import { CurrentUser } from './decorators/current-user.decorator';
 
 import type { CurrentUserData } from './jwt.strategy';
@@ -47,6 +48,18 @@ export class AuthController {
   })
   login(@Body() dto: LoginDto): Promise<AuthResponseDto> {
     return this.auth.login(dto);
+  }
+
+  @Public()
+  @Post('staff-connect')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Redeem a one-time connect code for a scanner-device session',
+  })
+  @ApiOkResponse({ type: AuthResponseDto })
+  @ApiUnauthorizedResponse({ description: 'code: INVALID_CONNECT_CODE' })
+  staffConnect(@Body() dto: StaffConnectDto): Promise<AuthResponseDto> {
+    return this.auth.staffConnect(dto.code);
   }
 
   @Get('me')

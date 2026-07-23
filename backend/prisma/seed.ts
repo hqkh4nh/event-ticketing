@@ -1,5 +1,7 @@
 import 'dotenv/config';
 
+import { createHash } from 'crypto';
+
 import { PrismaPg } from '@prisma/adapter-pg';
 import { hash } from 'bcryptjs';
 import {
@@ -23,6 +25,15 @@ if (process.env.NODE_ENV === 'production' && !seedPassword) {
   throw new Error('SEED_USER_PASSWORD is required in production.');
 }
 
+const defaultDevelopmentConnectCode = 'GATEDEMO';
+const seedConnectCode = process.env.SEED_CONNECT_CODE;
+
+if (process.env.NODE_ENV === 'production' && !seedConnectCode) {
+  throw new Error('SEED_CONNECT_CODE is required in production.');
+}
+
+const gateDeviceId = '0198a1f0-2000-7000-8000-000000000001';
+
 const users = [
   {
     email: 'admin@example.com',
@@ -41,12 +52,6 @@ const users = [
     fullName: 'Pending Organizer',
     role: Role.ORGANIZER,
     status: UserStatus.PENDING,
-  },
-  {
-    email: 'scanner@example.com',
-    fullName: 'Event Scanner',
-    role: Role.SCANNER,
-    status: UserStatus.ACTIVE,
   },
   {
     email: 'attendee@example.com',
@@ -263,8 +268,42 @@ async function main(): Promise<void> {
     );
   }
 
+  // Demo scanner device: owned by the seed organizer, assigned to the Summer
+  // Music Festival, reachable with a known connect code for local testing.
+  const connectCode = seedConnectCode ?? defaultDevelopmentConnectCode;
+  const codeHash = createHash('sha256').update(connectCode).digest('hex');
+  const codeExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const gateEventId = events[0].id;
+
+  await prisma.user.upsert({
+    where: { id: gateDeviceId },
+    update: { fullName: 'Gate 1', managedById: organizer.id },
+    create: {
+      id: gateDeviceId,
+      role: Role.SCANNER,
+      status: UserStatus.ACTIVE,
+      fullName: 'Gate 1',
+      managedById: organizer.id,
+    },
+  });
+  await prisma.eventStaff.upsert({
+    where: {
+      eventId_userId: { eventId: gateEventId, userId: gateDeviceId },
+    },
+    update: {},
+    create: { eventId: gateEventId, userId: gateDeviceId },
+  });
+  await prisma.staffConnectCode.upsert({
+    where: { codeHash },
+    update: { redeemedAt: null, expiresAt: codeExpiresAt },
+    create: { staffId: gateDeviceId, codeHash, expiresAt: codeExpiresAt },
+  });
+
   console.log(
     `Seeded ${users.length} development users and ${events.length} events.`,
+  );
+  console.log(
+    `Scanner device "Gate 1" ready: connect code ${connectCode} (expires ${codeExpiresAt.toISOString()}).`,
   );
 }
 

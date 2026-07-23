@@ -69,7 +69,7 @@ enum CheckinResult {
 
 model User {
   id              String     @id @default(uuid(7)) @db.Uuid
-  email           String     @unique
+  email           String?    @unique
   passwordHash    String?
   googleSubject   String?    @unique
   emailVerifiedAt DateTime?  @db.Timestamptz(3)
@@ -78,17 +78,36 @@ model User {
   phone           String?
   role            Role       @default(ATTENDEE)
   status          UserStatus @default(ACTIVE)
+  managedById     String?    @db.Uuid
+  managedBy       User?      @relation("ManagedStaff", fields: [managedById], references: [id])
   createdAt       DateTime   @default(now()) @db.Timestamptz(3)
   updatedAt       DateTime   @updatedAt @db.Timestamptz(3)
 
-  events           Event[]        @relation("OrganizerEvents")
+  events           Event[]            @relation("OrganizerEvents")
   orders           Order[]
-  scannedTickets   Ticket[]       @relation("TicketScanner")
+  scannedTickets   Ticket[]           @relation("TicketScanner")
   staffAssignments EventStaff[]
   checkins         CheckinLog[]
   notifications    Notification[]
+  managedStaff     User[]             @relation("ManagedStaff")
+  connectCodes     StaffConnectCode[]
 
   @@index([role, status])
+  @@index([managedById])
+}
+
+/// One-time connect code a gate device redeems for a scanner JWT.
+model StaffConnectCode {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  staffId    String    @db.Uuid
+  staff      User      @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  // SHA-256 hex of the code; the plaintext is returned once and never stored.
+  codeHash   String    @unique
+  expiresAt  DateTime  @db.Timestamptz(3)
+  redeemedAt DateTime? @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+
+  @@index([staffId])
 }
 
 model Event {
