@@ -169,7 +169,7 @@ export function AdminSectionHeader({
         <Pressable
           accessibilityRole="button"
           onPress={onAction}
-          className="min-h-touch-target-min justify-center rounded-full px-3 active:bg-primary/10"
+          className="min-h-touch-target-min justify-center rounded-ctl px-3 active:bg-primary/10"
         >
           <Text className="font-semibold text-label-md text-primary">{actionLabel}</Text>
         </Pressable>

@@ -21,10 +21,11 @@ export const TextField = forwardRef<TextInput, Props>(function TextField(
       <TextInput
         ref={ref}
         className={[
-          'h-touch-target-min rounded-md border px-4',
+          'h-touch-target-min rounded-ctl border px-4',
           'font-sans text-body-md',
           'bg-surface-container-lowest text-on-surface',
-          hasError ? 'border-error' : 'border-outline',
+          // Coral focus ring; error border wins when present.
+          hasError ? 'border-error' : 'border-outline focus:border-primary',
         ].join(' ')}
         // NativeWind maps this back onto `placeholderTextColor`. A literal
         // colour here cannot follow the scheme, and the light outline this

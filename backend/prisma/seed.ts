@@ -73,7 +73,7 @@ const events = [
     featured: true,
     startAt: new Date('2026-08-15T12:00:00.000Z'),
     endAt: new Date('2026-08-15T16:00:00.000Z'),
-    coverImageUrl: 'https://picsum.photos/seed/eticket-music-festival/800/600',
+    coverImageUrl: 'https://loremflickr.com/800/600/music,festival?lock=11',
     status: EventStatus.PUBLISHED,
     ticketTypes: [
       {
@@ -101,7 +101,7 @@ const events = [
     featured: true,
     startAt: new Date('2026-08-22T01:30:00.000Z'),
     endAt: new Date('2026-08-22T10:30:00.000Z'),
-    coverImageUrl: 'https://picsum.photos/seed/eticket-web-summit/800/600',
+    coverImageUrl: 'https://loremflickr.com/800/600/technology,conference?lock=12',
     status: EventStatus.PUBLISHED,
     ticketTypes: [
       {
@@ -129,7 +129,7 @@ const events = [
     featured: false,
     startAt: new Date('2026-09-01T02:00:00.000Z'),
     endAt: new Date('2026-09-01T11:00:00.000Z'),
-    coverImageUrl: 'https://picsum.photos/seed/eticket-art-exhibition/800/600',
+    coverImageUrl: 'https://loremflickr.com/800/600/art,gallery?lock=13',
     status: EventStatus.PUBLISHED,
     ticketTypes: [
       {
@@ -151,7 +151,7 @@ const events = [
     featured: true,
     startAt: new Date('2026-09-15T22:00:00.000Z'),
     endAt: new Date('2026-09-16T04:00:00.000Z'),
-    coverImageUrl: 'https://picsum.photos/seed/eticket-marathon/800/600',
+    coverImageUrl: 'https://loremflickr.com/800/600/marathon,running?lock=14',
     status: EventStatus.PUBLISHED,
     ticketTypes: [
       {
@@ -179,7 +179,7 @@ const events = [
     featured: false,
     startAt: new Date('2026-08-20T07:00:00.000Z'),
     endAt: new Date('2026-08-20T10:00:00.000Z'),
-    coverImageUrl: 'https://picsum.photos/seed/eticket-pottery/800/600',
+    coverImageUrl: 'https://loremflickr.com/800/600/pottery,ceramics?lock=15',
     status: EventStatus.PUBLISHED,
     ticketTypes: [
       {
@@ -201,7 +201,7 @@ const events = [
     featured: false,
     startAt: new Date('2026-10-05T13:00:00.000Z'),
     endAt: new Date('2026-10-05T15:30:00.000Z'),
-    coverImageUrl: 'https://picsum.photos/seed/eticket-acoustic/800/600',
+    coverImageUrl: 'https://loremflickr.com/800/600/acoustic,guitar?lock=16',
     status: EventStatus.PUBLISHED,
     ticketTypes: [
       {

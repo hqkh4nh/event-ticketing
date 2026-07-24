@@ -3,9 +3,11 @@ import { Text, View } from 'react-native';
 import type { MyTicket } from '@/lib/api/orders';
 
 const STATUS_STYLES: Record<MyTicket['status'], { container: string; text: string }> = {
+  // Valid tickets read as mint, not coral: coral is the brand/active colour,
+  // mint is the "still valid" status. A used ticket goes neutral grey.
   ISSUED: {
-    container: 'bg-primary-container',
-    text: 'text-on-primary-container',
+    container: 'bg-success-container',
+    text: 'text-on-success-container',
   },
   USED: {
     container: 'bg-surface-container-high',

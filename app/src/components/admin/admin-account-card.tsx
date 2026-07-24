@@ -77,7 +77,7 @@ export function AdminAccountCard({
           <Pressable
             accessibilityRole="button"
             onPress={onApprove}
-            className="h-touch-target-min flex-1 flex-row items-center justify-center gap-2 rounded-full bg-primary active:opacity-80"
+            className="h-touch-target-min flex-1 flex-row items-center justify-center gap-2 rounded-ctl bg-primary active:opacity-80"
           >
             <MaterialIcons name="check" size={18} className="text-on-primary" />
             <Text className="font-semibold text-label-md text-on-primary">{approveLabel}</Text>

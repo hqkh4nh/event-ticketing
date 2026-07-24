@@ -19,13 +19,21 @@ import { TextField } from '@/components/ui/text-field';
 import { postCheckin, type CheckinResult } from '@/lib/api/checkin';
 import { toUserMessage } from '@/lib/api/error-message';
 
-// Green / amber / red — distinct at a glance for a gate operator. These are not
-// theme roles (there is no success/warning token), so they are set inline.
-const RESULT_COLOR: Record<CheckinResult, string> = {
-  VALID: '#16a34a',
-  ALREADY_USED: '#d97706',
-  INVALID: '#dc2626',
-  WRONG_EVENT: '#dc2626',
+// Each check-in result maps to its status container plus a distinct icon, so a
+// gate operator never reads colour alone (see DESIGN.md, "Scanner Result").
+// WRONG_EVENT is tertiary, not error: it must not read as an invalid ticket.
+const RESULT_STYLE: Record<CheckinResult, { container: string; foreground: string }> = {
+  VALID: { container: 'bg-success-container', foreground: 'text-on-success-container' },
+  ALREADY_USED: { container: 'bg-warning-container', foreground: 'text-on-warning-container' },
+  INVALID: { container: 'bg-error-container', foreground: 'text-on-error-container' },
+  WRONG_EVENT: { container: 'bg-tertiary-container', foreground: 'text-on-tertiary-container' },
+};
+
+const RESULT_ICON: Record<CheckinResult, keyof typeof MaterialIcons.glyphMap> = {
+  VALID: 'check-circle',
+  ALREADY_USED: 'history',
+  INVALID: 'cancel',
+  WRONG_EVENT: 'error',
 };
 
 export default function ScanScreen() {
@@ -109,15 +117,16 @@ export default function ScanScreen() {
 
             {result ? (
               <View
-                className="items-center gap-2 rounded-lg px-4 py-6"
-                style={{ backgroundColor: RESULT_COLOR[result] }}
+                className={`items-center gap-2 rounded-card px-4 py-6 ${RESULT_STYLE[result].container}`}
               >
                 <MaterialIcons
-                  name={result === 'VALID' ? 'check-circle' : 'cancel'}
+                  name={RESULT_ICON[result]}
                   size={40}
-                  color="#ffffff"
+                  className={RESULT_STYLE[result].foreground}
                 />
-                <Text className="font-bold text-headline-md text-white">
+                <Text
+                  className={`font-bold text-headline-md ${RESULT_STYLE[result].foreground}`}
+                >
                   {t(`scanner.result.${result}`)}
                 </Text>
               </View>

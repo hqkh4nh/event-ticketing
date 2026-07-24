@@ -34,8 +34,8 @@ function ProfileRow({ icon, label, description, last = false, onPress }: Profile
         last ? '' : 'border-b border-outline-variant',
       ].join(' ')}
     >
-      <View className="h-10 w-10 items-center justify-center rounded-full bg-primary-container">
-        <MaterialIcons name={icon} size={21} className="text-on-primary-container" />
+      <View className="h-10 w-10 items-center justify-center rounded-full bg-surface-container-high">
+        <MaterialIcons name={icon} size={21} className="text-on-surface-variant" />
       </View>
       <View className="min-w-0 flex-1 gap-0.5">
         <Text className="font-medium text-body-md text-on-surface">{label}</Text>
@@ -155,7 +155,7 @@ export default function ProfileScreen() {
                 </View>
                 <View
                   accessibilityRole="radiogroup"
-                  className="h-touch-target-min flex-row rounded-lg bg-surface-container p-1"
+                  className="h-touch-target-min flex-row rounded-full bg-surface-container p-1"
                 >
                   {LANGUAGES.map((value) => {
                     const selected = value === language;
@@ -167,7 +167,7 @@ export default function ProfileScreen() {
                         accessibilityState={{ checked: selected }}
                         onPress={() => void setLanguage(value)}
                         className={[
-                          'flex-1 items-center justify-center rounded active:opacity-70',
+                          'flex-1 items-center justify-center rounded-full active:opacity-70',
                           selected ? 'bg-surface-container-lowest' : '',
                         ]
                           .filter(Boolean)
@@ -202,7 +202,7 @@ export default function ProfileScreen() {
                 </View>
                 <View
                   accessibilityRole="radiogroup"
-                  className="h-touch-target-min flex-row rounded-lg bg-surface-container p-1"
+                  className="h-touch-target-min flex-row rounded-full bg-surface-container p-1"
                 >
                   {THEMES.map((value) => {
                     const selected = value === theme;
@@ -214,7 +214,7 @@ export default function ProfileScreen() {
                         accessibilityState={{ checked: selected }}
                         onPress={() => void setTheme(value)}
                         className={[
-                          'flex-1 items-center justify-center rounded active:opacity-70',
+                          'flex-1 items-center justify-center rounded-full active:opacity-70',
                           selected ? 'bg-surface-container-lowest' : '',
                         ]
                           .filter(Boolean)

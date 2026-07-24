@@ -2,6 +2,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 
+import { Wordmark } from '@/components/brand/logo-mark';
 import { themes } from '@/design/themes';
 import type { MyTicket } from '@/lib/api/orders';
 import { formatDateTime } from '@/lib/format';
@@ -19,11 +20,11 @@ export function TicketImageCard({ ticket }: TicketImageCardProps) {
   return (
     <View
       collapsable={false}
-      className="gap-4 rounded-xl border border-outline-variant bg-surface-container-lowest p-5"
+      className="gap-4 rounded-card border border-outline-variant bg-surface-container-lowest p-5"
       style={themes.light}
     >
       <View className="flex-row items-center justify-between gap-3">
-        <Text className="font-bold text-body-lg text-primary">Viora</Text>
+        <Wordmark className="text-body-lg" />
         <TicketStatusBadge
           status={ticket.status}
           label={t(`tickets.status.${ticket.status.toLowerCase()}`)}
@@ -58,7 +59,7 @@ export function TicketImageCard({ ticket }: TicketImageCardProps) {
           <Text className="font-sans text-label-sm text-on-surface-variant">
             {t('tickets.ticketCode')}
           </Text>
-          <Text className="font-medium text-label-md text-on-surface">{ticket.code}</Text>
+          <Text className="font-mono text-label-md text-on-surface">{ticket.code}</Text>
         </View>
       </View>
 

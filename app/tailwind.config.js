@@ -66,10 +66,14 @@ module.exports = {
       },
       borderRadius: {
         DEFAULT: '0.5rem',
-        md: '0.75rem', // input
-        lg: '1rem', // card
+        md: '0.75rem',
+        lg: '1rem',
         xl: '1.5rem',
-        full: '9999px', // button
+        // Ember tier: cards 16, controls (button/input/small chip) 12,
+        // status badges + avatars full-pill.
+        card: '16px',
+        ctl: '12px',
+        full: '9999px',
       },
       spacing: {
         'container-padding': '20px',
@@ -79,14 +83,21 @@ module.exports = {
         'bottom-nav-height': '80px',
       },
       maxWidth: {
-        // Reading width on desktop web. Native never reaches this.
+        // Reading width for detail/form/ticket screens on desktop web.
         content: '800px',
+        // Browse width for the Explore and management grids.
+        wide: '1200px',
       },
       fontFamily: {
         sans: ['BeVietnamPro_400Regular'],
         medium: ['BeVietnamPro_500Medium'],
         semibold: ['BeVietnamPro_600SemiBold'],
         bold: ['BeVietnamPro_700Bold'],
+        // Display voice for headings and the wordmark; body stays Be Vietnam Pro.
+        display: ['SpaceGrotesk_700Bold'],
+        'display-medium': ['SpaceGrotesk_500Medium'],
+        // Ticket codes only, per DESIGN.md (read/typed when a scanner fails).
+        mono: ['JetBrainsMono_500Medium'],
       },
     },
   },

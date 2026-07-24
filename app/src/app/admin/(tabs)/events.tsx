@@ -42,7 +42,7 @@ export default function AdminEventsScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-surface">
-      <View className="w-full max-w-5xl flex-1 self-center">
+      <View className="w-full max-w-wide flex-1 self-center">
         <AdminScreenHeader
           eyebrow={t('admin.brand')}
           title={t('admin.events.title')}
@@ -135,11 +135,11 @@ export default function AdminEventsScreen() {
           </View>
 
           {filteredEvents.length ? (
-            <View className="gap-3">
+            <View className="flex-row flex-wrap justify-between gap-y-3">
               {filteredEvents.map((event) => (
-                <AdminEventCard
-                  key={event.id}
-                  event={event}
+                <View key={event.id} className="w-full md:w-[48%]">
+                  <AdminEventCard
+                    event={event}
                   statusLabel={t(`admin.eventStatus.${event.status}`)}
                   soldLabel={t('admin.events.sold', {
                     sold: event.sold,
@@ -166,7 +166,8 @@ export default function AdminEventsScreen() {
                       featured: !current.featured,
                     }))
                   }
-                />
+                  />
+                </View>
               ))}
             </View>
           ) : (

@@ -1,10 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <mask id="notch">
-    <rect width="512" height="512" fill="#fff"/>
-    <circle cx="33" cy="256" r="48" fill="#000"/>
-    <circle cx="479" cy="256" r="48" fill="#000"/>
-  </mask>
-  <rect x="52" y="52" width="408" height="408" rx="82" fill="none" stroke="#006B5F" stroke-width="38" stroke-linejoin="round" mask="url(#notch)"/>
-  <rect x="137" y="137" width="238" height="238" rx="50" fill="none" stroke="#006B5F" stroke-width="34" stroke-linejoin="round"/>
-  <path fill="#006B5F" transform="translate(183.3503 317.9422) scale(.105442 -.105442)" d="M1290 563V461H453Q466 335 544 272Q622 209 762 209Q875 209 993.5 242.5Q1112 276 1237 344V68Q1110 20 983 -4.5Q856 -29 729 -29Q425 -29 256.5 125.5Q88 280 88 559Q88 833 253.5 990Q419 1147 709 1147Q973 1147 1131.5 988Q1290 829 1290 563ZM922 682Q922 784 862.5 846.5Q803 909 707 909Q603 909 538 850.5Q473 792 457 682Z"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><rect x="0" y="0" width="512" height="512" rx="150" fill="#FF6B4A"/><g transform="translate(135.57,330.4) scale(0.3,-0.3)" fill="#2A0F07"><path transform="translate(0,0)" d="M296 -14Q222 -14 165.5 17.5Q109 49 77.5 106.5Q46 164 46 242V254Q46 332 77.0 389.5Q108 447 164.0 478.5Q220 510 294 510Q367 510 421.0 477.5Q475 445 505.0 387.5Q535 330 535 254V211H174Q176 160 212.0 128.0Q248 96 300 96Q353 96 378.0 119.0Q403 142 416 170L519 116Q505 90 478.5 59.5Q452 29 408.0 7.5Q364 -14 296 -14ZM175 305H407Q403 348 372.5 374.0Q342 400 293 400Q242 400 212.0 374.0Q182 348 175 305Z"/></g><circle cx="380" cy="168" r="16" fill="#FFD9CE"/><circle cx="380" cy="256" r="16" fill="#FFD9CE"/><circle cx="380" cy="344" r="16" fill="#FFD9CE"/></svg>

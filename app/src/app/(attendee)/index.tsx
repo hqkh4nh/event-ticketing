@@ -2,9 +2,17 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, FlatList, Text, TextInput, View } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  Text,
+  TextInput,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Wordmark } from '@/components/brand/logo-mark';
 import { EventListItem } from '@/components/event/event-list-item';
 import { FeaturedEventCard } from '@/components/event/featured-event-card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +31,13 @@ const SEARCH_DEBOUNCE_MS = 300;
 const FEATURED_LIST_STYLE = { marginHorizontal: -CONTAINER_PADDING } as const;
 const FEATURED_CONTENT_STYLE = { gap: 16, paddingHorizontal: CONTAINER_PADDING } as const;
 const LIST_CONTENT_STYLE = { paddingHorizontal: CONTAINER_PADDING, paddingVertical: 24 } as const;
+const GRID_CONTENT_STYLE = {
+  paddingHorizontal: CONTAINER_PADDING,
+  paddingVertical: 24,
+  gap: 16,
+} as const;
+const GRID_COLUMN_STYLE = { gap: 16 } as const;
+const GRID_CELL_STYLE = { flex: 1 } as const;
 
 function Separator() {
   return <View className="h-px bg-outline-variant" />;
@@ -30,6 +45,12 @@ function Separator() {
 
 export default function HomeScreen() {
   const { t } = useTranslation();
+  const { width } = useWindowDimensions();
+  // Phones keep the single-column reading list; desktop widens into a poster
+  // grid. Columns track the wide breakpoint the nav already switches at.
+  const isWide = width >= 768;
+  const columns = !isWide ? 1 : width >= 1200 ? 4 : 3;
+  const isGrid = columns > 1;
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
 
@@ -106,12 +127,12 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-surface">
-      {/* Past the reading width the rows would stretch a 72px thumbnail across
-          a desktop window with the title marooned at the far end. */}
-      <View className="w-full max-w-content flex-1 self-center">
+      {/* Phones stay at the reading width as a single list; desktop opens up to
+          the browse width and lays the events out as a grid. */}
+      <View className={`w-full flex-1 self-center ${isWide ? 'max-w-wide' : 'max-w-content'}`}>
         <View className="gap-3 border-b border-outline-variant px-container-padding pb-3">
           <View className="flex-row items-center justify-between">
-            <Text className="font-bold text-display-sm text-primary">{t('auth.brand')}</Text>
+            <Wordmark className="text-display-sm" />
 
             <View className="h-10 w-10 items-center justify-center rounded-full bg-surface-container-low">
               <MaterialIcons name="person" size={20} className="text-primary" />
@@ -133,17 +154,28 @@ export default function HomeScreen() {
         </View>
 
         <FlatList
+          key={columns}
           data={events}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <EventListItem event={item} />}
-          ItemSeparatorComponent={Separator}
+          numColumns={columns}
+          columnWrapperStyle={isGrid ? GRID_COLUMN_STYLE : undefined}
+          renderItem={({ item }) =>
+            isGrid ? (
+              <View style={GRID_CELL_STYLE}>
+                <FeaturedEventCard event={item} fullWidth />
+              </View>
+            ) : (
+              <EventListItem event={item} />
+            )
+          }
+          ItemSeparatorComponent={isGrid ? undefined : Separator}
           ListHeaderComponent={listHeader}
           ListEmptyComponent={listEmpty}
           refreshing={eventsQuery.isRefetching}
           onRefresh={() => void eventsQuery.refetch()}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={LIST_CONTENT_STYLE}
+          contentContainerStyle={isGrid ? GRID_CONTENT_STYLE : LIST_CONTENT_STYLE}
         />
       </View>
     </SafeAreaView>

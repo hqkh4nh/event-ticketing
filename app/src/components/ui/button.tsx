@@ -5,7 +5,14 @@ type Props = Omit<PressableProps, 'children'> & {
   icon?: keyof typeof MaterialIcons.glyphMap;
   label: string;
   loading?: boolean;
-  variant?: 'primary' | 'outline';
+  // `outline` is the secondary (thin-bordered) button; `ghost` is text only.
+  variant?: 'primary' | 'outline' | 'ghost';
+};
+
+const CONTAINER: Record<NonNullable<Props['variant']>, string> = {
+  primary: 'bg-primary',
+  outline: 'border border-primary',
+  ghost: '',
 };
 
 export function Button({
@@ -17,8 +24,7 @@ export function Button({
   ...props
 }: Props) {
   const isDisabled = disabled === true || loading;
-  const isPrimary = variant === 'primary';
-  const textTone = isPrimary ? 'text-on-primary' : 'text-primary';
+  const textTone = variant === 'primary' ? 'text-on-primary' : 'text-primary';
 
   return (
     <Pressable
@@ -26,8 +32,8 @@ export function Button({
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       disabled={isDisabled}
       className={[
-        'h-cta-height flex-row items-center justify-center gap-2 rounded-full px-6 active:scale-[0.98]',
-        isPrimary ? 'bg-primary' : 'border border-primary',
+        'h-cta-height flex-row items-center justify-center gap-2 rounded-ctl px-6 active:scale-[0.98]',
+        CONTAINER[variant],
         isDisabled ? 'opacity-40' : '',
       ]
         .filter(Boolean)

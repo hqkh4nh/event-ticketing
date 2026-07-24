@@ -3,21 +3,28 @@ import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
+import { Chip } from '@/components/ui/chip';
 import { NumericText } from '@/components/ui/numeric-text';
 import { TicketSurface } from '@/components/ui/ticket-surface';
 import type { EventSummary } from '@/lib/api/events';
 import { formatDayMonth, formatVndAmount } from '@/lib/format';
 
 /**
- * Wide card for the horizontal "featured" carousel. Shaped as a ticket so the
- * poster sits on the face and the details sit on the stub.
- *
- * The category label that used to sit above the title is gone on purpose: it
- * repeated on every card in the same uppercase treatment, which is the loudest
- * tell of a generated layout. The poster already says what kind of event it is.
+ * Wide card for the horizontal "featured" carousel. Shaped as a ticket: the
+ * poster is the face, the details sit on the stub. The title is laid over the
+ * poster on a dark scrim so the image leads and the type stays legible, with a
+ * single category chip in the corner - the poster carries the rest.
  */
-export function FeaturedEventCard({ event }: { event: EventSummary }) {
+/** `fullWidth` fills the parent (grid cell); otherwise it is a 280px carousel card. */
+export function FeaturedEventCard({
+  event,
+  fullWidth = false,
+}: {
+  event: EventSummary;
+  fullWidth?: boolean;
+}) {
   const { t, i18n } = useTranslation();
 
   const isFree = event.minPriceVnd === 0;
@@ -27,18 +34,13 @@ export function FeaturedEventCard({ event }: { event: EventSummary }) {
 
   return (
     <Link href={{ pathname: '/event/[id]', params: { id: event.id } }} asChild>
-      <Pressable accessibilityRole="button" className="w-[280px] active:opacity-90">
+      <Pressable
+        accessibilityRole="button"
+        className={`${fullWidth ? 'w-full' : 'w-[280px]'} active:opacity-90`}
+      >
         <TicketSurface
           stub={
             <View className="gap-2 p-4">
-              <Text numberOfLines={2} className="font-bold text-body-lg text-on-surface">
-                {event.title}
-              </Text>
-
-              {/* Date and price get a line each. Sharing one row cannot work at
-                  this card width: "22/08 · TP. Hồ Chí Minh" beside
-                  "From 500.000đ" either wraps or truncates the price, and the
-                  price is the last thing on the card that may be cut. */}
               <View className="flex-row items-center gap-1">
                 <MaterialIcons
                   name="calendar-today"
@@ -59,18 +61,44 @@ export function FeaturedEventCard({ event }: { event: EventSummary }) {
             </View>
           }
         >
-          {event.coverImageUrl ? (
-            <Image
-              source={event.coverImageUrl}
-              contentFit="cover"
-              transition={200}
-              style={{ width: '100%', height: 160 }}
-            />
-          ) : (
-            <View className="h-40 items-center justify-center bg-surface-container-low">
-              <MaterialIcons name="image-not-supported" size={32} className="text-outline" />
+          <View className="relative h-40">
+            {event.coverImageUrl ? (
+              <Image
+                source={event.coverImageUrl}
+                contentFit="cover"
+                transition={200}
+                style={{ width: '100%', height: '100%' }}
+              />
+            ) : (
+              <View className="h-full items-center justify-center bg-surface-container-low">
+                <MaterialIcons name="image-not-supported" size={32} className="text-outline" />
+              </View>
+            )}
+
+            {/* Dark scrim, transparent at the top, so the overlaid title reads. */}
+            <View className="absolute inset-x-0 bottom-0 h-24">
+              <Svg width="100%" height="100%">
+                <Defs>
+                  <LinearGradient id="posterScrim" x1="0" y1="0" x2="0" y2="1">
+                    <Stop offset="0" stopColor="#16141B" stopOpacity="0" />
+                    <Stop offset="1" stopColor="#16141B" stopOpacity="0.82" />
+                  </LinearGradient>
+                </Defs>
+                <Rect width="100%" height="100%" fill="url(#posterScrim)" />
+              </Svg>
             </View>
-          )}
+
+            <View className="absolute left-3 top-3">
+              <Chip tone="primary" label={t(`event.category.${event.category}`)} />
+            </View>
+
+            <Text
+              numberOfLines={2}
+              className="absolute inset-x-0 bottom-0 p-3 font-display text-body-lg text-white"
+            >
+              {event.title}
+            </Text>
+          </View>
         </TicketSurface>
       </Pressable>
     </Link>

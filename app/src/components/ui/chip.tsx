@@ -4,9 +4,9 @@ import { Text, View } from 'react-native';
 type Props = {
   label: string;
   /**
-   * `promo` is the only place the secondary colour is allowed to appear. Teal
-   * is the single accent; a second competing accent on ordinary labels is what
-   * made the reference screens read as generic.
+   * `primary` is the coral category chip. `promo` is the only place the
+   * secondary colour is allowed to appear; a second competing accent on
+   * ordinary labels is what made the reference screens read as generic.
    */
   tone?: 'neutral' | 'primary' | 'promo';
   icon?: keyof typeof MaterialIcons.glyphMap;
@@ -14,13 +14,13 @@ type Props = {
 
 const SURFACE: Record<NonNullable<Props['tone']>, string> = {
   neutral: 'bg-surface-container',
-  primary: 'bg-primary/10',
+  primary: 'bg-primary-container',
   promo: 'bg-secondary-container',
 };
 
 const FOREGROUND: Record<NonNullable<Props['tone']>, string> = {
   neutral: 'text-on-surface-variant',
-  primary: 'text-primary',
+  primary: 'text-on-primary-container',
   promo: 'text-on-secondary-container',
 };
 

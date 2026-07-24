@@ -3,7 +3,14 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { OrganizerEventCard } from '@/components/organizer/organizer-event-card';
@@ -24,10 +31,21 @@ const LIST_CONTENT_STYLE = {
   paddingHorizontal: 20,
   paddingBottom: 32,
 } as const;
+const GRID_CONTENT_STYLE = {
+  paddingHorizontal: 20,
+  paddingBottom: 32,
+  gap: 12,
+} as const;
+const GRID_COLUMN_STYLE = { gap: 12 } as const;
+const GRID_CELL_STYLE = { flex: 1 } as const;
 
 export default function OrganizerEventsScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isWide = width >= 768;
+  const columns = isWide ? 2 : 1;
+  const isGrid = columns > 1;
   const [filter, setFilter] = useState<EventFilter>('ALL');
 
   const eventsQuery = useQuery({
@@ -128,7 +146,7 @@ export default function OrganizerEventsScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-surface">
-      <View className="w-full max-w-content flex-1 self-center">
+      <View className={`w-full flex-1 self-center ${isWide ? 'max-w-wide' : 'max-w-content'}`}>
         <View className="flex-row items-center justify-between gap-4 border-b border-outline-variant px-container-padding py-4">
           <Text className="flex-1 font-bold text-display-sm text-on-surface">
             {t('organizer.title')}
@@ -144,16 +162,27 @@ export default function OrganizerEventsScreen() {
         </View>
 
         <FlatList
+          key={columns}
           data={visibleEvents}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <OrganizerEventCard event={item} />}
-          ItemSeparatorComponent={() => <View className="h-3" />}
+          numColumns={columns}
+          columnWrapperStyle={isGrid ? GRID_COLUMN_STYLE : undefined}
+          renderItem={({ item }) =>
+            isGrid ? (
+              <View style={GRID_CELL_STYLE}>
+                <OrganizerEventCard event={item} />
+              </View>
+            ) : (
+              <OrganizerEventCard event={item} />
+            )
+          }
+          ItemSeparatorComponent={isGrid ? undefined : () => <View className="h-3" />}
           ListHeaderComponent={listHeader}
           ListEmptyComponent={listEmpty}
           refreshing={eventsQuery.isRefetching && !eventsQuery.isPending}
           onRefresh={() => void eventsQuery.refetch()}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={LIST_CONTENT_STYLE}
+          contentContainerStyle={isGrid ? GRID_CONTENT_STYLE : LIST_CONTENT_STYLE}
         />
       </View>
     </SafeAreaView>

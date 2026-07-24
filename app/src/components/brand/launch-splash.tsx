@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { LogoMark } from '@/components/brand/logo-mark';
+import { LogoMark, Wordmark } from '@/components/brand/logo-mark';
 
 type Props = {
   onComplete: () => void;
@@ -22,7 +22,10 @@ export function LaunchSplash({ onComplete }: Props) {
     <View className="flex-1 bg-surface-container-lowest">
       <View className="w-full max-w-content flex-1 self-center px-container-padding">
         <View className="justify-end" style={{ height: insets.top + 52 }}>
-          <LogoMark size={34} />
+          <View className="flex-row items-center gap-2">
+            <LogoMark size={30} />
+            <Wordmark className="text-headline-md" />
+          </View>
         </View>
 
         <View className="flex-1 items-center justify-center">
@@ -47,7 +50,7 @@ export function LaunchSplash({ onComplete }: Props) {
           accessibilityRole="button"
           accessibilityLabel={t('launch.start')}
           onPress={onComplete}
-          className="h-cta-height flex-row items-center justify-center gap-2 rounded-full bg-primary px-6 active:scale-[0.98]"
+          className="h-cta-height flex-row items-center justify-center gap-2 rounded-ctl bg-primary px-6 active:scale-[0.98]"
           style={{ marginBottom: insets.bottom + 20 }}
         >
           <Text className="font-semibold text-body-md text-on-primary">{t('launch.start')}</Text>

@@ -64,14 +64,14 @@ export function ConfirmDialog({
           <View className="mt-2 w-full flex-row gap-3">
             <Pressable
               accessibilityRole="button"
-              className="h-cta-height flex-1 items-center justify-center rounded-full border border-outline active:scale-[0.98] active:opacity-80"
+              className="h-cta-height flex-1 items-center justify-center rounded-ctl border border-outline active:scale-[0.98] active:opacity-80"
               onPress={onCancel}
             >
               <Text className="font-semibold text-body-md text-on-surface">{cancelLabel}</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              className="h-cta-height flex-1 items-center justify-center rounded-full bg-error active:scale-[0.98] active:opacity-80"
+              className="h-cta-height flex-1 items-center justify-center rounded-ctl bg-error active:scale-[0.98] active:opacity-80"
               onPress={onConfirm}
             >
               <Text className="font-semibold text-body-md text-on-error">{confirmLabel}</Text>

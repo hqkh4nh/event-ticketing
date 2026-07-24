@@ -3,9 +3,13 @@
  * reaches colour through a NativeWind class name, which resolves to a CSS
  * variable fed from here.
  *
- * Mirrors the `colors` and `colorsDark` tables in DESIGN.md. The palette is
- * Material 3, but only the roles this product actually uses: the `*-fixed`
- * roles from the M3 spec are deliberately absent because nothing renders them.
+ * Mirrors the `colors` and `colorsDark` tables in DESIGN.md. The palette is the
+ * "Ember" identity (warm Ink/Paper surfaces, coral primary, mint reserved for
+ * success) carried on the Material 3 role set this product actually uses: the
+ * `*-fixed` roles from the M3 spec are deliberately absent because nothing
+ * renders them. Status roles (`secondary`, `tertiary`, `error`, `warning`) keep
+ * their tuned values; only the surface ladder, `primary`, `success`, and the
+ * neutral text/outline roles carry the Ember colours.
  */
 
 export type ColorRole =
@@ -46,20 +50,24 @@ export type ColorRole =
 export type Palette = Record<ColorRole, string>;
 
 const light: Palette = {
-  surface: '#f8f9ff',
+  // Paper: a warm white, not cold grey-blue and not pure white.
+  surface: '#fbf7f4',
   'surface-container-lowest': '#ffffff',
-  'surface-container-low': '#eff4ff',
-  'surface-container': '#e6eeff',
-  'surface-container-high': '#dee9fc',
-  'on-surface': '#121c2a',
-  'on-surface-variant': '#3c4947',
-  outline: '#6c7a77',
-  'outline-variant': '#bbcac6',
+  'surface-container-low': '#f6f1ed',
+  'surface-container': '#f1ebe6',
+  'surface-container-high': '#ebe4de',
+  'on-surface': '#1b1720',
+  'on-surface-variant': '#6b6472',
+  outline: '#8b8391',
+  'outline-variant': '#e4dcd5',
 
-  primary: '#006b5f',
+  // Coral runs a touch deeper in light than in dark: the vivid #ff6b4a fails
+  // AA as small text on Paper, so light uses a coral dark enough to pass and
+  // pairs it with white text; dark keeps the vivid coral with dark-brown text.
+  primary: '#c7361a',
   'on-primary': '#ffffff',
-  'primary-container': '#14b8a6',
-  'on-primary-container': '#00423b',
+  'primary-container': '#ffe3db',
+  'on-primary-container': '#7a2a17',
 
   secondary: '#a93349',
   'on-secondary': '#ffffff',
@@ -88,21 +96,21 @@ const light: Palette = {
 };
 
 const dark: Palette = {
-  // Never pure black. #101720 keeps depth in a dark hall, per DESIGN.md.
-  surface: '#101720',
-  'surface-container-lowest': '#0b1119',
-  'surface-container-low': '#191f28',
-  'surface-container': '#1d232c',
-  'surface-container-high': '#272e37',
-  'on-surface': '#dfe3ec',
-  'on-surface-variant': '#bfc9c6',
-  outline: '#899490',
-  'outline-variant': '#3c4947',
+  // Ink: a warm near-black, never pure black, to keep depth in a dark hall.
+  surface: '#16141b',
+  'surface-container-lowest': '#221e2a',
+  'surface-container-low': '#1c1924',
+  'surface-container': '#272430',
+  'surface-container-high': '#2c2734',
+  'on-surface': '#f1edf4',
+  'on-surface-variant': '#a79fb0',
+  outline: '#786f82',
+  'outline-variant': '#302b39',
 
-  primary: '#4fdbc8',
-  'on-primary': '#00382f',
-  'primary-container': '#005048',
-  'on-primary-container': '#71f8e4',
+  primary: '#ff6b4a',
+  'on-primary': '#2a0f07',
+  'primary-container': '#3a241d',
+  'on-primary-container': '#ffb4a1',
 
   secondary: '#ffb2b9',
   'on-secondary': '#5f1122',
@@ -119,10 +127,10 @@ const dark: Palette = {
   'error-container': '#93000a',
   'on-error-container': '#ffdad6',
 
-  success: '#5cdcac',
-  'on-success': '#00382a',
-  'success-container': '#00543e',
-  'on-success-container': '#a6f2ce',
+  success: '#34d399',
+  'on-success': '#05271c',
+  'success-container': '#123227',
+  'on-success-container': '#6ee7b7',
 
   warning: '#ffb95c',
   'on-warning': '#4a2800',
