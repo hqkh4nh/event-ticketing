@@ -8,7 +8,8 @@
     "scheme": "eventticketing",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/images/icon.png"
+      "icon": "./assets/images/icon.png",
+      "bundleIdentifier": "com.anonymous.eventticketing"
     },
     "android": {
       "adaptiveIcon": {
@@ -16,7 +17,13 @@
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED"
+      ],
+      "package": "com.anonymous.eventticketing"
     },
     "web": {
       "bundler": "metro",
