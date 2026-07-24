@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/images/icon.png",
-      "bundleIdentifier": "com.anonymous.eventticketing"
+      "bundleIdentifier": "dev.vku.eventticketing"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +23,7 @@
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.READ_MEDIA_VISUAL_USER_SELECTED"
       ],
-      "package": "com.anonymous.eventticketing"
+      "package": "dev.vku.eventticketing"
     },
     "web": {
       "bundler": "metro",
