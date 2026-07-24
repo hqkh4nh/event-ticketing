@@ -500,7 +500,7 @@ export const vi = {
     scanNext: 'Quét tiếp',
     back: 'Quay lại',
     result: {
-      VALID: 'Hợp lệ — cho vào',
+      VALID: 'Hợp lệ, cho vào',
       ALREADY_USED: 'Vé đã dùng',
       INVALID: 'Vé không hợp lệ',
       WRONG_EVENT: 'Sai sự kiện',

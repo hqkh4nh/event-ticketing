@@ -500,7 +500,7 @@ export const en = {
     scanNext: 'Scan next',
     back: 'Back',
     result: {
-      VALID: 'Valid — admit',
+      VALID: 'Valid, admit',
       ALREADY_USED: 'Already used',
       INVALID: 'Invalid ticket',
       WRONG_EVENT: 'Wrong event',

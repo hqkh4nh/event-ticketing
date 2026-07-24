@@ -8,8 +8,12 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { Chip } from '@/components/ui/chip';
 import { NumericText } from '@/components/ui/numeric-text';
 import { TicketSurface } from '@/components/ui/ticket-surface';
+import { palette } from '@/design/tokens';
 import type { EventSummary } from '@/lib/api/events';
 import { formatDayMonth, formatVndAmount } from '@/lib/format';
+
+// The scrim is always Ink so the overlaid white title reads regardless of theme.
+const SCRIM = palette.dark.surface;
 
 /**
  * Wide card for the horizontal "featured" carousel. Shaped as a ticket: the
@@ -80,8 +84,8 @@ export function FeaturedEventCard({
               <Svg width="100%" height="100%">
                 <Defs>
                   <LinearGradient id="posterScrim" x1="0" y1="0" x2="0" y2="1">
-                    <Stop offset="0" stopColor="#16141B" stopOpacity="0" />
-                    <Stop offset="1" stopColor="#16141B" stopOpacity="0.82" />
+                    <Stop offset="0" stopColor={SCRIM} stopOpacity="0" />
+                    <Stop offset="1" stopColor={SCRIM} stopOpacity="0.82" />
                   </LinearGradient>
                 </Defs>
                 <Rect width="100%" height="100%" fill="url(#posterScrim)" />

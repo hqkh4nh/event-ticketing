@@ -24,7 +24,7 @@ type IssuedCode = { label: string; connectCode: string; expiresAt: string };
 /**
  * Scanner devices of one event: create a device (shows its one-time connect
  * code as text + QR), block/unblock, and issue a fresh code. The code panel is
- * the only place the plaintext ever appears — the server stores a hash.
+ * the only place the plaintext ever appears; the server stores a hash.
  */
 export function StaffDevicesSection({
   eventId,

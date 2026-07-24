@@ -53,7 +53,7 @@ export default function ScanScreen() {
 
   // The camera fires onBarcodeScanned repeatedly while a code is in frame, and
   // every queued callback closes over the same render's `pending`. A synchronous
-  // ref lock rejects the extra scans before any second POST is dispatched — the
+  // ref lock rejects the extra scans before any second POST is dispatched. The
   // state flag alone would let several through before the re-render.
   const lock = useRef(false);
 
