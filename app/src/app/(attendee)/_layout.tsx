@@ -1,4 +1,5 @@
 import { Redirect, Tabs } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -6,6 +7,10 @@ import {
   useAppTabScreenOptions,
 } from '@/components/navigation/app-tab-bar';
 import { useAuthStore } from '@/stores/auth-store';
+import {
+  getUnreadNotificationCount,
+  notificationsKeys,
+} from '@/lib/api/notifications';
 
 /**
  * Attendee shell. Guarding here rather than on each screen means a tab added
@@ -21,6 +26,12 @@ export default function AttendeeLayout() {
   const role = useAuthStore((state) => state.user?.role);
   const { t } = useTranslation();
   const screenOptions = useAppTabScreenOptions();
+  const unreadQuery = useQuery({
+    queryKey: notificationsKeys.unread(),
+    queryFn: getUnreadNotificationCount,
+    enabled: Boolean(token),
+  });
+  const unreadCount = unreadQuery.data?.count;
 
   if (isLoading) return null;
   if (!token) return <Redirect href="/auth/login" />;
@@ -51,6 +62,7 @@ export default function AttendeeLayout() {
         name="notifications"
         options={{
           title: t('tabs.notifications'),
+          tabBarBadge: unreadCount ? unreadCount : undefined,
           tabBarIcon: (props) => <AppTabIcon name="notifications" {...props} />,
         }}
       />

@@ -1,14 +1,24 @@
 import { Tabs } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
 import {
   AppTabIcon,
   useAppTabScreenOptions,
 } from '@/components/navigation/app-tab-bar';
+import {
+  getUnreadNotificationCount,
+  notificationsKeys,
+} from '@/lib/api/notifications';
 
 export default function OrganizerTabsLayout() {
   const { t } = useTranslation();
   const screenOptions = useAppTabScreenOptions();
+  const unreadQuery = useQuery({
+    queryKey: notificationsKeys.unread(),
+    queryFn: getUnreadNotificationCount,
+  });
+  const unreadCount = unreadQuery.data?.count;
 
   return (
     <Tabs screenOptions={screenOptions}>
@@ -30,6 +40,7 @@ export default function OrganizerTabsLayout() {
         name="notifications"
         options={{
           title: t('organizer.tabs.notifications'),
+          tabBarBadge: unreadCount ? unreadCount : undefined,
           tabBarIcon: (props) => <AppTabIcon name="notifications" {...props} />,
         }}
       />

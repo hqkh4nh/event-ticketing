@@ -88,8 +88,13 @@ export const vi = {
     backToEvent: 'Về trang sự kiện',
   },
   notifications: {
+    title: 'Thông báo',
     emptyTitle: 'Chưa có thông báo',
     emptyDescription: 'Thông báo về sự kiện và vé của bạn sẽ xuất hiện ở đây.',
+    loadErrorTitle: 'Không tải được thông báo',
+    unread: 'Chưa đọc',
+    unreadCount: '{{count}} thông báo chưa đọc',
+    markAllRead: 'Đọc tất cả',
   },
   profile: {
     title: 'Hồ sơ',

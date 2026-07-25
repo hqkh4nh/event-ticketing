@@ -67,6 +67,20 @@ export class AuthController {
   @ApiOperation({ summary: 'Get current user info' })
   @ApiOkResponse({ type: AuthResponseDto })
   me(@CurrentUser() user: CurrentUserData): AuthUserDto {
-    return user;
+    return {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role,
+      status: user.status,
+    };
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Revoke the current signed-in session' })
+  logout(@CurrentUser() user: CurrentUserData): Promise<void> {
+    return this.auth.logout(user.id, user.sessionId);
   }
 }

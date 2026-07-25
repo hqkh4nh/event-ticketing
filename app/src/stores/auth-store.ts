@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import { AuthUser } from '@/lib/api/auth';
+import { type AuthUser, logout } from '@/lib/api/auth';
 import { tokenStorage } from '@/lib/auth/token-storage';
 import { userStorage } from '@/stores/user-storage';
 
@@ -36,6 +36,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   async signOut() {
+    try {
+      await logout();
+    } catch {
+      // Local sign-out must remain available when the device is offline. The
+      // server session will otherwise expire naturally with its JWT.
+    }
     await Promise.all([tokenStorage.clear(), userStorage.clear()]);
     set({ token: null, user: null });
   },

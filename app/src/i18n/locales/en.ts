@@ -89,8 +89,13 @@ export const en = {
     backToEvent: 'Back to event',
   },
   notifications: {
+    title: 'Notifications',
     emptyTitle: 'No notifications',
     emptyDescription: 'Updates about your events and tickets will appear here.',
+    loadErrorTitle: 'Unable to load notifications',
+    unread: 'Unread',
+    unreadCount: '{{count}} unread',
+    markAllRead: 'Mark all read',
   },
   profile: {
     title: 'Profile',

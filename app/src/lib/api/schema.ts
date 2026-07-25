@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api": {
+    "/": {
         parameters: {
             query?: never;
             header?: never;
@@ -20,7 +20,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/auth/register": {
+    "/auth/register": {
         parameters: {
             query?: never;
             header?: never;
@@ -37,7 +37,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/auth/login": {
+    "/auth/login": {
         parameters: {
             query?: never;
             header?: never;
@@ -54,7 +54,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/auth/staff-connect": {
+    "/auth/staff-connect": {
         parameters: {
             query?: never;
             header?: never;
@@ -71,7 +71,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/auth/me": {
+    "/auth/me": {
         parameters: {
             query?: never;
             header?: never;
@@ -88,7 +88,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/events": {
+    "/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revoke the current signed-in session */
+        post: operations["AuthController_logout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events": {
         parameters: {
             query?: never;
             header?: never;
@@ -105,7 +122,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/events/{id}": {
+    "/events/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -122,7 +139,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/organizer/events": {
+    "/organizer/events": {
         parameters: {
             query?: never;
             header?: never;
@@ -140,7 +157,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/organizer/events/{id}": {
+    "/organizer/events/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -159,7 +176,7 @@ export interface paths {
         patch: operations["EventsOrganizerController_update"];
         trace?: never;
     };
-    "/api/organizer/events/{id}/publish": {
+    "/organizer/events/{id}/publish": {
         parameters: {
             query?: never;
             header?: never;
@@ -176,7 +193,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/organizer/events/{id}/unpublish": {
+    "/organizer/events/{id}/unpublish": {
         parameters: {
             query?: never;
             header?: never;
@@ -193,7 +210,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/organizer/events/{id}/cancel": {
+    "/organizer/events/{id}/cancel": {
         parameters: {
             query?: never;
             header?: never;
@@ -210,7 +227,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/organizer/events/{id}/ticket-types": {
+    "/organizer/events/{id}/ticket-types": {
         parameters: {
             query?: never;
             header?: never;
@@ -227,7 +244,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/organizer/events/{id}/ticket-types/{typeId}": {
+    "/organizer/events/{id}/ticket-types/{typeId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -245,7 +262,7 @@ export interface paths {
         patch: operations["EventsOrganizerController_updateTicketType"];
         trace?: never;
     };
-    "/api/me/tickets": {
+    "/me/tickets": {
         parameters: {
             query?: never;
             header?: never;
@@ -262,7 +279,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/orders": {
+    "/orders": {
         parameters: {
             query?: never;
             header?: never;
@@ -279,7 +296,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/orders/{id}": {
+    "/orders/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -296,7 +313,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/payments/sepay/webhook": {
+    "/payments/sepay/webhook": {
         parameters: {
             query?: never;
             header?: never;
@@ -313,7 +330,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/events/{eventId}/checkin": {
+    "/events/{eventId}/checkin": {
         parameters: {
             query?: never;
             header?: never;
@@ -330,7 +347,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/scanner/events": {
+    "/scanner/events": {
         parameters: {
             query?: never;
             header?: never;
@@ -347,7 +364,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/organizer/events/{eventId}/staff": {
+    "/organizer/events/{eventId}/staff": {
         parameters: {
             query?: never;
             header?: never;
@@ -365,7 +382,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/organizer/staff/{id}/reconnect": {
+    "/organizer/staff/{id}/reconnect": {
         parameters: {
             query?: never;
             header?: never;
@@ -382,7 +399,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/organizer/staff/{id}": {
+    "/organizer/staff/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -399,7 +416,7 @@ export interface paths {
         patch: operations["StaffController_update"];
         trace?: never;
     };
-    "/api/admin/organizers": {
+    "/admin/organizers": {
         parameters: {
             query?: never;
             header?: never;
@@ -416,7 +433,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/organizers/{id}/status": {
+    "/admin/organizers/{id}/status": {
         parameters: {
             query?: never;
             header?: never;
@@ -431,6 +448,74 @@ export interface paths {
         head?: never;
         /** Approve, block, or restore an organizer account. */
         patch: operations["AdminController_updateStatus"];
+        trace?: never;
+    };
+    "/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List notifications for the current user */
+        get: operations["NotificationsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/unread-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the current unread notification count */
+        get: operations["NotificationsController_unreadCount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Mark one notification as read */
+        patch: operations["NotificationsController_markRead"];
+        trace?: never;
+    };
+    "/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark every notification as read */
+        post: operations["NotificationsController_markAllRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
 }
@@ -833,6 +918,29 @@ export interface components {
              */
             status: "ACTIVE" | "BLOCKED";
         };
+        NotificationDto: {
+            /** Format: uuid */
+            id: string;
+            type: string;
+            title: string;
+            body: string;
+            data: {
+                [key: string]: unknown;
+            } | null;
+            read: boolean;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        NotificationListDto: {
+            items: components["schemas"]["NotificationDto"][];
+            total: number;
+            unreadCount: number;
+            page: number;
+            limit: number;
+        };
+        UnreadNotificationCountDto: {
+            count: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -965,6 +1073,23 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AuthResponseDto"];
                 };
+            };
+        };
+    };
+    AuthController_logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -1778,6 +1903,92 @@ export interface operations {
             };
             /** @description code: NOT_FOUND */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    NotificationsController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationListDto"];
+                };
+            };
+        };
+    };
+    NotificationsController_unreadCount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnreadNotificationCountDto"];
+                };
+            };
+        };
+    };
+    NotificationsController_markRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationDto"];
+                };
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    NotificationsController_markAllRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -27,6 +27,10 @@ export function me() {
     return apiFetch<AuthUser>('/auth/me');
 }
 
+export function logout(): Promise<void> {
+    return apiFetch<void>('/auth/logout', { method: 'POST' });
+}
+
 /** Redeems a one-time connect code for a scanner-device session. */
 export function staffConnect(body: { code: string }): Promise<AuthResponse> {
     return apiFetch<AuthResponse>('/auth/staff-connect', {

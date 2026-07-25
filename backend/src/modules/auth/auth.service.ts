@@ -1,4 +1,4 @@
-import { createHash } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 
 import {
   ConflictException,
@@ -54,7 +54,7 @@ export class AuthService {
         },
       });
 
-      return this.buildSession(user);
+      return await this.buildSession(user);
     } catch (error) {
       // P2002: Unique constraint failed on the {constraint}
       if (
@@ -163,6 +163,13 @@ export class AuthService {
     return this.buildSession(record.staff, expiresIn);
   }
 
+  async logout(userId: string, sessionId: string): Promise<void> {
+    await this.prisma.authSession.updateMany({
+      where: { id: sessionId, userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+  }
+
   private invalidConnectCode(): UnauthorizedException {
     return new UnauthorizedException({
       code: ErrorCode.INVALID_CONNECT_CODE,
@@ -170,7 +177,7 @@ export class AuthService {
     });
   }
 
-  private buildSession(
+  private async buildSession(
     user: {
       id: string;
       email: string | null;
@@ -179,18 +186,33 @@ export class AuthService {
       status: UserStatus;
     },
     expiresInOverride?: StringValue,
-  ): AuthResponseDto {
+  ): Promise<AuthResponseDto> {
     const expiresIn =
       expiresInOverride ??
       this.config.get<StringValue>('jwt.expiresIn') ??
       '1d';
+    const sessionId = randomUUID();
     const accessToken = this.jwt.sign(
-      { sub: user.id },
+      { sub: user.id, sid: sessionId },
       {
         secret: this.config.getOrThrow<string>('jwt.secret'),
         expiresIn,
       },
     );
+
+    const payload = this.jwt.decode<{ exp?: number }>(accessToken);
+    if (!payload?.exp) {
+      throw new Error('Signed access token is missing an expiration.');
+    }
+
+    await this.prisma.authSession.create({
+      data: {
+        id: sessionId,
+        userId: user.id,
+        expiresAt: new Date(payload.exp * 1000),
+      },
+    });
+
     return { accessToken, user };
   }
 }
