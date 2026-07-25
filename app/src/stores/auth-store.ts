@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 import { type AuthUser, logout } from '@/lib/api/auth';
 import { tokenStorage } from '@/lib/auth/token-storage';
+import { queryClient } from '@/lib/query/query-client';
 import { userStorage } from '@/stores/user-storage';
 
 export type AuthState = {
@@ -31,6 +32,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   async signIn(token, user) {
+    queryClient.clear();
     await Promise.all([tokenStorage.set(token), userStorage.set(user)]);
     set({ token, user });
   },
@@ -43,6 +45,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       // server session will otherwise expire naturally with its JWT.
     }
     await Promise.all([tokenStorage.clear(), userStorage.clear()]);
+    queryClient.clear();
     set({ token: null, user: null });
   },
 }));

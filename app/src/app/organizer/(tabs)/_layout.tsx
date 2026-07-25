@@ -17,6 +17,7 @@ export default function OrganizerTabsLayout() {
   const unreadQuery = useQuery({
     queryKey: notificationsKeys.unread(),
     queryFn: getUnreadNotificationCount,
+    refetchOnMount: 'always',
   });
   const unreadCount = unreadQuery.data?.count;
 

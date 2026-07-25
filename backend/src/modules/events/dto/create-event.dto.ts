@@ -1,6 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsBoolean,
   IsEnum,
   IsISO8601,
   IsNotEmpty,
@@ -53,9 +52,4 @@ export class CreateEventDto {
   @IsString()
   @MaxLength(2048)
   coverImageUrl?: string | null;
-
-  @ApiPropertyOptional({ default: false })
-  @IsOptional()
-  @IsBoolean()
-  featured?: boolean;
 }

@@ -169,7 +169,6 @@ export default function EditEventScreen() {
                 startAt: new Date(event.startAt),
                 endAt: new Date(event.endAt),
                 coverImageUrl: event.coverImageUrl ?? '',
-                featured: event.featured,
               }}
               submitLabel={t('organizer.form.save')}
               submitting={update.isPending}

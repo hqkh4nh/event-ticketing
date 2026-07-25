@@ -48,6 +48,14 @@ export function NotificationCenterScreen() {
 
   function renderNotification(item: AppNotification) {
     const busy = markRead.isPending && markRead.variables === item.id;
+    const eventTitle = item.data?.eventTitle;
+    const content =
+      item.type === 'EVENT_FEATURED' && typeof eventTitle === 'string'
+        ? {
+            title: t('notifications.types.EVENT_FEATURED.title'),
+            body: t('notifications.types.EVENT_FEATURED.body', { eventTitle }),
+          }
+        : { title: item.title, body: item.body };
 
     return (
       <Pressable
@@ -80,7 +88,7 @@ export function NotificationCenterScreen() {
             <Text
               className="min-w-0 flex-1 font-semibold text-body-md text-on-surface"
             >
-              {item.title}
+              {content.title}
             </Text>
             {!item.read ? (
               <View
@@ -90,7 +98,7 @@ export function NotificationCenterScreen() {
             ) : null}
           </View>
           <Text className="font-sans text-label-md text-on-surface-variant">
-            {item.body}
+            {content.body}
           </Text>
           <Text className="font-sans text-label-sm text-outline">
             {new Intl.DateTimeFormat(i18n.language, {

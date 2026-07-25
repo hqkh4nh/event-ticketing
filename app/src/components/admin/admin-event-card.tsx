@@ -2,34 +2,31 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
 
 import { AdminStatusBadge } from '@/components/admin/admin-ui';
-import type { AdminEvent } from '@/lib/mock/admin';
+import type { AdminEvent } from '@/lib/api/admin';
 
 export function AdminEventCard({
   event,
   statusLabel,
   soldLabel,
   featuredLabel,
-  hideLabel,
-  showLabel,
   featureLabel,
   unfeatureLabel,
   formattedDate,
-  onToggleHidden,
   onToggleFeatured,
+  busy = false,
 }: {
   event: AdminEvent;
   statusLabel: string;
   soldLabel: string;
   featuredLabel: string;
-  hideLabel: string;
-  showLabel: string;
   featureLabel: string;
   unfeatureLabel: string;
   formattedDate: string;
-  onToggleHidden: () => void;
   onToggleFeatured: () => void;
+  busy?: boolean;
 }) {
-  const isHidden = event.status === 'HIDDEN';
+  const featureDisabled =
+    busy || (!event.featured && event.status !== 'PUBLISHED');
 
   return (
     <View className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest">
@@ -85,8 +82,13 @@ export function AdminEventCard({
       <View className="flex-row gap-2 border-t border-outline-variant p-3">
         <Pressable
           accessibilityRole="button"
+          accessibilityState={{ busy, disabled: featureDisabled }}
+          disabled={featureDisabled}
           onPress={onToggleFeatured}
-          className="h-touch-target-min flex-1 flex-row items-center justify-center gap-2 rounded-full border border-outline active:bg-surface-container"
+          className={[
+            'h-touch-target-min flex-1 flex-row items-center justify-center gap-2 rounded-full border border-outline active:bg-surface-container',
+            featureDisabled ? 'opacity-40' : '',
+          ].join(' ')}
         >
           <MaterialIcons
             name={event.featured ? 'star-outline' : 'star'}
@@ -95,27 +97,6 @@ export function AdminEventCard({
           />
           <Text className="font-semibold text-label-sm text-on-surface">
             {event.featured ? unfeatureLabel : featureLabel}
-          </Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          onPress={onToggleHidden}
-          className={[
-            'h-touch-target-min flex-1 flex-row items-center justify-center gap-2 rounded-full active:opacity-80',
-            isHidden ? 'bg-primary' : 'bg-warning-container',
-          ].join(' ')}
-        >
-          <MaterialIcons
-            name={isHidden ? 'visibility' : 'visibility-off'}
-            size={18}
-            className={isHidden ? 'text-on-primary' : 'text-on-warning-container'}
-          />
-          <Text
-            className={`font-semibold text-label-sm ${
-              isHidden ? 'text-on-primary' : 'text-on-warning-container'
-            }`}
-          >
-            {isHidden ? showLabel : hideLabel}
           </Text>
         </Pressable>
       </View>

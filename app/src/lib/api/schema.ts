@@ -450,6 +450,40 @@ export interface paths {
         patch: operations["AdminController_updateStatus"];
         trace?: never;
     };
+    "/admin/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List events for Admin moderation. */
+        get: operations["AdminController_listEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/events/{id}/featured": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Mark or unmark a published event as featured. */
+        patch: operations["AdminController_updateEventFeatured"];
+        trace?: never;
+    };
     "/notifications": {
         parameters: {
             query?: never;
@@ -638,8 +672,6 @@ export interface components {
              */
             endAt: string;
             coverImageUrl?: string | null;
-            /** @default false */
-            featured: boolean;
         };
         OrganizerTicketTypeDto: {
             /** Format: uuid */
@@ -699,8 +731,6 @@ export interface components {
              */
             endAt?: string;
             coverImageUrl?: string | null;
-            /** @default false */
-            featured: boolean;
         };
         CreateTicketTypeDto: {
             /** @example General Admission */
@@ -917,6 +947,31 @@ export interface components {
              * @enum {string}
              */
             status: "ACTIVE" | "BLOCKED";
+        };
+        AdminEventDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            organizerId: string;
+            organizerName: string;
+            title: string;
+            venue: string;
+            /** @enum {string} */
+            status: "DRAFT" | "PUBLISHED" | "CANCELLED" | "HIDDEN";
+            featured: boolean;
+            /** Format: date-time */
+            startAt: string;
+            sold: number;
+            capacity: number;
+        };
+        AdminEventListDto: {
+            items: components["schemas"]["AdminEventDto"][];
+            total: number;
+            page: number;
+            limit: number;
+        };
+        UpdateEventFeaturedDto: {
+            featured: boolean;
         };
         NotificationDto: {
             /** Format: uuid */
@@ -1892,6 +1947,77 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminOrganizerDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AdminController_listEvents: {
+        parameters: {
+            query?: {
+                status?: "DRAFT" | "PUBLISHED" | "CANCELLED" | "HIDDEN";
+                /** @description Case-insensitive match against event or organizer name. */
+                search?: string;
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminEventListDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AdminController_updateEventFeatured: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateEventFeaturedDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminEventDto"];
                 };
             };
             /** @description code: FORBIDDEN_ROLE */

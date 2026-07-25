@@ -7,9 +7,19 @@ export type AdminOrganizerList = components['schemas']['AdminOrganizerListDto'];
 export type AdminOrganizerStatus = AdminOrganizer['status'];
 export type UpdateAdminOrganizerStatus =
   components['schemas']['UpdateOrganizerStatusDto']['status'];
+export type AdminEvent = components['schemas']['AdminEventDto'];
+export type AdminEventList = components['schemas']['AdminEventListDto'];
+export type AdminEventStatus = AdminEvent['status'];
 
 export type ListAdminOrganizersQuery = {
   status?: AdminOrganizerStatus;
+  search?: string;
+  page?: number;
+  limit?: number;
+};
+
+export type ListAdminEventsQuery = {
+  status?: AdminEventStatus;
   search?: string;
   page?: number;
   limit?: number;
@@ -20,6 +30,9 @@ export const adminKeys = {
   organizers: () => [...adminKeys.all, 'organizers'] as const,
   organizerList: (query: ListAdminOrganizersQuery) =>
     [...adminKeys.organizers(), query] as const,
+  events: () => [...adminKeys.all, 'events'] as const,
+  eventList: (query: ListAdminEventsQuery) =>
+    [...adminKeys.events(), query] as const,
 };
 
 export function listAdminOrganizers(
@@ -47,6 +60,35 @@ export function updateAdminOrganizerStatus(
     {
       method: 'PATCH',
       body: JSON.stringify({ status }),
+    },
+  );
+}
+
+export function listAdminEvents(
+  query: ListAdminEventsQuery = {},
+): Promise<AdminEventList> {
+  const params = new URLSearchParams();
+
+  if (query.status) params.set('status', query.status);
+  if (query.search) params.set('search', query.search);
+  if (query.page) params.set('page', String(query.page));
+  if (query.limit) params.set('limit', String(query.limit));
+
+  const search = params.toString();
+  return apiFetch<AdminEventList>(
+    `/admin/events${search ? `?${search}` : ''}`,
+  );
+}
+
+export function updateAdminEventFeatured(
+  id: string,
+  featured: boolean,
+): Promise<AdminEvent> {
+  return apiFetch<AdminEvent>(
+    `/admin/events/${encodeURIComponent(id)}/featured`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ featured }),
     },
   );
 }

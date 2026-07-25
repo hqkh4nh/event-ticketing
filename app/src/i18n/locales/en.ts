@@ -96,6 +96,12 @@ export const en = {
     unread: 'Unread',
     unreadCount: '{{count}} unread',
     markAllRead: 'Mark all read',
+    types: {
+      EVENT_FEATURED: {
+        title: 'Event approved as featured',
+        body: '“{{eventTitle}}” has been approved as featured.',
+      },
+    },
   },
   profile: {
     title: 'Profile',
@@ -310,8 +316,15 @@ export const en = {
       resultCount: '{{count}} events',
       sold: '{{sold}}/{{capacity}} tickets sold',
       featured: 'Featured',
+      loadErrorTitle: 'Unable to load events',
       emptyTitle: 'No events found',
       emptyDescription: 'Try another filter or search term.',
+      confirmFeatureTitle: 'Feature this event?',
+      confirmFeatureDescription:
+        '“{{event}}” will appear in the featured section and its Organizer will be notified.',
+      confirmFeatureAction: 'Mark as featured',
+      featuredSuccess: 'Event featured and the Organizer was notified.',
+      unfeaturedSuccess: 'Event removed from the featured section.',
     },
     profile: {
       title: 'Admin account',

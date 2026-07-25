@@ -110,7 +110,6 @@ export class EventsOrganizerService {
         startAt: new Date(dto.startAt),
         endAt: new Date(dto.endAt),
         coverImageUrl: dto.coverImageUrl ?? null,
-        featured: dto.featured ?? false,
       },
       select: { id: true },
     });
@@ -144,7 +143,6 @@ export class EventsOrganizerService {
         ...(dto.coverImageUrl !== undefined
           ? { coverImageUrl: dto.coverImageUrl }
           : {}),
-        ...(dto.featured !== undefined ? { featured: dto.featured } : {}),
       },
     });
     return this.toDetail(id, organizerId);
@@ -187,7 +185,7 @@ export class EventsOrganizerService {
     assertTransition(event.status, EventStatus.DRAFT);
     await this.prisma.event.update({
       where: { id },
-      data: { status: EventStatus.DRAFT },
+      data: { status: EventStatus.DRAFT, featured: false },
     });
     return this.toDetail(id, organizerId);
   }
@@ -197,7 +195,7 @@ export class EventsOrganizerService {
     assertTransition(event.status, EventStatus.CANCELLED);
     await this.prisma.event.update({
       where: { id },
-      data: { status: EventStatus.CANCELLED },
+      data: { status: EventStatus.CANCELLED, featured: false },
     });
     return this.toDetail(id, organizerId);
   }

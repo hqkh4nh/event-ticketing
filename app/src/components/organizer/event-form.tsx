@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Switch, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/text-field';
@@ -25,7 +25,6 @@ export type EventFormValues = {
   startAt: Date;
   endAt: Date;
   coverImageUrl: string;
-  featured: boolean;
 };
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
@@ -42,7 +41,6 @@ function createEmptyValues(): EventFormValues {
     startAt,
     endAt: new Date(startAt.getTime() + ONE_HOUR_MS),
     coverImageUrl: '',
-    featured: false,
   };
 }
 
@@ -113,7 +111,6 @@ export function EventForm({
       startAt: values.startAt.toISOString(),
       endAt: values.endAt.toISOString(),
       coverImageUrl: values.coverImageUrl.trim() || null,
-      featured: values.featured,
     });
   }
 
@@ -215,16 +212,6 @@ export function EventForm({
         autoCapitalize="none"
         keyboardType="url"
       />
-
-      <View className="flex-row items-center justify-between py-1">
-        <Text className="font-medium text-label-md text-on-surface-variant">
-          {t('organizer.form.featured')}
-        </Text>
-        <Switch
-          value={values.featured}
-          onValueChange={(v) => set('featured', v)}
-        />
-      </View>
 
       {serverError ? (
         <View className="rounded-md bg-error-container px-4 py-3">

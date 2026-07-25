@@ -1,44 +1,107 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AdminEventCard } from '@/components/admin/admin-event-card';
 import { AdminScreenHeader } from '@/components/admin/admin-ui';
+import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { EmptyState } from '@/components/ui/empty-state';
 import {
-  ADMIN_EVENTS,
+  adminKeys,
   type AdminEvent,
   type AdminEventStatus,
-} from '@/lib/mock/admin';
+  listAdminEvents,
+  updateAdminEventFeatured,
+} from '@/lib/api/admin';
+import { toUserMessage } from '@/lib/api/error-message';
 
 type EventFilter = 'ALL' | AdminEventStatus;
 
-const FILTERS: EventFilter[] = ['ALL', 'PUBLISHED', 'DRAFT', 'HIDDEN', 'CANCELLED'];
+const FILTERS: EventFilter[] = [
+  'ALL',
+  'PUBLISHED',
+  'DRAFT',
+  'HIDDEN',
+  'CANCELLED',
+];
+const SEARCH_DEBOUNCE_MS = 300;
+const PAGE_LIMIT = 100;
+
+type Feedback = {
+  message: string;
+  tone: 'success' | 'error';
+};
 
 export default function AdminEventsScreen() {
   const { t, i18n } = useTranslation();
-  const [events, setEvents] = useState(ADMIN_EVENTS);
+  const queryClient = useQueryClient();
   const [filter, setFilter] = useState<EventFilter>('ALL');
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [pendingFeatureEvent, setPendingFeatureEvent] =
+    useState<AdminEvent | null>(null);
 
-  const filteredEvents = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+  useEffect(() => {
+    const timeout = setTimeout(
+      () => setDebouncedQuery(query.trim()),
+      SEARCH_DEBOUNCE_MS,
+    );
+    return () => clearTimeout(timeout);
+  }, [query]);
 
-    return events.filter((event) => {
-      const matchesFilter = filter === 'ALL' || event.status === filter;
-      const matchesQuery =
-        !normalizedQuery ||
-        event.title.toLowerCase().includes(normalizedQuery) ||
-        event.organizerName.toLowerCase().includes(normalizedQuery);
+  const queryParams = useMemo(
+    () => ({
+      status: filter === 'ALL' ? undefined : filter,
+      search: debouncedQuery || undefined,
+      page: 1,
+      limit: PAGE_LIMIT,
+    }),
+    [debouncedQuery, filter],
+  );
 
-      return matchesFilter && matchesQuery;
-    });
-  }, [events, filter, query]);
+  const eventsQuery = useQuery({
+    queryKey: adminKeys.eventList(queryParams),
+    queryFn: () => listAdminEvents(queryParams),
+  });
 
-  function updateEvent(id: string, update: (event: AdminEvent) => AdminEvent) {
-    setEvents((current) => current.map((event) => (event.id === id ? update(event) : event)));
-  }
+  const featuredMutation = useMutation({
+    mutationFn: ({
+      id,
+      featured,
+    }: {
+      id: string;
+      featured: boolean;
+    }) => updateAdminEventFeatured(id, featured),
+    onSuccess: (_, variables) => {
+      void queryClient.invalidateQueries({ queryKey: adminKeys.events() });
+      setPendingFeatureEvent(null);
+      setFeedback({
+        tone: 'success',
+        message: variables.featured
+          ? t('admin.events.featuredSuccess')
+          : t('admin.events.unfeaturedSuccess'),
+      });
+    },
+    onError: (error) => {
+      setPendingFeatureEvent(null);
+      setFeedback({ tone: 'error', message: toUserMessage(error, t) });
+    },
+  });
+
+  const events = eventsQuery.data?.items ?? [];
+  const total = eventsQuery.data?.total ?? 0;
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-surface">
@@ -54,12 +117,64 @@ export default function AdminEventsScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerClassName="gap-5 px-container-padding py-6"
         >
+          {feedback ? (
+            <View
+              accessibilityLiveRegion="polite"
+              className={[
+                'flex-row items-center gap-2 rounded-lg px-4 py-3',
+                feedback.tone === 'success'
+                  ? 'bg-success-container'
+                  : 'bg-error-container',
+              ].join(' ')}
+            >
+              <MaterialIcons
+                name={feedback.tone === 'success' ? 'check-circle' : 'error'}
+                size={19}
+                className={
+                  feedback.tone === 'success'
+                    ? 'text-on-success-container'
+                    : 'text-on-error-container'
+                }
+              />
+              <Text
+                className={[
+                  'min-w-0 flex-1 font-medium text-label-md',
+                  feedback.tone === 'success'
+                    ? 'text-on-success-container'
+                    : 'text-on-error-container',
+                ].join(' ')}
+              >
+                {feedback.message}
+              </Text>
+              <Pressable
+                accessibilityLabel={t('common.done')}
+                accessibilityRole="button"
+                hitSlop={10}
+                onPress={() => setFeedback(null)}
+              >
+                <MaterialIcons
+                  name="close"
+                  size={19}
+                  className={
+                    feedback.tone === 'success'
+                      ? 'text-on-success-container'
+                      : 'text-on-error-container'
+                  }
+                />
+              </Pressable>
+            </View>
+          ) : null}
+
           <View className="gap-2">
             <Text className="font-medium text-label-md text-on-surface-variant">
               {t('admin.events.searchLabel')}
             </Text>
             <View className="h-touch-target-min flex-row items-center gap-2 rounded-md border border-outline bg-surface-container-lowest px-4">
-              <MaterialIcons name="search" size={21} className="text-on-surface-variant" />
+              <MaterialIcons
+                name="search"
+                size={21}
+                className="text-on-surface-variant"
+              />
               <TextInput
                 accessibilityLabel={t('admin.events.searchLabel')}
                 className="min-w-0 flex-1 font-sans text-body-md text-on-surface"
@@ -75,7 +190,11 @@ export default function AdminEventsScreen() {
                   hitSlop={10}
                   onPress={() => setQuery('')}
                 >
-                  <MaterialIcons name="cancel" size={19} className="text-outline" />
+                  <MaterialIcons
+                    name="cancel"
+                    size={19}
+                    className="text-outline"
+                  />
                 </Pressable>
               ) : null}
             </View>
@@ -88,10 +207,6 @@ export default function AdminEventsScreen() {
           >
             {FILTERS.map((value) => {
               const selected = value === filter;
-              const count =
-                value === 'ALL'
-                  ? events.length
-                  : events.filter((event) => event.status === value).length;
 
               return (
                 <Pressable
@@ -100,7 +215,7 @@ export default function AdminEventsScreen() {
                   accessibilityState={{ selected }}
                   onPress={() => setFilter(value)}
                   className={[
-                    'h-touch-target-min flex-row items-center justify-center gap-2 rounded-full border px-4',
+                    'h-touch-target-min items-center justify-center rounded-full border px-4',
                     selected
                       ? 'border-primary bg-primary'
                       : 'border-outline-variant bg-surface-container-lowest',
@@ -113,13 +228,6 @@ export default function AdminEventsScreen() {
                   >
                     {t(`admin.eventFilters.${value}`)}
                   </Text>
-                  <Text
-                    className={`font-semibold text-label-sm ${
-                      selected ? 'text-on-primary' : 'text-on-surface-variant'
-                    }`}
-                  >
-                    {count}
-                  </Text>
                 </Pressable>
               );
             })}
@@ -130,61 +238,96 @@ export default function AdminEventsScreen() {
               {t('admin.events.resultTitle')}
             </Text>
             <Text className="font-medium text-label-md text-on-surface-variant">
-              {t('admin.events.resultCount', { count: filteredEvents.length })}
+              {t('admin.events.resultCount', { count: total })}
             </Text>
           </View>
 
-          {filteredEvents.length ? (
+          {eventsQuery.isPending ? (
+            <View className="items-center py-16">
+              <ActivityIndicator className="text-primary" />
+            </View>
+          ) : eventsQuery.isError ? (
+            <EmptyState
+              icon="cloud-off"
+              title={t('admin.events.loadErrorTitle')}
+              description={toUserMessage(eventsQuery.error, t)}
+              action={
+                <Button
+                  label={t('common.retry')}
+                  onPress={() => void eventsQuery.refetch()}
+                />
+              }
+            />
+          ) : events.length ? (
             <View className="flex-row flex-wrap justify-between gap-y-3">
-              {filteredEvents.map((event) => (
-                <View key={event.id} className="w-full md:w-[48%]">
-                  <AdminEventCard
-                    event={event}
-                  statusLabel={t(`admin.eventStatus.${event.status}`)}
-                  soldLabel={t('admin.events.sold', {
-                    sold: event.sold,
-                    capacity: event.capacity,
-                  })}
-                  featuredLabel={t('admin.events.featured')}
-                  hideLabel={t('admin.actions.hide')}
-                  showLabel={t('admin.actions.show')}
-                  featureLabel={t('admin.actions.feature')}
-                  unfeatureLabel={t('admin.actions.unfeature')}
-                  formattedDate={new Intl.DateTimeFormat(i18n.language, {
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                  }).format(new Date(event.startAt))}
-                  onToggleHidden={() =>
-                    updateEvent(event.id, (current) => ({
-                      ...current,
-                      status: current.status === 'HIDDEN' ? 'PUBLISHED' : 'HIDDEN',
-                    }))
-                  }
-                  onToggleFeatured={() =>
-                    updateEvent(event.id, (current) => ({
-                      ...current,
-                      featured: !current.featured,
-                    }))
-                  }
-                  />
-                </View>
-              ))}
+              {events.map((event) => {
+                const busy =
+                  featuredMutation.isPending &&
+                  featuredMutation.variables?.id === event.id;
+
+                return (
+                  <View key={event.id} className="w-full md:w-[48%]">
+                    <AdminEventCard
+                      event={event}
+                      busy={busy}
+                      statusLabel={t(`admin.eventStatus.${event.status}`)}
+                      soldLabel={t('admin.events.sold', {
+                        sold: event.sold,
+                        capacity: event.capacity,
+                      })}
+                      featuredLabel={t('admin.events.featured')}
+                      featureLabel={t('admin.actions.feature')}
+                      unfeatureLabel={t('admin.actions.unfeature')}
+                      formattedDate={new Intl.DateTimeFormat(i18n.language, {
+                        dateStyle: 'medium',
+                        timeStyle: 'short',
+                      }).format(new Date(event.startAt))}
+                      onToggleFeatured={() => {
+                        setFeedback(null);
+                        if (event.featured) {
+                          featuredMutation.mutate({
+                            id: event.id,
+                            featured: false,
+                          });
+                        } else {
+                          setPendingFeatureEvent(event);
+                        }
+                      }}
+                    />
+                  </View>
+                );
+              })}
             </View>
           ) : (
-            <View className="items-center gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest px-6 py-12">
-              <View className="h-14 w-14 items-center justify-center rounded-full bg-surface-container">
-                <MaterialIcons name="event-busy" size={28} className="text-on-surface-variant" />
-              </View>
-              <Text className="text-center font-semibold text-body-lg text-on-surface">
-                {t('admin.events.emptyTitle')}
-              </Text>
-              <Text className="text-center font-sans text-label-md text-on-surface-variant">
-                {t('admin.events.emptyDescription')}
-              </Text>
-            </View>
+            <EmptyState
+              icon="event-busy"
+              title={t('admin.events.emptyTitle')}
+              description={t('admin.events.emptyDescription')}
+            />
           )}
         </ScrollView>
       </View>
+
+      <ConfirmDialog
+        visible={pendingFeatureEvent !== null}
+        title={t('admin.events.confirmFeatureTitle')}
+        description={t('admin.events.confirmFeatureDescription', {
+          event: pendingFeatureEvent?.title ?? '',
+        })}
+        cancelLabel={t('common.cancel')}
+        confirmLabel={t('admin.events.confirmFeatureAction')}
+        icon="star"
+        tone="primary"
+        loading={featuredMutation.isPending}
+        onCancel={() => setPendingFeatureEvent(null)}
+        onConfirm={() => {
+          if (!pendingFeatureEvent) return;
+          featuredMutation.mutate({
+            id: pendingFeatureEvent.id,
+            featured: true,
+          });
+        }}
+      />
     </SafeAreaView>
   );
 }

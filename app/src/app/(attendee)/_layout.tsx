@@ -30,6 +30,7 @@ export default function AttendeeLayout() {
     queryKey: notificationsKeys.unread(),
     queryFn: getUnreadNotificationCount,
     enabled: Boolean(token),
+    refetchOnMount: 'always',
   });
   const unreadCount = unreadQuery.data?.count;
 

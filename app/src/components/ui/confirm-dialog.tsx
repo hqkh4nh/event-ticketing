@@ -1,5 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, Text, View } from 'react-native';
 
 import { themes } from '@/design/themes';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -13,6 +13,8 @@ type ConfirmDialogProps = {
   onCancel: () => void;
   onConfirm: () => void;
   icon?: keyof typeof MaterialIcons.glyphMap;
+  loading?: boolean;
+  tone?: 'error' | 'primary';
 };
 
 export function ConfirmDialog({
@@ -24,13 +26,18 @@ export function ConfirmDialog({
   onCancel,
   onConfirm,
   icon = 'warning-amber',
+  loading = false,
+  tone = 'error',
 }: ConfirmDialogProps) {
   const colorScheme = useColorScheme() ?? 'light';
+  const isPrimary = tone === 'primary';
 
   return (
     <Modal
       animationType="fade"
-      onRequestClose={onCancel}
+      onRequestClose={() => {
+        if (!loading) onCancel();
+      }}
       statusBarTranslucent
       transparent
       visible={visible}
@@ -40,7 +47,8 @@ export function ConfirmDialog({
           accessibilityLabel={cancelLabel}
           accessibilityRole="button"
           className="absolute inset-0 bg-black/60"
-          onPress={onCancel}
+          disabled={loading}
+          onPress={loading ? undefined : onCancel}
         />
 
         <View
@@ -48,8 +56,19 @@ export function ConfirmDialog({
           className="w-full items-center gap-4 rounded-xl border border-outline-variant bg-surface-container-lowest p-6"
           style={[themes[colorScheme], { maxWidth: 420 }]}
         >
-          <View className="h-14 w-14 items-center justify-center rounded-full bg-error-container">
-            <MaterialIcons name={icon} size={28} className="text-on-error-container" />
+          <View
+            className={[
+              'h-14 w-14 items-center justify-center rounded-full',
+              isPrimary ? 'bg-primary-container' : 'bg-error-container',
+            ].join(' ')}
+          >
+            <MaterialIcons
+              name={icon}
+              size={28}
+              className={
+                isPrimary ? 'text-on-primary-container' : 'text-on-error-container'
+              }
+            />
           </View>
 
           <View className="items-center gap-2">
@@ -64,17 +83,41 @@ export function ConfirmDialog({
           <View className="mt-2 w-full flex-row gap-3">
             <Pressable
               accessibilityRole="button"
-              className="h-cta-height flex-1 items-center justify-center rounded-ctl border border-outline active:scale-[0.98] active:opacity-80"
+              accessibilityState={{ disabled: loading }}
+              className={[
+                'h-cta-height flex-1 items-center justify-center rounded-ctl border border-outline active:scale-[0.98] active:opacity-80',
+                loading ? 'opacity-40' : '',
+              ].join(' ')}
+              disabled={loading}
               onPress={onCancel}
             >
               <Text className="font-semibold text-body-md text-on-surface">{cancelLabel}</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              className="h-cta-height flex-1 items-center justify-center rounded-ctl bg-error active:scale-[0.98] active:opacity-80"
+              accessibilityState={{ busy: loading, disabled: loading }}
+              className={[
+                'h-cta-height flex-1 items-center justify-center rounded-ctl active:scale-[0.98] active:opacity-80',
+                isPrimary ? 'bg-primary' : 'bg-error',
+                loading ? 'opacity-40' : '',
+              ].join(' ')}
+              disabled={loading}
               onPress={onConfirm}
             >
-              <Text className="font-semibold text-body-md text-on-error">{confirmLabel}</Text>
+              {loading ? (
+                <ActivityIndicator
+                  className={isPrimary ? 'text-on-primary' : 'text-on-error'}
+                />
+              ) : (
+                <Text
+                  className={[
+                    'font-semibold text-body-md',
+                    isPrimary ? 'text-on-primary' : 'text-on-error',
+                  ].join(' ')}
+                >
+                  {confirmLabel}
+                </Text>
+              )}
             </Pressable>
           </View>
         </View>

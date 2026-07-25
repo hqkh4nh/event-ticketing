@@ -95,6 +95,12 @@ export const vi = {
     unread: 'Chưa đọc',
     unreadCount: '{{count}} thông báo chưa đọc',
     markAllRead: 'Đọc tất cả',
+    types: {
+      EVENT_FEATURED: {
+        title: 'Sự kiện được duyệt nổi bật',
+        body: 'Sự kiện “{{eventTitle}}” đã được duyệt nổi bật.',
+      },
+    },
   },
   profile: {
     title: 'Hồ sơ',
@@ -309,8 +315,15 @@ export const vi = {
       resultCount: '{{count}} sự kiện',
       sold: 'Đã bán {{sold}}/{{capacity}} vé',
       featured: 'Nổi bật',
+      loadErrorTitle: 'Không thể tải danh sách sự kiện',
       emptyTitle: 'Không tìm thấy sự kiện',
       emptyDescription: 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm.',
+      confirmFeatureTitle: 'Đánh dấu sự kiện nổi bật?',
+      confirmFeatureDescription:
+        '“{{event}}” sẽ xuất hiện trong khu vực nổi bật và Organizer sẽ nhận được thông báo.',
+      confirmFeatureAction: 'Đánh dấu nổi bật',
+      featuredSuccess: 'Đã đánh dấu sự kiện nổi bật và gửi thông báo cho Organizer.',
+      unfeaturedSuccess: 'Đã bỏ đánh dấu nổi bật khỏi sự kiện.',
     },
     profile: {
       title: 'Tài khoản quản trị',
