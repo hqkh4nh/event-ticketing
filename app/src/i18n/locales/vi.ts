@@ -198,8 +198,17 @@ export const vi = {
       greeting: 'Xin chào, {{name}}',
       systemHealthy: 'Hệ thống đang hoạt động ổn định',
       systemHealthyDescription: 'Không ghi nhận sự cố nghiêm trọng trong 24 giờ qua.',
+      organizerApiConnected: 'Đã kết nối dữ liệu Organizer',
+      organizerApiConnectedDescription:
+        'Danh sách và trạng thái duyệt đang được đồng bộ từ hệ thống.',
       pendingTitle: 'Organizer chờ duyệt',
       pendingDescription: 'Các yêu cầu mới cần được kiểm tra.',
+      noPendingTitle: 'Không có yêu cầu chờ duyệt',
+      noPendingDescription: 'Tất cả yêu cầu Organizer đã được xử lý.',
+      integrationTitle: 'Dữ liệu quản trị',
+      integrationDescription: 'Trạng thái kết nối API của trang tổng quan.',
+      integrationNote:
+        'Sự kiện, Scanner và thanh toán sẽ hiển thị số liệu khi các API quản trị tương ứng được triển khai.',
       attentionTitle: 'Cần chú ý',
       attentionDescription: 'Những mục có thể ảnh hưởng đến vận hành.',
       paymentReviewTitle: 'Giao dịch cần đối soát',
@@ -216,6 +225,7 @@ export const vi = {
       activeScannersHelper: 'Tài khoản đang hoạt động',
       paymentReviews: 'Cần kiểm tra',
       paymentReviewsHelper: 'Giao dịch thanh toán',
+      notConnected: 'Chưa kết nối API',
     },
     actions: {
       viewAll: 'Xem tất cả',
@@ -247,9 +257,8 @@ export const vi = {
     },
     accountFilters: {
       PENDING: 'Chờ duyệt',
-      ORGANIZER: 'Organizer',
-      SCANNER: 'Scanner',
-      ATTENDEE: 'Attendee',
+      ACTIVE: 'Đang hoạt động',
+      BLOCKED: 'Đã khóa',
     },
     accounts: {
       title: 'Quản lý tài khoản',
@@ -259,6 +268,9 @@ export const vi = {
       clearSearch: 'Xóa nội dung tìm kiếm',
       resultTitle: 'Danh sách tài khoản',
       resultCount: '{{count}} tài khoản',
+      organizerDetail: '{{count}} sự kiện • Tham gia {{date}}',
+      emailUnavailable: 'Chưa có email',
+      loadErrorTitle: 'Không thể tải danh sách Organizer',
       emptyTitle: 'Không tìm thấy tài khoản',
       emptyDescription: 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm.',
       createScanner: 'Tạo tài khoản Scanner',

@@ -2,7 +2,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
 
 import { AdminStatusBadge } from '@/components/admin/admin-ui';
-import type { AdminAccount } from '@/lib/mock/admin';
+import type { AdminOrganizer } from '@/lib/api/admin';
 
 function initialsOf(fullName: string): string {
   return fullName
@@ -22,16 +22,18 @@ export function AdminAccountCard({
   approveLabel,
   blockLabel,
   restoreLabel,
+  busy = false,
   onApprove,
   onToggleBlock,
 }: {
-  account: AdminAccount;
+  account: AdminOrganizer;
   detail: string;
   roleLabel: string;
   statusLabel: string;
   approveLabel: string;
   blockLabel: string;
   restoreLabel: string;
+  busy?: boolean;
   onApprove: () => void;
   onToggleBlock: () => void;
 }) {
@@ -76,8 +78,13 @@ export function AdminAccountCard({
         {isPending ? (
           <Pressable
             accessibilityRole="button"
+            accessibilityState={{ busy, disabled: busy }}
+            disabled={busy}
             onPress={onApprove}
-            className="h-touch-target-min flex-1 flex-row items-center justify-center gap-2 rounded-ctl bg-primary active:opacity-80"
+            className={[
+              'h-touch-target-min flex-1 flex-row items-center justify-center gap-2 rounded-ctl bg-primary active:opacity-80',
+              busy ? 'opacity-40' : '',
+            ].join(' ')}
           >
             <MaterialIcons name="check" size={18} className="text-on-primary" />
             <Text className="font-semibold text-label-md text-on-primary">{approveLabel}</Text>
@@ -85,11 +92,14 @@ export function AdminAccountCard({
         ) : null}
         <Pressable
           accessibilityRole="button"
+          accessibilityState={{ busy, disabled: busy }}
+          disabled={busy}
           onPress={onToggleBlock}
           className={[
             'h-touch-target-min flex-row items-center justify-center gap-2 rounded-full border px-4 active:opacity-80',
             isPending ? '' : 'flex-1',
             isBlocked ? 'border-success' : 'border-outline',
+            busy ? 'opacity-40' : '',
           ].join(' ')}
         >
           <MaterialIcons

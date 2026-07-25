@@ -1,10 +1,9 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
+  ActivityIndicator,
   Pressable,
   ScrollView,
   Text,
@@ -14,75 +13,96 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AdminAccountCard } from '@/components/admin/admin-account-card';
-import { AdminIconButton, AdminScreenHeader } from '@/components/admin/admin-ui';
+import { AdminScreenHeader } from '@/components/admin/admin-ui';
 import { Button } from '@/components/ui/button';
-import { TextField } from '@/components/ui/text-field';
-import { themes } from '@/design/themes';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { EmptyState } from '@/components/ui/empty-state';
 import {
-  ADMIN_ACCOUNTS,
-  type AdminAccount,
-  type AdminAccountRole,
-} from '@/lib/mock/admin';
+  adminKeys,
+  listAdminOrganizers,
+  type AdminOrganizer,
+  type AdminOrganizerStatus,
+  updateAdminOrganizerStatus,
+  type UpdateAdminOrganizerStatus,
+} from '@/lib/api/admin';
+import { toUserMessage } from '@/lib/api/error-message';
 
-type AccountFilter = 'PENDING' | AdminAccountRole;
+const FILTERS: AdminOrganizerStatus[] = ['PENDING', 'ACTIVE', 'BLOCKED'];
+const SEARCH_DEBOUNCE_MS = 300;
+const PAGE_LIMIT = 100;
 
-const FILTERS: AccountFilter[] = ['PENDING', 'ORGANIZER', 'SCANNER', 'ATTENDEE'];
+type Feedback = {
+  message: string;
+  tone: 'success' | 'error';
+};
 
 export default function AdminAccountsScreen() {
-  const { t } = useTranslation();
-  const colorScheme = useColorScheme() ?? 'light';
-  const [accounts, setAccounts] = useState(ADMIN_ACCOUNTS);
-  const [filter, setFilter] = useState<AccountFilter>('PENDING');
+  const { t, i18n } = useTranslation();
+  const queryClient = useQueryClient();
+  const [filter, setFilter] = useState<AdminOrganizerStatus>('PENDING');
   const [query, setQuery] = useState('');
-  const [dialogVisible, setDialogVisible] = useState(false);
-  const [scannerName, setScannerName] = useState('');
-  const [scannerEmail, setScannerEmail] = useState('');
-  const [feedback, setFeedback] = useState<string | null>(null);
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
 
-  const filteredAccounts = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-
-    return accounts.filter((account) => {
-      const matchesFilter =
-        filter === 'PENDING' ? account.status === 'PENDING' : account.role === filter;
-      const matchesQuery =
-        !normalizedQuery ||
-        account.fullName.toLowerCase().includes(normalizedQuery) ||
-        account.email.toLowerCase().includes(normalizedQuery);
-
-      return matchesFilter && matchesQuery;
-    });
-  }, [accounts, filter, query]);
-
-  function updateStatus(id: string, status: AdminAccount['status']) {
-    setAccounts((current) =>
-      current.map((account) => (account.id === id ? { ...account, status } : account)),
+  useEffect(() => {
+    const timeout = setTimeout(
+      () => setDebouncedQuery(query.trim()),
+      SEARCH_DEBOUNCE_MS,
     );
-  }
+    return () => clearTimeout(timeout);
+  }, [query]);
 
-  function addScanner() {
-    const fullName = scannerName.trim();
-    const email = scannerEmail.trim().toLowerCase();
-    if (!fullName || !email) return;
+  const queryParams = useMemo(
+    () => ({
+      status: filter,
+      search: debouncedQuery || undefined,
+      page: 1,
+      limit: PAGE_LIMIT,
+    }),
+    [debouncedQuery, filter],
+  );
 
-    setAccounts((current) => [
-      {
-        id: `scanner-${Date.now()}`,
-        fullName,
-        email,
-        role: 'SCANNER',
-        status: 'ACTIVE',
-        createdAt: new Date().toISOString(),
-        detailKey: 'noAssignment',
-      },
-      ...current,
-    ]);
-    setFilter('SCANNER');
-    setScannerName('');
-    setScannerEmail('');
-    setDialogVisible(false);
-    setFeedback(t('admin.accounts.scannerCreated'));
+  const organizersQuery = useQuery({
+    queryKey: adminKeys.organizerList(queryParams),
+    queryFn: () => listAdminOrganizers(queryParams),
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: ({
+      id,
+      status,
+    }: {
+      id: string;
+      status: UpdateAdminOrganizerStatus;
+    }) => updateAdminOrganizerStatus(id, status),
+    onSuccess: (_, variables) => {
+      void queryClient.invalidateQueries({ queryKey: adminKeys.organizers() });
+      setFeedback({
+        tone: 'success',
+        message:
+          variables.status === 'BLOCKED'
+            ? t('admin.accounts.accountBlocked')
+            : filter === 'BLOCKED'
+              ? t('admin.accounts.accountRestored')
+              : t('admin.accounts.organizerApproved'),
+      });
+    },
+    onError: (error) => {
+      setFeedback({ tone: 'error', message: toUserMessage(error, t) });
+    },
+  });
+
+  const organizers = organizersQuery.data?.items ?? [];
+  const total = organizersQuery.data?.total ?? 0;
+
+  function organizerDetail(account: AdminOrganizer): string {
+    const joinedAt = new Intl.DateTimeFormat(i18n.language, {
+      dateStyle: 'medium',
+    }).format(new Date(account.createdAt));
+
+    return t('admin.accounts.organizerDetail', {
+      count: account.eventCount,
+      date: joinedAt,
+    });
   }
 
   return (
@@ -92,13 +112,6 @@ export default function AdminAccountsScreen() {
           eyebrow={t('admin.brand')}
           title={t('admin.accounts.title')}
           description={t('admin.accounts.description')}
-          action={
-            <AdminIconButton
-              icon="person-add"
-              label={t('admin.accounts.createScanner')}
-              onPress={() => setDialogVisible(true)}
-            />
-          }
         />
 
         <ScrollView
@@ -109,15 +122,31 @@ export default function AdminAccountsScreen() {
           {feedback ? (
             <View
               accessibilityLiveRegion="polite"
-              className="flex-row items-center gap-2 rounded-lg bg-success-container px-4 py-3"
+              className={[
+                'flex-row items-center gap-2 rounded-lg px-4 py-3',
+                feedback.tone === 'success'
+                  ? 'bg-success-container'
+                  : 'bg-error-container',
+              ].join(' ')}
             >
               <MaterialIcons
-                name="check-circle"
+                name={feedback.tone === 'success' ? 'check-circle' : 'error'}
                 size={19}
-                className="text-on-success-container"
+                className={
+                  feedback.tone === 'success'
+                    ? 'text-on-success-container'
+                    : 'text-on-error-container'
+                }
               />
-              <Text className="min-w-0 flex-1 font-medium text-label-md text-on-success-container">
-                {feedback}
+              <Text
+                className={[
+                  'min-w-0 flex-1 font-medium text-label-md',
+                  feedback.tone === 'success'
+                    ? 'text-on-success-container'
+                    : 'text-on-error-container',
+                ].join(' ')}
+              >
+                {feedback.message}
               </Text>
               <Pressable
                 accessibilityLabel={t('common.done')}
@@ -128,7 +157,11 @@ export default function AdminAccountsScreen() {
                 <MaterialIcons
                   name="close"
                   size={19}
-                  className="text-on-success-container"
+                  className={
+                    feedback.tone === 'success'
+                      ? 'text-on-success-container'
+                      : 'text-on-error-container'
+                  }
                 />
               </Pressable>
             </View>
@@ -142,6 +175,7 @@ export default function AdminAccountsScreen() {
               <MaterialIcons name="search" size={21} className="text-on-surface-variant" />
               <TextInput
                 accessibilityLabel={t('admin.accounts.searchLabel')}
+                autoCapitalize="none"
                 className="min-w-0 flex-1 font-sans text-body-md text-on-surface"
                 placeholder={t('admin.accounts.searchPlaceholder')}
                 placeholderClassName="text-on-surface-variant"
@@ -168,9 +202,6 @@ export default function AdminAccountsScreen() {
           >
             {FILTERS.map((value) => {
               const selected = value === filter;
-              const count = accounts.filter((account) =>
-                value === 'PENDING' ? account.status === 'PENDING' : account.role === value,
-              ).length;
 
               return (
                 <Pressable
@@ -179,7 +210,7 @@ export default function AdminAccountsScreen() {
                   accessibilityState={{ selected }}
                   onPress={() => setFilter(value)}
                   className={[
-                    'h-touch-target-min flex-row items-center justify-center gap-2 rounded-full border px-4',
+                    'h-touch-target-min items-center justify-center rounded-full border px-4',
                     selected
                       ? 'border-primary bg-primary'
                       : 'border-outline-variant bg-surface-container-lowest',
@@ -192,19 +223,6 @@ export default function AdminAccountsScreen() {
                   >
                     {t(`admin.accountFilters.${value}`)}
                   </Text>
-                  <View
-                    className={`rounded-full px-2 py-0.5 ${
-                      selected ? 'bg-on-primary/15' : 'bg-surface-container'
-                    }`}
-                  >
-                    <Text
-                      className={`font-semibold text-label-sm ${
-                        selected ? 'text-on-primary' : 'text-on-surface-variant'
-                      }`}
-                    >
-                      {count}
-                    </Text>
-                  </View>
                 </Pressable>
               );
             })}
@@ -215,119 +233,66 @@ export default function AdminAccountsScreen() {
               {t('admin.accounts.resultTitle')}
             </Text>
             <Text className="font-medium text-label-md text-on-surface-variant">
-              {t('admin.accounts.resultCount', { count: filteredAccounts.length })}
+              {t('admin.accounts.resultCount', { count: total })}
             </Text>
           </View>
 
-          {filteredAccounts.length ? (
-            <View className="gap-3">
-              {filteredAccounts.map((account) => (
-                <AdminAccountCard
-                  key={account.id}
-                  account={account}
-                  detail={t(`admin.accountDetails.${account.detailKey}`)}
-                  roleLabel={t(`admin.roles.${account.role}`)}
-                  statusLabel={t(`admin.status.${account.status}`)}
-                  approveLabel={t('admin.actions.approve')}
-                  blockLabel={t('admin.actions.block')}
-                  restoreLabel={t('admin.actions.restore')}
-                  onApprove={() => {
-                    updateStatus(account.id, 'ACTIVE');
-                    setFeedback(t('admin.accounts.organizerApproved'));
-                  }}
-                  onToggleBlock={() => {
-                    updateStatus(account.id, account.status === 'BLOCKED' ? 'ACTIVE' : 'BLOCKED');
-                    setFeedback(
-                      account.status === 'BLOCKED'
-                        ? t('admin.accounts.accountRestored')
-                        : t('admin.accounts.accountBlocked'),
-                    );
-                  }}
+          {organizersQuery.isPending ? (
+            <View className="items-center py-16">
+              <ActivityIndicator className="text-primary" />
+            </View>
+          ) : organizersQuery.isError ? (
+            <EmptyState
+              icon="cloud-off"
+              title={t('admin.accounts.loadErrorTitle')}
+              description={toUserMessage(organizersQuery.error, t)}
+              action={
+                <Button
+                  label={t('common.retry')}
+                  onPress={() => void organizersQuery.refetch()}
                 />
-              ))}
+              }
+            />
+          ) : organizers.length ? (
+            <View className="gap-3">
+              {organizers.map((account) => {
+                const busy =
+                  statusMutation.isPending &&
+                  statusMutation.variables?.id === account.id;
+
+                return (
+                  <AdminAccountCard
+                    key={account.id}
+                    account={account}
+                    busy={busy}
+                    detail={organizerDetail(account)}
+                    roleLabel={t('admin.roles.ORGANIZER')}
+                    statusLabel={t(`admin.status.${account.status}`)}
+                    approveLabel={t('admin.actions.approve')}
+                    blockLabel={t('admin.actions.block')}
+                    restoreLabel={t('admin.actions.restore')}
+                    onApprove={() =>
+                      statusMutation.mutate({ id: account.id, status: 'ACTIVE' })
+                    }
+                    onToggleBlock={() =>
+                      statusMutation.mutate({
+                        id: account.id,
+                        status: account.status === 'BLOCKED' ? 'ACTIVE' : 'BLOCKED',
+                      })
+                    }
+                  />
+                );
+              })}
             </View>
           ) : (
-            <View className="items-center gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest px-6 py-12">
-              <View className="h-14 w-14 items-center justify-center rounded-full bg-surface-container">
-                <MaterialIcons name="person-search" size={28} className="text-on-surface-variant" />
-              </View>
-              <Text className="text-center font-semibold text-body-lg text-on-surface">
-                {t('admin.accounts.emptyTitle')}
-              </Text>
-              <Text className="text-center font-sans text-label-md text-on-surface-variant">
-                {t('admin.accounts.emptyDescription')}
-              </Text>
-            </View>
+            <EmptyState
+              icon="person-search"
+              title={t('admin.accounts.emptyTitle')}
+              description={t('admin.accounts.emptyDescription')}
+            />
           )}
         </ScrollView>
       </View>
-
-      <Modal
-        animationType="fade"
-        onRequestClose={() => setDialogVisible(false)}
-        statusBarTranslucent
-        transparent
-        visible={dialogVisible}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          className="flex-1 justify-end"
-        >
-          <Pressable
-            accessibilityLabel={t('common.cancel')}
-            accessibilityRole="button"
-            className="absolute inset-0 bg-black/60"
-            onPress={() => setDialogVisible(false)}
-          />
-          <View
-            accessibilityViewIsModal
-            className="w-full self-center rounded-t-xl border border-outline-variant bg-surface p-5"
-            style={[themes[colorScheme], { maxWidth: 560 }]}
-          >
-            <View className="mb-5 flex-row items-center justify-between gap-3">
-              <View className="min-w-0 flex-1 gap-1">
-                <Text className="font-semibold text-headline-md text-on-surface">
-                  {t('admin.accounts.createScanner')}
-                </Text>
-                <Text className="font-sans text-label-sm text-on-surface-variant">
-                  {t('admin.accounts.createScannerDescription')}
-                </Text>
-              </View>
-              <Pressable
-                accessibilityLabel={t('common.cancel')}
-                accessibilityRole="button"
-                onPress={() => setDialogVisible(false)}
-                className="h-touch-target-min w-touch-target-min items-center justify-center rounded-full active:bg-surface-container"
-              >
-                <MaterialIcons name="close" size={23} className="text-on-surface" />
-              </Pressable>
-            </View>
-            <View className="gap-4">
-              <TextField
-                label={t('auth.field.fullName')}
-                placeholder={t('auth.field.fullNamePlaceholder')}
-                value={scannerName}
-                onChangeText={setScannerName}
-              />
-              <TextField
-                autoCapitalize="none"
-                autoComplete="email"
-                keyboardType="email-address"
-                label={t('auth.field.email')}
-                placeholder={t('auth.field.emailPlaceholder')}
-                value={scannerEmail}
-                onChangeText={setScannerEmail}
-              />
-              <Button
-                icon="person-add"
-                label={t('admin.accounts.createAction')}
-                disabled={!scannerName.trim() || !scannerEmail.trim()}
-                onPress={addScanner}
-              />
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
     </SafeAreaView>
   );
 }

@@ -1,12 +1,15 @@
 import { Tabs } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppTabIcon } from '@/components/navigation/app-tab-bar';
 import { useTokens } from '@/hooks/use-tokens';
+import { adminKeys, listAdminOrganizers } from '@/lib/api/admin';
 
 const SIDEBAR_BREAKPOINT = 900;
+const PENDING_COUNT_QUERY = { status: 'PENDING', page: 1, limit: 1 } as const;
 
 export default function AdminTabsLayout() {
   const { t } = useTranslation();
@@ -14,6 +17,11 @@ export default function AdminTabsLayout() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isWide = width >= SIDEBAR_BREAKPOINT;
+  const pendingQuery = useQuery({
+    queryKey: adminKeys.organizerList(PENDING_COUNT_QUERY),
+    queryFn: () => listAdminOrganizers(PENDING_COUNT_QUERY),
+  });
+  const pendingCount = pendingQuery.data?.total;
 
   return (
     <Tabs
@@ -69,7 +77,7 @@ export default function AdminTabsLayout() {
         name="accounts"
         options={{
           title: t('admin.tabs.accounts'),
-          tabBarBadge: 3,
+          tabBarBadge: pendingCount ? pendingCount : undefined,
           tabBarIcon: (props) => <AppTabIcon name="manage-accounts" {...props} />,
         }}
       />

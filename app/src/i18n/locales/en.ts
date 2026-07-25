@@ -199,8 +199,17 @@ export const en = {
       greeting: 'Hello, {{name}}',
       systemHealthy: 'All systems operational',
       systemHealthyDescription: 'No critical incidents were detected in the last 24 hours.',
+      organizerApiConnected: 'Organizer data connected',
+      organizerApiConnectedDescription:
+        'Approval requests and statuses are synchronized with the system.',
       pendingTitle: 'Organizers awaiting approval',
       pendingDescription: 'New requests that need review.',
+      noPendingTitle: 'No pending requests',
+      noPendingDescription: 'All organizer requests have been reviewed.',
+      integrationTitle: 'Admin data',
+      integrationDescription: 'API connection status for the overview.',
+      integrationNote:
+        'Event, Scanner, and payment metrics will appear when their admin APIs are available.',
       attentionTitle: 'Needs attention',
       attentionDescription: 'Items that may affect daily operations.',
       paymentReviewTitle: 'Payments need review',
@@ -217,6 +226,7 @@ export const en = {
       activeScannersHelper: 'Active accounts',
       paymentReviews: 'Review',
       paymentReviewsHelper: 'Payment transactions',
+      notConnected: 'API not connected',
     },
     actions: {
       viewAll: 'View all',
@@ -248,9 +258,8 @@ export const en = {
     },
     accountFilters: {
       PENDING: 'Pending',
-      ORGANIZER: 'Organizer',
-      SCANNER: 'Scanner',
-      ATTENDEE: 'Attendee',
+      ACTIVE: 'Active',
+      BLOCKED: 'Blocked',
     },
     accounts: {
       title: 'Account management',
@@ -260,6 +269,9 @@ export const en = {
       clearSearch: 'Clear search',
       resultTitle: 'Accounts',
       resultCount: '{{count}} accounts',
+      organizerDetail: '{{count}} events • Joined {{date}}',
+      emailUnavailable: 'No email provided',
+      loadErrorTitle: 'Unable to load organizers',
       emptyTitle: 'No accounts found',
       emptyDescription: 'Try another filter or search term.',
       createScanner: 'Create Scanner account',

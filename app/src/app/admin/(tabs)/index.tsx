@@ -1,7 +1,15 @@
 import { MaterialIcons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
@@ -10,10 +18,13 @@ import {
   AdminSectionHeader,
   AdminStatusBadge,
 } from '@/components/admin/admin-ui';
-import { ADMIN_ACCOUNTS, ADMIN_EVENTS } from '@/lib/mock/admin';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
+import { adminKeys, listAdminOrganizers } from '@/lib/api/admin';
+import { toUserMessage } from '@/lib/api/error-message';
 import { useAuthStore } from '@/stores/auth-store';
 
-const pendingAccounts = ADMIN_ACCOUNTS.filter((account) => account.status === 'PENDING');
+const PENDING_QUERY = { status: 'PENDING', page: 1, limit: 3 } as const;
 
 export default function AdminOverviewScreen() {
   const { t, i18n } = useTranslation();
@@ -21,10 +32,14 @@ export default function AdminOverviewScreen() {
   const { width } = useWindowDimensions();
   const user = useAuthStore((state) => state.user);
   const metricWidth = width >= 1160 ? '23.5%' : width >= 620 ? '48.5%' : '47.5%';
-  const publishedEvents = ADMIN_EVENTS.filter((event) => event.status === 'PUBLISHED').length;
-  const activeScanners = ADMIN_ACCOUNTS.filter(
-    (account) => account.role === 'SCANNER' && account.status === 'ACTIVE',
-  ).length;
+
+  const pendingQuery = useQuery({
+    queryKey: adminKeys.organizerList(PENDING_QUERY),
+    queryFn: () => listAdminOrganizers(PENDING_QUERY),
+  });
+
+  const pendingAccounts = pendingQuery.data?.items ?? [];
+  const pendingTotal = pendingQuery.data?.total;
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-surface">
@@ -54,14 +69,14 @@ export default function AdminOverviewScreen() {
         >
           <View className="flex-row items-center gap-3 rounded-xl border border-success/40 bg-success-container p-4">
             <View className="h-11 w-11 items-center justify-center rounded-full bg-success">
-              <MaterialIcons name="verified-user" size={22} className="text-on-success" />
+              <MaterialIcons name="cloud-done" size={22} className="text-on-success" />
             </View>
             <View className="min-w-0 flex-1 gap-0.5">
               <Text className="font-semibold text-body-md text-on-success-container">
-                {t('admin.overview.systemHealthy')}
+                {t('admin.overview.organizerApiConnected')}
               </Text>
               <Text className="font-sans text-label-sm text-on-success-container">
-                {t('admin.overview.systemHealthyDescription')}
+                {t('admin.overview.organizerApiConnectedDescription')}
               </Text>
             </View>
           </View>
@@ -70,7 +85,7 @@ export default function AdminOverviewScreen() {
             <AdminMetricCard
               icon="pending-actions"
               label={t('admin.metrics.pendingOrganizers')}
-              value={String(pendingAccounts.length)}
+              value={pendingTotal === undefined ? '—' : String(pendingTotal)}
               helper={t('admin.metrics.pendingOrganizersHelper')}
               tone="warning"
               style={{ width: metricWidth }}
@@ -78,23 +93,23 @@ export default function AdminOverviewScreen() {
             <AdminMetricCard
               icon="event-available"
               label={t('admin.metrics.publishedEvents')}
-              value={String(publishedEvents)}
-              helper={t('admin.metrics.publishedEventsHelper')}
+              value="—"
+              helper={t('admin.metrics.notConnected')}
               tone="success"
               style={{ width: metricWidth }}
             />
             <AdminMetricCard
               icon="qr-code-scanner"
               label={t('admin.metrics.activeScanners')}
-              value={String(activeScanners)}
-              helper={t('admin.metrics.activeScannersHelper')}
+              value="—"
+              helper={t('admin.metrics.notConnected')}
               style={{ width: metricWidth }}
             />
             <AdminMetricCard
               icon="receipt-long"
               label={t('admin.metrics.paymentReviews')}
-              value="2"
-              helper={t('admin.metrics.paymentReviewsHelper')}
+              value="—"
+              helper={t('admin.metrics.notConnected')}
               tone="error"
               style={{ width: metricWidth }}
             />
@@ -107,91 +122,88 @@ export default function AdminOverviewScreen() {
               actionLabel={t('admin.actions.viewAll')}
               onAction={() => router.push('/admin/accounts')}
             />
-            <View className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest">
-              {pendingAccounts.slice(0, 3).map((account, index) => (
-                <Pressable
-                  key={account.id}
-                  accessibilityRole="button"
-                  onPress={() => router.push('/admin/accounts')}
-                  className={[
-                    'min-h-touch-target-min flex-row items-center gap-3 p-4 active:bg-surface-container-low',
-                    index === 0 ? '' : 'border-t border-outline-variant',
-                  ].join(' ')}
-                >
-                  <View className="h-10 w-10 items-center justify-center rounded-full bg-warning-container">
-                    <MaterialIcons
-                      name="person"
-                      size={20}
-                      className="text-on-warning-container"
-                    />
-                  </View>
-                  <View className="min-w-0 flex-1 gap-0.5">
-                    <Text
-                      numberOfLines={1}
-                      className="font-medium text-body-md text-on-surface"
-                    >
-                      {account.fullName}
-                    </Text>
-                    <Text
-                      numberOfLines={1}
-                      className="font-sans text-label-sm text-on-surface-variant"
-                    >
-                      {t(`admin.accountDetails.${account.detailKey}`)}
-                    </Text>
-                  </View>
-                  <AdminStatusBadge
-                    status="PENDING"
-                    label={t('admin.status.PENDING')}
+
+            {pendingQuery.isPending ? (
+              <View className="items-center py-10">
+                <ActivityIndicator className="text-primary" />
+              </View>
+            ) : pendingQuery.isError ? (
+              <EmptyState
+                icon="cloud-off"
+                title={t('admin.accounts.loadErrorTitle')}
+                description={toUserMessage(pendingQuery.error, t)}
+                action={
+                  <Button
+                    label={t('common.retry')}
+                    onPress={() => void pendingQuery.refetch()}
                   />
-                </Pressable>
-              ))}
-            </View>
+                }
+              />
+            ) : pendingAccounts.length ? (
+              <View className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest">
+                {pendingAccounts.map((account, index) => (
+                  <Pressable
+                    key={account.id}
+                    accessibilityRole="button"
+                    onPress={() => router.push('/admin/accounts')}
+                    className={[
+                      'min-h-touch-target-min flex-row items-center gap-3 p-4 active:bg-surface-container-low',
+                      index === 0 ? '' : 'border-t border-outline-variant',
+                    ].join(' ')}
+                  >
+                    <View className="h-10 w-10 items-center justify-center rounded-full bg-warning-container">
+                      <MaterialIcons
+                        name="person"
+                        size={20}
+                        className="text-on-warning-container"
+                      />
+                    </View>
+                    <View className="min-w-0 flex-1 gap-0.5">
+                      <Text
+                        numberOfLines={1}
+                        className="font-medium text-body-md text-on-surface"
+                      >
+                        {account.fullName}
+                      </Text>
+                      <Text
+                        numberOfLines={1}
+                        className="font-sans text-label-sm text-on-surface-variant"
+                      >
+                        {account.email ?? t('admin.accounts.emailUnavailable')}
+                      </Text>
+                    </View>
+                    <AdminStatusBadge
+                      status="PENDING"
+                      label={t('admin.status.PENDING')}
+                    />
+                  </Pressable>
+                ))}
+              </View>
+            ) : (
+              <EmptyState
+                icon="task-alt"
+                title={t('admin.overview.noPendingTitle')}
+                description={t('admin.overview.noPendingDescription')}
+              />
+            )}
           </View>
 
           <View className="gap-3">
             <AdminSectionHeader
-              title={t('admin.overview.attentionTitle')}
-              description={t('admin.overview.attentionDescription')}
+              title={t('admin.overview.integrationTitle')}
+              description={t('admin.overview.integrationDescription')}
             />
-            <View className="gap-3">
-              <View className="flex-row items-center gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
-                <View className="h-11 w-11 items-center justify-center rounded-lg bg-error-container">
-                  <MaterialIcons
-                    name="account-balance-wallet"
-                    size={22}
-                    className="text-on-error-container"
-                  />
-                </View>
-                <View className="min-w-0 flex-1 gap-0.5">
-                  <Text className="font-medium text-body-md text-on-surface">
-                    {t('admin.overview.paymentReviewTitle')}
-                  </Text>
-                  <Text className="font-sans text-label-sm text-on-surface-variant">
-                    {t('admin.overview.paymentReviewDescription')}
-                  </Text>
-                </View>
-                <View className="rounded-full bg-error-container px-2.5 py-1">
-                  <Text className="font-semibold text-label-sm text-on-error-container">2</Text>
-                </View>
+            <View className="flex-row items-center gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
+              <View className="h-11 w-11 items-center justify-center rounded-lg bg-primary-container">
+                <MaterialIcons
+                  name="hub"
+                  size={22}
+                  className="text-on-primary-container"
+                />
               </View>
-              <View className="flex-row items-center gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
-                <View className="h-11 w-11 items-center justify-center rounded-lg bg-warning-container">
-                  <MaterialIcons
-                    name="visibility-off"
-                    size={22}
-                    className="text-on-warning-container"
-                  />
-                </View>
-                <View className="min-w-0 flex-1 gap-0.5">
-                  <Text className="font-medium text-body-md text-on-surface">
-                    {t('admin.overview.hiddenEventTitle')}
-                  </Text>
-                  <Text className="font-sans text-label-sm text-on-surface-variant">
-                    {t('admin.overview.hiddenEventDescription')}
-                  </Text>
-                </View>
-                <MaterialIcons name="chevron-right" size={22} className="text-outline" />
-              </View>
+              <Text className="min-w-0 flex-1 font-sans text-label-md text-on-surface-variant">
+                {t('admin.overview.integrationNote')}
+              </Text>
             </View>
           </View>
         </ScrollView>
