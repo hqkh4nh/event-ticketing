@@ -18,6 +18,7 @@ import { FeaturedEventCarousel } from '@/components/event/featured-event-carouse
 import { FeaturedEventCard } from '@/components/event/featured-event-card';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
+import { useTokens } from '@/hooks/use-tokens';
 import {
   eventsKeys,
   listEvents,
@@ -43,6 +44,7 @@ function Separator() {
 
 export default function HomeScreen() {
   const { t } = useTranslation();
+  const tokens = useTokens();
   const { width } = useWindowDimensions();
   // Phones keep the single-column reading list; desktop widens into a poster
   // grid. Columns track the wide breakpoint the nav already switches at.
@@ -138,10 +140,11 @@ export default function HomeScreen() {
               value={query}
               onChangeText={setQuery}
               placeholder={t('home.searchPlaceholder')}
-              placeholderClassName="text-on-surface-variant"
+              placeholderTextColor={tokens['on-surface-variant']}
               accessibilityLabel={t('home.searchPlaceholder')}
               returnKeyType="search"
-              className="h-full flex-1 font-sans text-body-md text-on-surface"
+              textAlignVertical="center"
+              className="h-full flex-1 py-0 font-sans text-body-md text-on-surface"
             />
           </View>
         </View>
