@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Wordmark } from '@/components/brand/logo-mark';
 import { EventListItem } from '@/components/event/event-list-item';
+import { FeaturedEventCarousel } from '@/components/event/featured-event-carousel';
 import { FeaturedEventCard } from '@/components/event/featured-event-card';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -27,9 +28,6 @@ import { toUserMessage } from '@/lib/api/error-message';
 const CONTAINER_PADDING = 20;
 const SEARCH_DEBOUNCE_MS = 300;
 
-// Bleeds past the list padding so the carousel runs to the screen edge.
-const FEATURED_LIST_STYLE = { marginHorizontal: -CONTAINER_PADDING } as const;
-const FEATURED_CONTENT_STYLE = { gap: 16, paddingHorizontal: CONTAINER_PADDING } as const;
 const LIST_CONTENT_STYLE = { paddingHorizontal: CONTAINER_PADDING, paddingVertical: 24 } as const;
 const GRID_CONTENT_STYLE = {
   paddingHorizontal: CONTAINER_PADDING,
@@ -71,7 +69,10 @@ export default function HomeScreen() {
   });
 
   const events = eventsQuery.data ?? [];
-  const featured = events.filter((event) => event.featured);
+  const featured = useMemo(
+    () => events.filter((event) => event.featured),
+    [events],
+  );
 
   const listHeader =
     eventsQuery.isPending || (eventsQuery.isError && events.length === 0) ? null : (
@@ -82,15 +83,7 @@ export default function HomeScreen() {
               {t('home.featured')}
             </Text>
 
-            <FlatList
-              horizontal
-              data={featured}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => <FeaturedEventCard event={item} />}
-              showsHorizontalScrollIndicator={false}
-              style={FEATURED_LIST_STYLE}
-              contentContainerStyle={FEATURED_CONTENT_STYLE}
-            />
+            <FeaturedEventCarousel events={featured} />
           </>
         )}
 

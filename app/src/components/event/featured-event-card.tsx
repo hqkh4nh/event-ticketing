@@ -21,15 +21,18 @@ const SCRIM = palette.dark.surface;
  * poster on a dark scrim so the image leads and the type stays legible, with a
  * single category chip in the corner - the poster carries the rest.
  */
-/** `fullWidth` fills the parent (grid cell); otherwise it is a 280px carousel card. */
+/** `fullWidth` fills the parent; `posterHeight` creates the taller carousel variant. */
 export function FeaturedEventCard({
   event,
   fullWidth = false,
+  posterHeight,
 }: {
   event: EventSummary;
   fullWidth?: boolean;
+  posterHeight?: number;
 }) {
   const { t, i18n } = useTranslation();
+  const isCarousel = posterHeight !== undefined;
 
   const isFree = event.minPriceVnd === 0;
   const priceLabel = isFree
@@ -44,28 +47,39 @@ export function FeaturedEventCard({
       >
         <TicketSurface
           stub={
-            <View className="gap-2 p-4">
-              <View className="flex-row items-center gap-1">
+            <View className={isCarousel ? 'gap-3 px-5 py-4' : 'gap-2 p-4'}>
+              <View className="flex-row items-center gap-2">
                 <MaterialIcons
                   name="calendar-today"
-                  size={14}
+                  size={isCarousel ? 16 : 14}
                   className="text-on-surface-variant"
                 />
                 <Text
                   numberOfLines={1}
-                  className="flex-1 font-sans text-label-md text-on-surface-variant"
+                  className={[
+                    'flex-1 font-sans text-on-surface-variant',
+                    isCarousel ? 'text-body-md' : 'text-label-md',
+                  ].join(' ')}
                 >
                   {formatDayMonth(event.startAt, i18n.language)} · {event.city}
                 </Text>
               </View>
 
-              <NumericText className="font-semibold text-label-md text-primary">
+              <NumericText
+                className={[
+                  'font-semibold text-primary',
+                  isCarousel ? 'text-body-md' : 'text-label-md',
+                ].join(' ')}
+              >
                 {priceLabel}
               </NumericText>
             </View>
           }
         >
-          <View className="relative h-40">
+          <View
+            className={isCarousel ? 'relative' : 'relative h-40'}
+            style={isCarousel ? { height: posterHeight } : undefined}
+          >
             {event.coverImageUrl ? (
               <Image
                 source={event.coverImageUrl}
@@ -80,7 +94,12 @@ export function FeaturedEventCard({
             )}
 
             {/* Dark scrim, transparent at the top, so the overlaid title reads. */}
-            <View className="absolute inset-x-0 bottom-0 h-24">
+            <View
+              className={[
+                'absolute inset-x-0 bottom-0',
+                isCarousel ? 'h-32' : 'h-24',
+              ].join(' ')}
+            >
               <Svg width="100%" height="100%">
                 <Defs>
                   <LinearGradient id="posterScrim" x1="0" y1="0" x2="0" y2="1">
@@ -92,13 +111,21 @@ export function FeaturedEventCard({
               </Svg>
             </View>
 
-            <View className="absolute left-3 top-3">
+            <View
+              className={[
+                'absolute',
+                isCarousel ? 'left-4 top-4' : 'left-3 top-3',
+              ].join(' ')}
+            >
               <Chip tone="primary" label={t(`event.category.${event.category}`)} />
             </View>
 
             <Text
               numberOfLines={2}
-              className="absolute inset-x-0 bottom-0 p-3 font-display text-body-lg text-white"
+              className={[
+                'absolute inset-x-0 bottom-0 font-display text-white',
+                isCarousel ? 'p-4 text-headline-md' : 'p-3 text-body-lg',
+              ].join(' ')}
             >
               {event.title}
             </Text>

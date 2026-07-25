@@ -13,6 +13,8 @@ export const en = {
     emptyDescription: 'There are no upcoming events yet.',
     noResults: 'Nothing matches "{{query}}". Try a shorter keyword or a city name.',
     loadErrorTitle: 'Unable to load events',
+    featuredCarousel: '{{count}} featured events',
+    featuredSlide: 'Featured event {{current}} of {{total}}',
   },
   tabs: {
     explore: 'Explore',

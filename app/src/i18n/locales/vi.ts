@@ -13,6 +13,8 @@ export const vi = {
     emptyDescription: 'Hiện chưa có sự kiện nào sắp diễn ra.',
     noResults: 'Không có kết quả cho "{{query}}". Thử từ khoá ngắn hơn hoặc tên thành phố.',
     loadErrorTitle: 'Không tải được sự kiện',
+    featuredCarousel: '{{count}} sự kiện nổi bật',
+    featuredSlide: 'Sự kiện nổi bật {{current}} trên {{total}}',
   },
   tabs: {
     explore: 'Khám phá',
