@@ -18,6 +18,7 @@ import { CheckinModule } from './modules/checkin/checkin.module';
 import { StaffModule } from './modules/staff/staff.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
     RealtimeModule,
     CheckinModule,
     StaffModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: JwtAuthGuard }],

@@ -399,6 +399,40 @@ export interface paths {
         patch: operations["StaffController_update"];
         trace?: never;
     };
+    "/api/admin/organizers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List organizers for approval and account management. */
+        get: operations["AdminController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/organizers/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Approve, block, or restore an organizer account. */
+        patch: operations["AdminController_updateStatus"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -772,6 +806,32 @@ export interface components {
             status?: "ACTIVE" | "BLOCKED";
             /** @example Gate 1 */
             label?: string;
+        };
+        AdminOrganizerDto: {
+            /** Format: uuid */
+            id: string;
+            email: string | null;
+            fullName: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "PENDING" | "BLOCKED";
+            eventCount: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        AdminOrganizerListDto: {
+            items: components["schemas"]["AdminOrganizerDto"][];
+            total: number;
+            page: number;
+            limit: number;
+        };
+        UpdateOrganizerStatusDto: {
+            /**
+             * @description ACTIVE approves or restores the organizer; BLOCKED revokes access.
+             * @enum {string}
+             */
+            status: "ACTIVE" | "BLOCKED";
         };
     };
     responses: never;
@@ -1639,6 +1699,77 @@ export interface operations {
                 };
             };
             /** @description code: FORBIDDEN_ROLE | ACCOUNT_PENDING_APPROVAL */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AdminController_list: {
+        parameters: {
+            query?: {
+                status?: "ACTIVE" | "PENDING" | "BLOCKED";
+                /** @description Case-insensitive match against full name or email. */
+                search?: string;
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminOrganizerListDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AdminController_updateStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateOrganizerStatusDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminOrganizerDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE */
             403: {
                 headers: {
                     [name: string]: unknown;
