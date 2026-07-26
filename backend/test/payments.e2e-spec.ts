@@ -83,6 +83,7 @@ describe('Payments / SePay webhook (e2e)', () => {
 
   let organizerToken: string;
   let buyerToken: string;
+  let buyerId: string;
   let adminId: string;
 
   async function register(role: 'ATTENDEE' | 'ORGANIZER', label: string) {
@@ -152,6 +153,11 @@ describe('Payments / SePay webhook (e2e)', () => {
   const ticketCount = (orderId: string) =>
     prisma.ticket.count({ where: { orderItem: { orderId } } });
 
+  const issuedNotifications = (orderId: string) =>
+    prisma.notification.findMany({
+      where: { userId: buyerId, dedupeKey: `ticket-issued:${orderId}` },
+    });
+
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -167,7 +173,9 @@ describe('Payments / SePay webhook (e2e)', () => {
       data: { status: 'ACTIVE' },
     });
     organizerToken = organizer.token;
-    buyerToken = (await register('ATTENDEE', 'buyer')).token;
+    const buyer = await register('ATTENDEE', 'buyer');
+    buyerToken = buyer.token;
+    buyerId = buyer.id;
     // ADMIN cannot self-sign-up; register then promote directly.
     const admin = await register('ATTENDEE', 'admin');
     await prisma.user.update({
@@ -238,6 +246,15 @@ describe('Payments / SePay webhook (e2e)', () => {
     });
     expect(payment?.status).toBe('MATCHED');
     expect(payment?.orderId).toBe(orderId);
+
+    const notifications = await issuedNotifications(orderId);
+    expect(notifications).toHaveLength(1);
+    expect(notifications[0].type).toBe('TICKET_ISSUED');
+    expect(notifications[0].data).toMatchObject({
+      orderId,
+      eventId,
+      ticketCount: 2,
+    });
   });
 
   it('does not issue twice when the same txn id is replayed', async () => {
@@ -266,6 +283,7 @@ describe('Payments / SePay webhook (e2e)', () => {
     expect(
       await prisma.payment.count({ where: { sepayTxnId: String(txn) } }),
     ).toBe(1);
+    expect(await issuedNotifications(orderId)).toHaveLength(1);
   });
 
   it('records UNMATCHED and issues nothing when the amount is wrong', async () => {
@@ -346,9 +364,13 @@ describe('Payments / SePay webhook (e2e)', () => {
     expect(payment?.status).toBe('REVIEW_REQUIRED');
     expect(payment?.reviewReason).toBeTruthy();
 
-    const adminNote = await prisma.notification.count({
-      where: { userId: adminId, type: 'PAYMENT_REVIEW_REQUIRED' },
+    const adminNote = await prisma.notification.findFirst({
+      where: {
+        userId: adminId,
+        dedupeKey: `payment-review:${txn}:${adminId}`,
+      },
     });
-    expect(adminNote).toBeGreaterThan(0);
+    expect(adminNote?.type).toBe('PAYMENT_REVIEW_REQUIRED');
+    expect(adminNote?.data).toEqual({ sepayTxnId: String(txn) });
   });
 });

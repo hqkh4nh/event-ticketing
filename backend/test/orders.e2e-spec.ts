@@ -137,6 +137,9 @@ describe('Orders / free ticket booking (e2e)', () => {
 
   afterAll(async () => {
     if (userIds.length) {
+      await prisma.notification.deleteMany({
+        where: { userId: { in: userIds } },
+      });
       await prisma.ticket.deleteMany({
         where: { orderItem: { order: { buyerId: { in: userIds } } } },
       });

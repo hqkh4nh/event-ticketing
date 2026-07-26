@@ -1,7 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { ErrorCode } from '../../common/errors/error-code';
-import { Prisma, type Notification } from '../../generated/prisma';
+import {
+  Prisma,
+  type Notification,
+  type NotificationType,
+} from '../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ListNotificationsQueryDto } from './dto/list-notifications-query.dto';
 import {
@@ -12,9 +16,7 @@ import {
 
 export type CreateNotificationInput = {
   userId: string;
-  type: string;
-  title: string;
-  body: string;
+  type: NotificationType;
   data?: Prisma.InputJsonValue;
   dedupeKey?: string;
 };
@@ -81,13 +83,18 @@ export class NotificationsService {
     });
   }
 
-  async create(input: CreateNotificationInput): Promise<NotificationDto> {
-    const notification = await this.prisma.notification.create({
+  /**
+   * Creates a notification. Pass the caller's transaction client to have it
+   * commit atomically with the work it announces.
+   */
+  async create(
+    input: CreateNotificationInput,
+    client: Prisma.TransactionClient = this.prisma,
+  ): Promise<NotificationDto> {
+    const notification = await client.notification.create({
       data: {
         userId: input.userId,
         type: input.type,
-        title: input.title,
-        body: input.body,
         ...(input.data !== undefined ? { data: input.data } : {}),
         ...(input.dedupeKey ? { dedupeKey: input.dedupeKey } : {}),
       },
@@ -101,8 +108,6 @@ function toDto(notification: Notification): NotificationDto {
   return {
     id: notification.id,
     type: notification.type,
-    title: notification.title,
-    body: notification.body,
     data: toObject(notification.data),
     read: notification.read,
     createdAt: notification.createdAt.toISOString(),

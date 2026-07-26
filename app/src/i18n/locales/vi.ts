@@ -98,9 +98,21 @@ export const vi = {
     unreadCount: '{{count}} thông báo chưa đọc',
     markAllRead: 'Đọc tất cả',
     types: {
+      TICKET_ISSUED: {
+        title: 'Vé của bạn đã sẵn sàng',
+        body: 'Bạn có {{count}} vé cho {{eventTitle}}.',
+      },
       EVENT_FEATURED: {
         title: 'Sự kiện được duyệt nổi bật',
         body: 'Sự kiện “{{eventTitle}}” đã được duyệt nổi bật.',
+      },
+      PAYMENT_REVIEW_REQUIRED: {
+        title: 'Giao dịch cần kiểm tra',
+        body: 'Giao dịch {{sepayTxnId}} không khớp đơn hàng nào.',
+      },
+      unknown: {
+        title: 'Thông báo mới',
+        body: 'Cập nhật ứng dụng để xem nội dung này.',
       },
     },
   },

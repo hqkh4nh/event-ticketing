@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { ErrorCode } from '../../common/errors/error-code';
 import { Order } from '../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { TicketsService } from '../tickets/tickets.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderResponseDto, PaymentInfoDto } from './dto/order-response.dto';
@@ -19,6 +20,7 @@ export class OrdersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tickets: TicketsService,
+    private readonly notifications: NotificationsService,
     private readonly config: ConfigService,
   ) {}
 
@@ -58,7 +60,7 @@ export class OrdersService {
 
       const event = await tx.event.findUnique({
         where: { id: dto.eventId },
-        select: { status: true },
+        select: { status: true, title: true },
       });
       if (!event || event.status !== 'PUBLISHED') {
         throw new ConflictException({
@@ -149,6 +151,23 @@ export class OrdersService {
         if (!isPaid) {
           await this.tickets.issue(tx, orderItem.id, quantity);
         }
+      }
+
+      if (!isPaid) {
+        await this.notifications.create(
+          {
+            userId: buyerId,
+            type: 'TICKET_ISSUED',
+            data: {
+              orderId: order.id,
+              eventId: dto.eventId,
+              eventTitle: event.title,
+              ticketCount: [...wanted.values()].reduce((a, b) => a + b, 0),
+            },
+            dedupeKey: `ticket-issued:${order.id}`,
+          },
+          tx,
+        );
       }
 
       return order.id;

@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/": {
+    "/api": {
         parameters: {
             query?: never;
             header?: never;
@@ -20,7 +20,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/register": {
+    "/api/auth/register": {
         parameters: {
             query?: never;
             header?: never;
@@ -37,7 +37,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/login": {
+    "/api/auth/login": {
         parameters: {
             query?: never;
             header?: never;
@@ -54,7 +54,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/staff-connect": {
+    "/api/auth/staff-connect": {
         parameters: {
             query?: never;
             header?: never;
@@ -71,7 +71,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/me": {
+    "/api/auth/me": {
         parameters: {
             query?: never;
             header?: never;
@@ -88,7 +88,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/logout": {
+    "/api/auth/logout": {
         parameters: {
             query?: never;
             header?: never;
@@ -105,7 +105,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/events": {
+    "/api/events": {
         parameters: {
             query?: never;
             header?: never;
@@ -122,7 +122,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/events/{id}": {
+    "/api/events/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -139,7 +139,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/organizer/events": {
+    "/api/organizer/events": {
         parameters: {
             query?: never;
             header?: never;
@@ -157,7 +157,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/organizer/events/{id}": {
+    "/api/organizer/events/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -176,7 +176,7 @@ export interface paths {
         patch: operations["EventsOrganizerController_update"];
         trace?: never;
     };
-    "/organizer/events/{id}/publish": {
+    "/api/organizer/events/{id}/publish": {
         parameters: {
             query?: never;
             header?: never;
@@ -193,7 +193,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/organizer/events/{id}/unpublish": {
+    "/api/organizer/events/{id}/unpublish": {
         parameters: {
             query?: never;
             header?: never;
@@ -210,7 +210,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/organizer/events/{id}/cancel": {
+    "/api/organizer/events/{id}/cancel": {
         parameters: {
             query?: never;
             header?: never;
@@ -227,7 +227,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/organizer/events/{id}/ticket-types": {
+    "/api/organizer/events/{id}/ticket-types": {
         parameters: {
             query?: never;
             header?: never;
@@ -244,7 +244,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/organizer/events/{id}/ticket-types/{typeId}": {
+    "/api/organizer/events/{id}/ticket-types/{typeId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -262,7 +262,7 @@ export interface paths {
         patch: operations["EventsOrganizerController_updateTicketType"];
         trace?: never;
     };
-    "/me/tickets": {
+    "/api/me/tickets": {
         parameters: {
             query?: never;
             header?: never;
@@ -279,7 +279,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/orders": {
+    "/api/orders": {
         parameters: {
             query?: never;
             header?: never;
@@ -296,7 +296,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/orders/{id}": {
+    "/api/orders/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -313,7 +313,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/payments/sepay/webhook": {
+    "/api/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List notifications for the current user */
+        get: operations["NotificationsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/unread-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the current unread notification count */
+        get: operations["NotificationsController_unreadCount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Mark one notification as read */
+        patch: operations["NotificationsController_markRead"];
+        trace?: never;
+    };
+    "/api/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark every notification as read */
+        post: operations["NotificationsController_markAllRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/payments/sepay/webhook": {
         parameters: {
             query?: never;
             header?: never;
@@ -330,7 +398,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/events/{eventId}/checkin": {
+    "/api/events/{eventId}/checkin": {
         parameters: {
             query?: never;
             header?: never;
@@ -347,7 +415,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/scanner/events": {
+    "/api/scanner/events": {
         parameters: {
             query?: never;
             header?: never;
@@ -364,7 +432,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/organizer/events/{eventId}/staff": {
+    "/api/organizer/events/{eventId}/staff": {
         parameters: {
             query?: never;
             header?: never;
@@ -382,7 +450,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/organizer/staff/{id}/reconnect": {
+    "/api/organizer/staff/{id}/reconnect": {
         parameters: {
             query?: never;
             header?: never;
@@ -399,7 +467,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/organizer/staff/{id}": {
+    "/api/organizer/staff/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -416,7 +484,7 @@ export interface paths {
         patch: operations["StaffController_update"];
         trace?: never;
     };
-    "/admin/organizers": {
+    "/api/admin/organizers": {
         parameters: {
             query?: never;
             header?: never;
@@ -433,7 +501,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/organizers/{id}/status": {
+    "/api/admin/organizers/{id}/status": {
         parameters: {
             query?: never;
             header?: never;
@@ -450,7 +518,7 @@ export interface paths {
         patch: operations["AdminController_updateStatus"];
         trace?: never;
     };
-    "/admin/events": {
+    "/api/admin/events": {
         parameters: {
             query?: never;
             header?: never;
@@ -467,7 +535,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/events/{id}/featured": {
+    "/api/admin/events/{id}/featured": {
         parameters: {
             query?: never;
             header?: never;
@@ -482,74 +550,6 @@ export interface paths {
         head?: never;
         /** Mark or unmark a published event as featured. */
         patch: operations["AdminController_updateEventFeatured"];
-        trace?: never;
-    };
-    "/notifications": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List notifications for the current user */
-        get: operations["NotificationsController_list"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/notifications/unread-count": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get the current unread notification count */
-        get: operations["NotificationsController_unreadCount"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/notifications/{id}/read": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Mark one notification as read */
-        patch: operations["NotificationsController_markRead"];
-        trace?: never;
-    };
-    "/notifications/read-all": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Mark every notification as read */
-        post: operations["NotificationsController_markAllRead"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
 }
@@ -838,6 +838,28 @@ export interface components {
             /** @description Present only while the order is PENDING payment. */
             payment?: components["schemas"]["PaymentInfoDto"];
         };
+        NotificationDto: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            type: "TICKET_ISSUED" | "EVENT_FEATURED" | "PAYMENT_REVIEW_REQUIRED";
+            data: {
+                [key: string]: unknown;
+            } | null;
+            read: boolean;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        NotificationListDto: {
+            items: components["schemas"]["NotificationDto"][];
+            total: number;
+            unreadCount: number;
+            page: number;
+            limit: number;
+        };
+        UnreadNotificationCountDto: {
+            count: number;
+        };
         SepayWebhookDto: {
             /** @description SePay transaction id; stable across retries. */
             id: number;
@@ -972,29 +994,6 @@ export interface components {
         };
         UpdateEventFeaturedDto: {
             featured: boolean;
-        };
-        NotificationDto: {
-            /** Format: uuid */
-            id: string;
-            type: string;
-            title: string;
-            body: string;
-            data: {
-                [key: string]: unknown;
-            } | null;
-            read: boolean;
-            /** Format: date-time */
-            createdAt: string;
-        };
-        NotificationListDto: {
-            items: components["schemas"]["NotificationDto"][];
-            total: number;
-            unreadCount: number;
-            page: number;
-            limit: number;
-        };
-        UnreadNotificationCountDto: {
-            count: number;
         };
     };
     responses: never;
@@ -1674,6 +1673,92 @@ export interface operations {
             };
         };
     };
+    NotificationsController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationListDto"];
+                };
+            };
+        };
+    };
+    NotificationsController_unreadCount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnreadNotificationCountDto"];
+                };
+            };
+        };
+    };
+    NotificationsController_markRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationDto"];
+                };
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    NotificationsController_markAllRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     PaymentsController_sepayWebhook: {
         parameters: {
             query?: never;
@@ -2029,92 +2114,6 @@ export interface operations {
             };
             /** @description code: NOT_FOUND */
             404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    NotificationsController_list: {
-        parameters: {
-            query?: {
-                page?: number;
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NotificationListDto"];
-                };
-            };
-        };
-    };
-    NotificationsController_unreadCount: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UnreadNotificationCountDto"];
-                };
-            };
-        };
-    };
-    NotificationsController_markRead: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NotificationDto"];
-                };
-            };
-            /** @description code: NOT_FOUND */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    NotificationsController_markAllRead: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            204: {
                 headers: {
                     [name: string]: unknown;
                 };

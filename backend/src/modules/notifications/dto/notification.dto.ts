@@ -1,10 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+import { NotificationType } from '../../../generated/prisma';
+
 export class NotificationDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
-  @ApiProperty() type!: string;
-  @ApiProperty() title!: string;
-  @ApiProperty() body!: string;
+  @ApiProperty({ enum: NotificationType }) type!: NotificationType;
   @ApiProperty({
     type: 'object',
     additionalProperties: true,

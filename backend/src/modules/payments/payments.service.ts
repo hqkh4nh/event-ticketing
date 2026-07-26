@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import { Prisma } from '../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { TicketsService } from '../tickets/tickets.service';
 import { SepayWebhookDto } from './dto/sepay-webhook.dto';
 
@@ -12,6 +13,7 @@ export class PaymentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tickets: TicketsService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   /**
@@ -36,7 +38,14 @@ export class PaymentsService {
     const order = transferCode
       ? await this.prisma.order.findUnique({
           where: { transferCode },
-          select: { id: true, status: true, totalVnd: true },
+          select: {
+            id: true,
+            status: true,
+            totalVnd: true,
+            buyerId: true,
+            eventId: true,
+            event: { select: { title: true } },
+          },
         })
       : null;
 
@@ -70,6 +79,20 @@ export class PaymentsService {
         await tx.payment.create({
           data: { ...base, status: 'MATCHED', matchedAt: new Date() },
         });
+        await this.notifications.create(
+          {
+            userId: order.buyerId,
+            type: 'TICKET_ISSUED',
+            data: {
+              orderId: order.id,
+              eventId: order.eventId,
+              eventTitle: order.event.title,
+              ticketCount: items.reduce((sum, item) => sum + item.quantity, 0),
+            },
+            dedupeKey: `ticket-issued:${order.id}`,
+          },
+          tx,
+        );
         return true;
       });
       if (issued) return;
@@ -117,9 +140,8 @@ export class PaymentsService {
     await this.prisma.notification.createMany({
       data: admins.map((admin) => ({
         userId: admin.id,
-        type: 'PAYMENT_REVIEW_REQUIRED',
-        title: 'Payment needs review',
-        body: `A SePay transfer (txn ${sepayTxnId}) could not be matched to a payable order.`,
+        type: 'PAYMENT_REVIEW_REQUIRED' as const,
+        data: { sepayTxnId },
         dedupeKey: `payment-review:${sepayTxnId}:${admin.id}`,
       })),
       skipDuplicates: true,

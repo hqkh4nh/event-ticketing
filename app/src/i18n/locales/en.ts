@@ -99,9 +99,22 @@ export const en = {
     unreadCount: '{{count}} unread',
     markAllRead: 'Mark all read',
     types: {
+      TICKET_ISSUED: {
+        title: 'Your tickets are ready',
+        body_one: 'You have 1 ticket for {{eventTitle}}.',
+        body_other: 'You have {{count}} tickets for {{eventTitle}}.',
+      },
       EVENT_FEATURED: {
         title: 'Event approved as featured',
         body: '“{{eventTitle}}” has been approved as featured.',
+      },
+      PAYMENT_REVIEW_REQUIRED: {
+        title: 'Payment needs review',
+        body: 'Transfer {{sepayTxnId}} did not match any order.',
+      },
+      unknown: {
+        title: 'New notification',
+        body: 'Update the app to see this notification.',
       },
     },
   },

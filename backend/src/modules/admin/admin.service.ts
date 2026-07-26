@@ -224,8 +224,6 @@ export class AdminService {
           data: {
             userId: existing.organizerId,
             type: 'EVENT_FEATURED',
-            title: 'Sự kiện đã được đánh dấu nổi bật',
-            body: `Sự kiện “${existing.title}” đã được đánh dấu nổi bật.`,
             data: {
               eventId: existing.id,
               eventTitle: existing.title,

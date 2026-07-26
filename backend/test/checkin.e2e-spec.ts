@@ -162,6 +162,9 @@ describe('Checkin / QR scan (e2e)', () => {
 
   afterAll(async () => {
     if (userIds.length) {
+      await prisma.notification.deleteMany({
+        where: { userId: { in: userIds } },
+      });
       await prisma.checkinLog.deleteMany({
         where: { event: { organizerId: { in: userIds } } },
       });

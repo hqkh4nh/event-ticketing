@@ -1,5 +1,7 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { TFunction } from 'i18next';
+import type { ComponentProps } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -22,6 +24,43 @@ import {
 import { toUserMessage } from '@/lib/api/error-message';
 
 const LIST_QUERY = { page: 1, limit: 100 } as const;
+
+const NOTIFICATION_ICON: Record<
+  AppNotification['type'],
+  ComponentProps<typeof MaterialIcons>['name']
+> = {
+  TICKET_ISSUED: 'confirmation-number',
+  PAYMENT_REVIEW_REQUIRED: 'error-outline',
+  EVENT_FEATURED: 'star',
+};
+
+/**
+ * Builds the copy for a notification. The server sends only `type` and `data`,
+ * so every user-facing string comes from the locale file; a type this build of
+ * the app does not know falls back to the `unknown` copy.
+ */
+function notificationCopy(
+  item: AppNotification,
+  t: TFunction,
+): { title: string; body: string } {
+  const data = item.data ?? {};
+  const options = {
+    ...data,
+    ...(typeof data.ticketCount === 'number'
+      ? { count: data.ticketCount }
+      : {}),
+  };
+  return {
+    title: t(`notifications.types.${item.type}.title`, {
+      ...options,
+      defaultValue: t('notifications.types.unknown.title'),
+    }),
+    body: t(`notifications.types.${item.type}.body`, {
+      ...options,
+      defaultValue: t('notifications.types.unknown.body'),
+    }),
+  };
+}
 
 export function NotificationCenterScreen() {
   const { t, i18n } = useTranslation();
@@ -48,14 +87,7 @@ export function NotificationCenterScreen() {
 
   function renderNotification(item: AppNotification) {
     const busy = markRead.isPending && markRead.variables === item.id;
-    const eventTitle = item.data?.eventTitle;
-    const content =
-      item.type === 'EVENT_FEATURED' && typeof eventTitle === 'string'
-        ? {
-            title: t('notifications.types.EVENT_FEATURED.title'),
-            body: t('notifications.types.EVENT_FEATURED.body', { eventTitle }),
-          }
-        : { title: item.title, body: item.body };
+    const copy = notificationCopy(item, t);
 
     return (
       <Pressable
@@ -78,7 +110,7 @@ export function NotificationCenterScreen() {
           ].join(' ')}
         >
           <MaterialIcons
-            name={item.type === 'EVENT_FEATURED' ? 'star' : 'notifications'}
+            name={NOTIFICATION_ICON[item.type] ?? 'notifications'}
             size={21}
             className={item.read ? 'text-on-surface-variant' : 'text-primary'}
           />
@@ -88,7 +120,7 @@ export function NotificationCenterScreen() {
             <Text
               className="min-w-0 flex-1 font-semibold text-body-md text-on-surface"
             >
-              {content.title}
+              {copy.title}
             </Text>
             {!item.read ? (
               <View
@@ -98,7 +130,7 @@ export function NotificationCenterScreen() {
             ) : null}
           </View>
           <Text className="font-sans text-label-md text-on-surface-variant">
-            {content.body}
+            {copy.body}
           </Text>
           <Text className="font-sans text-label-sm text-outline">
             {new Intl.DateTimeFormat(i18n.language, {
