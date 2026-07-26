@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
 } from '@nestjs/common';
 import {
@@ -16,10 +17,15 @@ import {
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
-import { AuthResponseDto, AuthUserDto } from './dto/auth-response.dto';
+import {
+  AuthResponseDto,
+  AuthUserDto,
+  toAuthUserDto,
+} from './dto/auth-response.dto';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { StaffConnectDto } from './dto/staff-connect.dto';
+import { UpdateMeDto } from './dto/update-me.dto';
 import { CurrentUser } from './decorators/current-user.decorator';
 
 import type { CurrentUserData } from './jwt.strategy';
@@ -65,15 +71,20 @@ export class AuthController {
   @Get('me')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user info' })
-  @ApiOkResponse({ type: AuthResponseDto })
+  @ApiOkResponse({ type: AuthUserDto })
   me(@CurrentUser() user: CurrentUserData): AuthUserDto {
-    return {
-      id: user.id,
-      email: user.email,
-      fullName: user.fullName,
-      role: user.role,
-      status: user.status,
-    };
+    return toAuthUserDto(user);
+  }
+
+  @Patch('me')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update the current user profile' })
+  @ApiOkResponse({ type: AuthUserDto })
+  updateMe(
+    @CurrentUser() user: CurrentUserData,
+    @Body() dto: UpdateMeDto,
+  ): Promise<AuthUserDto> {
+    return this.auth.updateMe(user.id, dto);
   }
 
   @Post('logout')

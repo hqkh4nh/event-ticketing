@@ -85,7 +85,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update the current user profile */
+        patch: operations["AuthController_updateMe"];
         trace?: never;
     };
     "/api/auth/logout": {
@@ -568,6 +569,11 @@ export interface components {
              * @enum {string}
              */
             role: "ATTENDEE" | "ORGANIZER";
+            /**
+             * @default vi
+             * @enum {string}
+             */
+            locale: "vi" | "en";
         };
         AuthUserDto: {
             id: string;
@@ -577,6 +583,8 @@ export interface components {
             role: "ATTENDEE" | "ORGANIZER" | "SCANNER" | "ADMIN";
             /** @enum {string} */
             status: "ACTIVE" | "PENDING" | "BLOCKED";
+            /** @enum {string} */
+            locale: "vi" | "en";
         };
         AuthResponseDto: {
             accessToken: string;
@@ -594,6 +602,10 @@ export interface components {
              * @example K7WMPX2Q
              */
             code: string;
+        };
+        UpdateMeDto: {
+            /** @enum {string} */
+            locale: "vi" | "en";
         };
         EventSummaryDto: {
             /** Format: uuid */
@@ -1125,7 +1137,30 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AuthResponseDto"];
+                    "application/json": components["schemas"]["AuthUserDto"];
+                };
+            };
+        };
+    };
+    AuthController_updateMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMeDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthUserDto"];
                 };
             };
         };

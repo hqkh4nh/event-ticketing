@@ -7,6 +7,7 @@ import { hash } from 'bcryptjs';
 import {
   EventCategory,
   EventStatus,
+  Locale,
   PrismaClient,
   Role,
   UserStatus,
@@ -40,24 +41,28 @@ const users = [
     fullName: 'System Admin',
     role: Role.ADMIN,
     status: UserStatus.ACTIVE,
+    locale: Locale.EN,
   },
   {
     email: 'organizer@example.com',
     fullName: 'Active Organizer',
     role: Role.ORGANIZER,
     status: UserStatus.ACTIVE,
+    locale: Locale.VI,
   },
   {
     email: 'pending.organizer@example.com',
     fullName: 'Pending Organizer',
     role: Role.ORGANIZER,
     status: UserStatus.PENDING,
+    locale: Locale.VI,
   },
   {
     email: 'attendee@example.com',
     fullName: 'Event Attendee',
     role: Role.ATTENDEE,
     status: UserStatus.ACTIVE,
+    locale: Locale.VI,
   },
 ];
 
@@ -231,6 +236,7 @@ async function main(): Promise<void> {
           passwordHash,
           role: user.role,
           status: user.status,
+          locale: user.locale,
         },
         create: {
           ...user,

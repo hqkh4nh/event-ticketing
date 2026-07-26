@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { Role, UserStatus } from '../../generated/prisma';
+import { Locale, Role, UserStatus } from '../../generated/prisma';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ErrorCode } from '../../common/errors/error-code';
@@ -16,6 +16,7 @@ export type CurrentUserData = {
   fullName: string;
   role: Role;
   status: UserStatus;
+  locale: Locale;
 };
 
 @Injectable()
@@ -47,6 +48,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             fullName: true,
             role: true,
             status: true,
+            locale: true,
           },
         },
       },

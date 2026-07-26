@@ -7,14 +7,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LogoMark } from '@/components/brand/logo-mark';
 import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/text-field';
-import { login } from '@/lib/api/auth';
+import { login, updateMe } from '@/lib/api/auth';
 import { toFieldErrors, toUserMessage } from '@/lib/api/error-message';
 import { useAuthStore } from '@/stores/auth-store';
+import { useLanguageStore } from '@/stores/language-store';
 
 export default function LoginScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const signIn = useAuthStore((s) => s.signIn);
+  const language = useLanguageStore((s) => s.language);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,6 +41,11 @@ export default function LoginScreen() {
     try {
       const res = await login({ email: email.trim(), password });
       await signIn(res.accessToken, res.user);
+      // The device wins on language, so sign-in pushes it over the stored value.
+      // Best effort: a failure here only affects the next email's language.
+      if (res.user.locale !== language) {
+        void updateMe({ locale: language }).catch(() => undefined);
+      }
       router.replace('/');
     } catch (err) {
       setFormError(toUserMessage(err, t));

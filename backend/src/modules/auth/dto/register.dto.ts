@@ -8,6 +8,10 @@ import {
   MinLength,
 } from 'class-validator';
 
+import { APP_LOCALES } from './update-me.dto';
+
+import type { AppLocale } from './update-me.dto';
+
 export const SELF_SIGNUP_ROLES = ['ATTENDEE', 'ORGANIZER'] as const;
 export type SelfSignupRole = (typeof SELF_SIGNUP_ROLES)[number];
 
@@ -32,4 +36,9 @@ export class RegisterDto {
   @IsOptional()
   @IsIn(SELF_SIGNUP_ROLES)
   role?: SelfSignupRole;
+
+  @ApiPropertyOptional({ enum: APP_LOCALES, default: 'vi' })
+  @IsOptional()
+  @IsIn(APP_LOCALES)
+  locale?: AppLocale;
 }

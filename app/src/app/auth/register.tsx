@@ -10,6 +10,7 @@ import { TextField } from '@/components/ui/text-field';
 import { register } from '@/lib/api/auth';
 import { toFieldErrors, toUserMessage } from '@/lib/api/error-message';
 import { useAuthStore } from '@/stores/auth-store';
+import { useLanguageStore } from '@/stores/language-store';
 
 type SignupRole = 'ATTENDEE' | 'ORGANIZER';
 
@@ -17,6 +18,7 @@ export default function RegisterScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const signIn = useAuthStore((s) => s.signIn);
+  const language = useLanguageStore((s) => s.language);
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -52,6 +54,7 @@ export default function RegisterScreen() {
         password,
         fullName: fullName.trim(),
         role,
+        locale: language,
       });
       await signIn(res.accessToken, res.user);
       router.replace('/');

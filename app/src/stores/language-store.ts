@@ -5,8 +5,20 @@ import i18n, {
   getDeviceLanguage,
   type Language,
 } from '@/i18n';
+import { updateMe } from '@/lib/api/auth';
+import { useAuthStore } from '@/stores/auth-store';
 
 const LANGUAGE_STORAGE_KEY = 'app_language';
+
+/**
+ * Mirrors the chosen language onto the account so the server knows which
+ * language to write ticket emails in. Best effort: the device stays the source
+ * of truth, so a failed sync must never block the language change.
+ */
+function syncLocaleToAccount(language: Language): void {
+  if (!useAuthStore.getState().token) return;
+  void updateMe({ locale: language }).catch(() => undefined);
+}
 
 function isLanguage(value: string | null): value is Language {
   return value === 'en' || value === 'vi';
@@ -41,5 +53,6 @@ export const useLanguageStore = create<LanguageState>((set) => ({
     await i18n.changeLanguage(language);
     set({ language });
     await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+    syncLocaleToAccount(language);
   },
 }));

@@ -3,6 +3,7 @@ import { apiFetch } from "./client";
 
 export type AuthUser = components['schemas']['AuthUserDto'];
 export type AuthResponse = components['schemas']['AuthResponseDto'];
+export type AccountLocale = AuthUser['locale'];
 
 export function login(body: { email: string; password: string }): Promise<AuthResponse> {
     return apiFetch<AuthResponse>('/auth/login', {
@@ -16,6 +17,7 @@ export function register(body: {
     password: string;
     fullName: string;
     role?: 'ATTENDEE' | 'ORGANIZER';
+    locale?: AccountLocale;
 }) {
     return apiFetch<AuthResponse>('/auth/register', {
         method: 'POST',
@@ -25,6 +27,14 @@ export function register(body: {
 
 export function me() {
     return apiFetch<AuthUser>('/auth/me');
+}
+
+/** Pushes the device's current language up so ticket emails are written in it. */
+export function updateMe(body: { locale: AccountLocale }): Promise<AuthUser> {
+    return apiFetch<AuthUser>('/auth/me', {
+        method: 'PATCH',
+        body: JSON.stringify(body)
+    })
 }
 
 export function logout(): Promise<void> {

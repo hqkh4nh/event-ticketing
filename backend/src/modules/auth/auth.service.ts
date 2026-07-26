@@ -11,10 +11,15 @@ import type { StringValue } from 'ms';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { RegisterDto } from './dto/register.dto';
-import { AuthResponseDto } from './dto/auth-response.dto';
-import { Prisma, Role, UserStatus } from '../../generated/prisma';
+import {
+  AuthResponseDto,
+  AuthUserDto,
+  toAuthUserDto,
+} from './dto/auth-response.dto';
+import { Locale, Prisma, Role, UserStatus } from '../../generated/prisma';
 import { ErrorCode } from '../../common/errors/error-code';
 import { LoginDto } from './dto/login.dto';
+import { UpdateMeDto, toPrismaLocale } from './dto/update-me.dto';
 
 const BCRYPT_ROUNDS = 10;
 
@@ -44,6 +49,7 @@ export class AuthService {
           fullName: dto.fullName.trim(),
           role,
           status,
+          ...(dto.locale ? { locale: toPrismaLocale(dto.locale) } : {}),
         },
         select: {
           id: true,
@@ -51,6 +57,7 @@ export class AuthService {
           fullName: true,
           role: true,
           status: true,
+          locale: true,
         },
       });
 
@@ -81,6 +88,7 @@ export class AuthService {
         fullName: true,
         role: true,
         status: true,
+        locale: true,
         passwordHash: true,
       },
     });
@@ -108,6 +116,7 @@ export class AuthService {
       fullName: user.fullName,
       role: user.role,
       status: user.status,
+      locale: user.locale,
     };
 
     return this.buildSession(safeUser);
@@ -135,6 +144,7 @@ export class AuthService {
             fullName: true,
             role: true,
             status: true,
+            locale: true,
           },
         },
       },
@@ -163,6 +173,27 @@ export class AuthService {
     return this.buildSession(record.staff, expiresIn);
   }
 
+  /**
+   * Overwrites the stored locale with the device's current language. The device
+   * is the source of truth, so this is a one-way push and never merges.
+   */
+  async updateMe(userId: string, dto: UpdateMeDto): Promise<AuthUserDto> {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { locale: toPrismaLocale(dto.locale) },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        role: true,
+        status: true,
+        locale: true,
+      },
+    });
+
+    return toAuthUserDto(user);
+  }
+
   async logout(userId: string, sessionId: string): Promise<void> {
     await this.prisma.authSession.updateMany({
       where: { id: sessionId, userId, revokedAt: null },
@@ -184,6 +215,7 @@ export class AuthService {
       fullName: string;
       role: Role;
       status: UserStatus;
+      locale: Locale;
     },
     expiresInOverride?: StringValue,
   ): Promise<AuthResponseDto> {
@@ -213,6 +245,6 @@ export class AuthService {
       },
     });
 
-    return { accessToken, user };
+    return { accessToken, user: toAuthUserDto(user) };
   }
 }
