@@ -30,6 +30,9 @@ export default () => ({
   mail: {
     host: process.env.SMTP_HOST ?? '',
     port: parseInt(process.env.SMTP_PORT ?? '587', 10),
+    // Mismatching port and secure (465 with secure off) hangs until timeout
+    // instead of failing loudly, so this is set explicitly, never inferred.
+    secure: process.env.SMTP_SECURE !== 'false',
     user: process.env.SMTP_USER ?? '',
     pass: process.env.SMTP_PASS ?? '',
     from: process.env.MAIL_FROM ?? 'Event Ticketing <no-reply@example.com>',

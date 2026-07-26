@@ -64,7 +64,7 @@ export class TicketsService {
         id: ticket.id,
         code: ticket.code,
         signature: ticket.signature,
-        qrPayload: `${ticket.code}.${ticket.signature}`,
+        qrPayload: this.signer.qrPayload(ticket.code, ticket.signature),
         status: ticket.status,
         issuedAt: ticket.issuedAt.toISOString(),
         ticketTypeName: ticketType.name,

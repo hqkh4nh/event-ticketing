@@ -26,6 +26,14 @@ export class TicketSignerService {
     return createHmac('sha256', this.secret).update(code).digest('base64url');
   }
 
+  /**
+   * The exact string a QR encodes. Both the app's ticket list and the ticket
+   * email build their QR from this, so the format cannot drift between them.
+   */
+  qrPayload(code: string, signature: string): string {
+    return `${code}.${signature}`;
+  }
+
   verify(code: string, signature: string): boolean {
     const expected = Buffer.from(this.sign(code));
     const actual = Buffer.from(signature);

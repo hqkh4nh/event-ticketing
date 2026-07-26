@@ -12,6 +12,8 @@ import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { AllExceptionsFilter } from '../src/common/filters/all-exceptions.filter';
 import { ErrorCode } from '../src/common/errors/error-code';
+import { MailService } from '../src/modules/mail/mail.service';
+import { TicketEmailService } from '../src/modules/mail/ticket-email.service';
 import { OrdersExpiryService } from '../src/modules/orders/orders-expiry.service';
 import { PrismaService } from '../src/prisma/prisma.service';
 
@@ -183,6 +185,39 @@ describe('Orders / free ticket booking (e2e)', () => {
         .update(ticket.code)
         .digest('base64url');
       expect(ticket.signature).toBe(expected);
+    }
+  });
+
+  it('keeps email off in the test environment', () => {
+    // MailModule is registered, so this is what stops a developer machine with
+    // real SMTP credentials in .env from mailing people during a test run.
+    expect(app.get(MailService).isEnabled).toBe(false);
+  });
+
+  it('still issues tickets when sending the email fails', async () => {
+    const sendTickets = jest
+      .spyOn(app.get(TicketEmailService), 'sendTicketsIssued')
+      .mockRejectedValue(new Error('smtp is down'));
+
+    try {
+      const { eventId, idByName } = await createPublishedEvent([
+        { name: 'Free GA', priceVnd: 0, quantityTotal: 10 },
+      ]);
+
+      const res = await request(app.getHttpServer())
+        .post('/api/orders')
+        .set(auth(buyerAToken))
+        .send({
+          eventId,
+          items: [{ ticketTypeId: idByName['Free GA'], quantity: 1 }],
+        })
+        .expect(201);
+
+      expect(res.body.status).toBe('PAID');
+      expect(res.body.tickets).toHaveLength(1);
+      expect(sendTickets).toHaveBeenCalledTimes(1);
+    } finally {
+      sendTickets.mockRestore();
     }
   });
 

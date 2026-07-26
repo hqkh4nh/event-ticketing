@@ -40,6 +40,23 @@ describe('TicketSignerService', () => {
     );
   });
 
+  it('builds the QR payload as code and signature joined by a dot', () => {
+    const signer = makeSigner();
+    const code = signer.newCode();
+    const signature = signer.sign(code);
+
+    expect(signer.qrPayload(code, signature)).toBe(`${code}.${signature}`);
+  });
+
+  it('round-trips a QR payload back through verify', () => {
+    const signer = makeSigner();
+    const code = signer.newCode();
+    const payload = signer.qrPayload(code, signer.sign(code));
+    const [scannedCode, scannedSignature] = payload.split('.');
+
+    expect(signer.verify(scannedCode, scannedSignature)).toBe(true);
+  });
+
   it('mints unique, URL-safe codes', () => {
     const signer = makeSigner();
     const codes = new Set(Array.from({ length: 1000 }, () => signer.newCode()));

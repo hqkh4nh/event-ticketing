@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import { Prisma } from '../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
+import { TicketEmailService } from '../mail/ticket-email.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TicketsService } from '../tickets/tickets.service';
 import { SepayWebhookDto } from './dto/sepay-webhook.dto';
@@ -14,6 +15,7 @@ export class PaymentsService {
     private readonly prisma: PrismaService,
     private readonly tickets: TicketsService,
     private readonly notifications: NotificationsService,
+    private readonly ticketEmail: TicketEmailService,
   ) {}
 
   /**
@@ -95,7 +97,12 @@ export class PaymentsService {
         );
         return true;
       });
-      if (issued) return;
+      if (issued) {
+        // After the commit and never awaited, so SePay gets its 200 without
+        // waiting on SMTP and never retries the webhook over a mail timeout.
+        this.ticketEmail.queueTicketsIssued(order.id);
+        return;
+      }
       // Lost the flip to the expiry sweep; fall through to review.
     }
 

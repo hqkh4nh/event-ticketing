@@ -15,6 +15,7 @@ process.env.SEPAY_WEBHOOK_API_KEY = WEBHOOK_API_KEY;
 import { AppModule } from '../src/app.module';
 import { AllExceptionsFilter } from '../src/common/filters/all-exceptions.filter';
 import { ErrorCode } from '../src/common/errors/error-code';
+import { TicketEmailService } from '../src/modules/mail/ticket-email.service';
 import { PrismaService } from '../src/prisma/prisma.service';
 
 function configureApp(app: INestApplication): void {
@@ -206,6 +207,10 @@ describe('Payments / SePay webhook (e2e)', () => {
   });
 
   it('issues tickets when a transfer matches a PENDING order', async () => {
+    const sendTickets = jest.spyOn(
+      app.get(TicketEmailService),
+      'sendTicketsIssued',
+    );
     const { eventId, ticketTypeId } = await createPaidEvent(200000, 50);
     const { orderId, amountVnd, transferCode } = await createPendingOrder(
       eventId,
@@ -255,9 +260,17 @@ describe('Payments / SePay webhook (e2e)', () => {
       eventId,
       ticketCount: 2,
     });
+
+    // Queued after the commit, not awaited by the webhook response.
+    expect(sendTickets).toHaveBeenCalledWith(orderId);
+    sendTickets.mockRestore();
   });
 
   it('does not issue twice when the same txn id is replayed', async () => {
+    const sendTickets = jest.spyOn(
+      app.get(TicketEmailService),
+      'sendTicketsIssued',
+    );
     const { eventId, ticketTypeId } = await createPaidEvent(200000, 50);
     const { orderId, amountVnd, transferCode } = await createPendingOrder(
       eventId,
@@ -284,6 +297,9 @@ describe('Payments / SePay webhook (e2e)', () => {
       await prisma.payment.count({ where: { sepayTxnId: String(txn) } }),
     ).toBe(1);
     expect(await issuedNotifications(orderId)).toHaveLength(1);
+    // The replay is a no-op, so the buyer must not get a second email either.
+    expect(sendTickets).toHaveBeenCalledTimes(1);
+    sendTickets.mockRestore();
   });
 
   it('records UNMATCHED and issues nothing when the amount is wrong', async () => {

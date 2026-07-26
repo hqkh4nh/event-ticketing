@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { ErrorCode } from '../../common/errors/error-code';
 import { Order } from '../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
+import { TicketEmailService } from '../mail/ticket-email.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TicketsService } from '../tickets/tickets.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -21,6 +22,7 @@ export class OrdersService {
     private readonly prisma: PrismaService,
     private readonly tickets: TicketsService,
     private readonly notifications: NotificationsService,
+    private readonly ticketEmail: TicketEmailService,
     private readonly config: ConfigService,
   ) {}
 
@@ -44,7 +46,7 @@ export class OrdersService {
     }
     const ticketTypeIds = [...wanted.keys()];
 
-    const orderId = await this.prisma.$transaction(async (tx) => {
+    const created = await this.prisma.$transaction(async (tx) => {
       if (dto.clientRequestId) {
         const existing = await tx.order.findUnique({
           where: {
@@ -55,7 +57,8 @@ export class OrdersService {
           },
           select: { id: true },
         });
-        if (existing) return existing.id;
+        // A replayed request issues nothing, so it must not mail anything either.
+        if (existing) return { id: existing.id, issued: false };
       }
 
       const event = await tx.event.findUnique({
@@ -170,10 +173,17 @@ export class OrdersService {
         );
       }
 
-      return order.id;
+      return { id: order.id, issued: !isPaid };
     });
 
-    return this.getById(buyerId, orderId);
+    // Sent after the commit and never awaited: a slow or dead SMTP server must
+    // not roll back issued tickets or hold up the response. The service
+    // swallows its own failures.
+    if (created.issued) {
+      this.ticketEmail.queueTicketsIssued(created.id);
+    }
+
+    return this.getById(buyerId, created.id);
   }
 
   async getById(buyerId: string, orderId: string): Promise<OrderResponseDto> {
