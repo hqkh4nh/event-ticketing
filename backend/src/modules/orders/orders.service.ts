@@ -8,13 +8,31 @@ import {
 import { ConfigService } from '@nestjs/config';
 
 import { ErrorCode } from '../../common/errors/error-code';
-import { Order } from '../../generated/prisma';
+import { Order, Prisma } from '../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 import { TicketEmailService } from '../mail/ticket-email.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TicketsService } from '../tickets/tickets.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderResponseDto, PaymentInfoDto } from './dto/order-response.dto';
+
+const orderDetailsInclude = {
+  event: {
+    select: { id: true, title: true, venue: true, startAt: true },
+  },
+  items: {
+    include: {
+      ticketType: { select: { name: true } },
+      tickets: { orderBy: { sequence: 'asc' as const } },
+    },
+  },
+} satisfies Prisma.OrderInclude;
+
+type OrderWithDetails = Prisma.OrderGetPayload<{
+  include: typeof orderDetailsInclude;
+}>;
+
+const MAX_PENDING_ORDERS_PER_BUYER = 3;
 
 @Injectable()
 export class OrdersService {
@@ -47,6 +65,10 @@ export class OrdersService {
     const ticketTypeIds = [...wanted.keys()];
 
     const created = await this.prisma.$transaction(async (tx) => {
+      // Serialize purchases from one account so concurrent requests cannot
+      // both observe the same pending-order count and exceed the limit.
+      await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${buyerId}::uuid FOR UPDATE`;
+
       if (dto.clientRequestId) {
         const existing = await tx.order.findUnique({
           where: {
@@ -119,6 +141,22 @@ export class OrdersService {
       const isPaid = totalVnd > 0n;
 
       const now = new Date();
+      if (isPaid) {
+        const pendingOrderCount = await tx.order.count({
+          where: {
+            buyerId,
+            status: 'PENDING',
+            expiresAt: { gt: now },
+          },
+        });
+        if (pendingOrderCount >= MAX_PENDING_ORDERS_PER_BUYER) {
+          throw new ConflictException({
+            code: ErrorCode.PENDING_ORDER_LIMIT_REACHED,
+            message: `A buyer may have at most ${MAX_PENDING_ORDERS_PER_BUYER} pending orders.`,
+          });
+        }
+      }
+
       const holdMinutes = this.config.get<number>('order.holdMinutes') ?? 15;
       const order = await tx.order.create({
         data: {
@@ -186,20 +224,24 @@ export class OrdersService {
     return this.getById(buyerId, created.id);
   }
 
+  async listPending(buyerId: string): Promise<OrderResponseDto[]> {
+    const orders = await this.prisma.order.findMany({
+      where: {
+        buyerId,
+        status: 'PENDING',
+        expiresAt: { gt: new Date() },
+      },
+      include: orderDetailsInclude,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return orders.map((order) => this.toResponse(order));
+  }
+
   async getById(buyerId: string, orderId: string): Promise<OrderResponseDto> {
     const order = await this.prisma.order.findFirst({
       where: { id: orderId, buyerId },
-      include: {
-        event: {
-          select: { id: true, title: true, venue: true, startAt: true },
-        },
-        items: {
-          include: {
-            ticketType: { select: { name: true } },
-            tickets: { orderBy: { sequence: 'asc' } },
-          },
-        },
-      },
+      include: orderDetailsInclude,
     });
     if (!order) {
       throw new NotFoundException({
@@ -208,6 +250,10 @@ export class OrdersService {
       });
     }
 
+    return this.toResponse(order);
+  }
+
+  private toResponse(order: OrderWithDetails): OrderResponseDto {
     return {
       id: order.id,
       status: order.status,

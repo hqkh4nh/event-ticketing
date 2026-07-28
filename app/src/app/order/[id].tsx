@@ -1,32 +1,27 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TicketQr } from '@/components/ticket/ticket-qr';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
 import { NumericText } from '@/components/ui/numeric-text';
-import { getOrder, ordersKeys, type OrderResponse } from '@/lib/api/orders';
+import { getOrder, ordersKeys, ticketsKeys, type OrderResponse } from '@/lib/api/orders';
 import { toUserMessage } from '@/lib/api/error-message';
-import { formatDateTime, formatVndAmount } from '@/lib/format';
-
-/** Formats a millisecond span as mm:ss, clamped at zero. */
-function formatCountdown(ms: number): string {
-  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-  const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
-  const seconds = String(totalSeconds % 60).padStart(2, '0');
-  return `${minutes}:${seconds}`;
-}
+import { formatCountdown, formatDateTime, formatVndAmount } from '@/lib/format';
 
 export default function OrderScreen() {
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
+  const [leaveConfirmVisible, setLeaveConfirmVisible] = useState(false);
   const orderId = Array.isArray(params.id) ? params.id[0] : (params.id ?? '');
 
   const orderQuery = useQuery({
@@ -41,6 +36,12 @@ export default function OrderScreen() {
     refetchIntervalInBackground: true,
   });
   const order = orderQuery.data;
+
+  useEffect(() => {
+    if (order?.status !== 'PAID') return;
+    void queryClient.invalidateQueries({ queryKey: ordersKeys.pending() });
+    void queryClient.invalidateQueries({ queryKey: ticketsKeys.mine() });
+  }, [order?.status, queryClient]);
 
   // Tick once a second to drive the payment countdown.
   const [now, setNow] = useState(() => Date.now());
@@ -101,9 +102,34 @@ export default function OrderScreen() {
         }}
         showsVerticalScrollIndicator={false}
       >
+        {order.status === 'PENDING' && !isExpired ? (
+          <Pressable
+            accessibilityLabel={t('order.leave')}
+            accessibilityRole="button"
+            className="h-touch-target-min w-touch-target-min self-end items-center justify-center rounded-full border border-outline-variant bg-surface-container-lowest active:scale-95 active:bg-surface-container-high"
+            onPress={() => setLeaveConfirmVisible(true)}
+          >
+            <MaterialIcons name="close" size={24} className="text-on-surface" />
+          </Pressable>
+        ) : null}
         <EventSummary order={order} />
         {body}
       </ScrollView>
+
+      <ConfirmDialog
+        visible={leaveConfirmVisible}
+        title={t('order.leaveConfirmTitle')}
+        description={t('order.leaveConfirmDescription')}
+        cancelLabel={t('common.cancel')}
+        confirmLabel={t('order.leave')}
+        icon="schedule"
+        tone="primary"
+        onCancel={() => setLeaveConfirmVisible(false)}
+        onConfirm={() => {
+          setLeaveConfirmVisible(false);
+          router.replace('/tickets');
+        }}
+      />
     </View>
   );
 }

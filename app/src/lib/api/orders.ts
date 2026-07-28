@@ -10,6 +10,7 @@ export type CreateOrderBody = components['schemas']['CreateOrderDto'];
 
 export const ordersKeys = {
   all: ['orders'] as const,
+  pending: () => [...ordersKeys.all, 'pending'] as const,
   detail: (id: string) => [...ordersKeys.all, 'detail', id] as const,
 };
 
@@ -27,6 +28,10 @@ export function createOrder(body: CreateOrderBody): Promise<OrderResponse> {
 
 export function getOrder(id: string): Promise<OrderResponse> {
   return apiFetch<OrderResponse>(`/orders/${encodeURIComponent(id)}`);
+}
+
+export function getPendingOrders(): Promise<OrderResponse[]> {
+  return apiFetch<OrderResponse[]>('/orders/pending');
 }
 
 export function getMyTickets(): Promise<MyTicket[]> {

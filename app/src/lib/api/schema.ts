@@ -297,6 +297,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/orders/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the current user's unexpired pending orders. */
+        get: operations["OrdersController_listPending"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/orders/{id}": {
         parameters: {
             query?: never;
@@ -1671,12 +1688,31 @@ export interface operations {
                     "application/json": components["schemas"]["OrderResponseDto"];
                 };
             };
-            /** @description EVENT_NOT_PURCHASABLE | SOLD_OUT */
+            /** @description EVENT_NOT_PURCHASABLE | PENDING_ORDER_LIMIT_REACHED | SOLD_OUT */
             409: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    OrdersController_listPending: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderResponseDto"][];
+                };
             };
         };
     };

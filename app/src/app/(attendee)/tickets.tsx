@@ -1,8 +1,8 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as MediaLibrary from 'expo-media-library';
 import { router } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -12,34 +12,77 @@ import {
   Pressable,
   ScrollView,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ViewShot from 'react-native-view-shot';
 
+import { PendingOrderCarousel } from '@/components/ticket/pending-order-carousel';
 import { TicketImageCard } from '@/components/ticket/ticket-image-card';
 import { TicketStatusBadge } from '@/components/ticket/ticket-status-badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { themes } from '@/design/themes';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useTokens } from '@/hooks/use-tokens';
 import { toUserMessage } from '@/lib/api/error-message';
-import { getMyTickets, ticketsKeys, type MyTicket } from '@/lib/api/orders';
+import {
+  getMyTickets,
+  getPendingOrders,
+  ordersKeys,
+  ticketsKeys,
+  type MyTicket,
+} from '@/lib/api/orders';
 import { formatDateTime } from '@/lib/format';
 
 type SaveFeedback = 'success' | 'permission' | 'error' | null;
+type TicketFilter = 'ALL' | MyTicket['status'];
+
+const FILTERS: {
+  value: TicketFilter;
+  label: 'all' | 'purchased' | 'used' | 'cancelled';
+}[] = [
+  { value: 'ALL', label: 'all' },
+  { value: 'ISSUED', label: 'purchased' },
+  { value: 'USED', label: 'used' },
+  { value: 'VOID', label: 'cancelled' },
+];
+
+function normalizeEventTitle(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLocaleLowerCase()
+    .trim();
+}
 
 export default function TicketsScreen() {
   const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme() ?? 'light';
+  const tokens = useTokens();
+  const queryClient = useQueryClient();
   const [active, setActive] = useState<MyTicket | null>(null);
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<TicketFilter>('ALL');
+  const [now, setNow] = useState(() => Date.now());
   const [isSaving, setIsSaving] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<SaveFeedback>(null);
   const ticketImageRef = useRef<ViewShot>(null);
+  const previousPendingIds = useRef<string | null>(null);
   const [mediaPermission, requestMediaPermission] = MediaLibrary.usePermissions({
     writeOnly: true,
     granularPermissions: [],
+  });
+
+  const pendingOrdersQuery = useQuery({
+    queryKey: ordersKeys.pending(),
+    queryFn: getPendingOrders,
+    refetchInterval: (pendingQuery) =>
+      pendingQuery.state.data?.length ? 4000 : false,
   });
 
   const ticketsQuery = useQuery({
@@ -47,28 +90,57 @@ export default function TicketsScreen() {
     queryFn: getMyTickets,
   });
 
-  if (ticketsQuery.isPending) {
-    return (
-      <View className="flex-1 items-center justify-center bg-surface">
-        <ActivityIndicator className="text-primary" />
-      </View>
-    );
-  }
+  useEffect(() => {
+    if (!pendingOrdersQuery.data?.length) return;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [pendingOrdersQuery.data?.length]);
 
-  if (ticketsQuery.isError) {
-    return (
-      <View className="flex-1 justify-center bg-surface">
-        <EmptyState
-          icon="cloud-off"
-          title={t('tickets.loadErrorTitle')}
-          description={toUserMessage(ticketsQuery.error, t)}
-          action={<Button label={t('common.retry')} onPress={() => void ticketsQuery.refetch()} />}
-        />
-      </View>
-    );
-  }
+  useEffect(() => {
+    if (!pendingOrdersQuery.data) return;
+    const pendingIds = pendingOrdersQuery.data
+      .map((order) => order.id)
+      .sort()
+      .join(':');
+    if (
+      previousPendingIds.current !== null &&
+      previousPendingIds.current !== pendingIds
+    ) {
+      void queryClient.invalidateQueries({ queryKey: ticketsKeys.mine() });
+    }
+    previousPendingIds.current = pendingIds;
+  }, [pendingOrdersQuery.data, queryClient]);
 
-  const tickets = ticketsQuery.data;
+  const normalizedQuery = normalizeEventTitle(query);
+  const tickets = useMemo(() => ticketsQuery.data ?? [], [ticketsQuery.data]);
+  const pendingOrders = useMemo(
+    () =>
+      (pendingOrdersQuery.data ?? []).filter(
+        (order) => order.payment && new Date(order.payment.expiresAt).getTime() > now,
+      ),
+    [now, pendingOrdersQuery.data],
+  );
+  const matchingPendingOrders = useMemo(
+    () =>
+      pendingOrders.filter((order) =>
+        normalizeEventTitle(order.event.title).includes(normalizedQuery),
+      ),
+    [normalizedQuery, pendingOrders],
+  );
+  const matchingTickets = useMemo(
+    () =>
+      tickets.filter((ticket) =>
+        normalizeEventTitle(ticket.eventTitle).includes(normalizedQuery),
+      ),
+    [normalizedQuery, tickets],
+  );
+  const filteredTickets = useMemo(
+    () =>
+      filter === 'ALL'
+        ? matchingTickets
+        : matchingTickets.filter((ticket) => ticket.status === filter),
+    [filter, matchingTickets],
+  );
 
   function openTicket(ticket: MyTicket) {
     setSaveFeedback(null);
@@ -112,93 +184,216 @@ export default function TicketsScreen() {
     }
   }
 
-  if (tickets.length === 0) {
-    return (
-      <View className="flex-1 justify-center bg-surface">
-        <EmptyState
-          icon="confirmation-number"
-          title={t('tickets.emptyTitle')}
-          description={t('tickets.emptyDescription')}
-          action={
-            <Button
-              variant="outline"
-              label={t('tickets.emptyAction')}
-              onPress={() => router.replace('/')}
-            />
-          }
-        />
-      </View>
-    );
-  }
-
   return (
     <View className="flex-1 bg-surface">
       <ScrollView
         className="w-full max-w-content flex-1 self-center"
         contentContainerClassName="px-container-padding gap-4"
         contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: insets.bottom + 24 }}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         <Text className="font-bold text-headline-md text-on-surface">{t('tabs.tickets')}</Text>
 
-        {tickets.map((ticket) => {
-          return (
+        <View className="h-touch-target-min flex-row items-center gap-2 rounded-full border border-outline-variant bg-surface-container-lowest px-4">
+          <MaterialIcons name="search" size={20} className="text-on-surface-variant" />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder={t('tickets.searchPlaceholder')}
+            placeholderTextColor={tokens['on-surface-variant']}
+            accessibilityLabel={t('tickets.searchPlaceholder')}
+            returnKeyType="search"
+            textAlignVertical="center"
+            className="h-full min-w-0 flex-1 py-0 font-sans text-body-md text-on-surface"
+          />
+          {query ? (
             <Pressable
-              key={ticket.id}
-              accessibilityLabel={t('tickets.openQrForEvent', { event: ticket.eventTitle })}
+              accessibilityLabel={t('tickets.clearSearch')}
               accessibilityRole="button"
-              onPress={() => openTicket(ticket)}
-              className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest active:bg-surface-container-low"
+              className="h-9 w-9 items-center justify-center rounded-full active:bg-surface-container-high"
+              onPress={() => setQuery('')}
             >
-              <View className="gap-3 p-4">
-                <TicketStatusBadge
-                  status={ticket.status}
-                  label={t(`tickets.status.${ticket.status.toLowerCase()}`)}
-                />
-
-                <Text
-                  numberOfLines={2}
-                  className="font-semibold text-body-lg text-on-surface"
-                >
-                  {ticket.eventTitle}
-                </Text>
-
-                <View className="gap-2">
-                  <View className="flex-row items-start gap-2">
-                    <MaterialIcons name="event" size={19} className="text-primary" />
-                    <Text className="flex-1 font-sans text-label-md text-on-surface-variant">
-                      {formatDateTime(ticket.eventStartAt, i18n.language)}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-start gap-2">
-                    <MaterialIcons name="location-on" size={19} className="text-primary" />
-                    <Text
-                      numberOfLines={2}
-                      className="flex-1 font-sans text-label-md text-on-surface-variant"
-                    >
-                      {ticket.eventVenue}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-
-              <View className="min-h-touch-target-min flex-row items-center justify-between gap-3 border-t border-outline-variant px-4 py-2">
-                <Text
-                  numberOfLines={1}
-                  className="min-w-0 flex-1 font-medium text-label-md text-on-surface"
-                >
-                  {ticket.ticketTypeName}
-                </Text>
-                <View className="flex-row items-center gap-2">
-                  <MaterialIcons name="qr-code-2" size={20} className="text-primary" />
-                  <Text className="font-semibold text-label-md text-primary">
-                    {t('tickets.viewQr')}
-                  </Text>
-                </View>
-              </View>
+              <MaterialIcons name="close" size={20} className="text-on-surface-variant" />
             </Pressable>
-          );
-        })}
+          ) : null}
+        </View>
+
+        {pendingOrdersQuery.isPending ? (
+          <View className="items-center gap-2 py-4">
+            <ActivityIndicator className="text-primary" />
+            <Text className="font-sans text-label-md text-on-surface-variant">
+              {t('tickets.pending.loading')}
+            </Text>
+          </View>
+        ) : pendingOrdersQuery.isError ? (
+          <View className="gap-3 rounded-xl border border-error/30 bg-error-container p-4">
+            <View className="flex-row items-start gap-2">
+              <MaterialIcons name="cloud-off" size={20} className="text-on-error-container" />
+              <View className="min-w-0 flex-1 gap-1">
+                <Text className="font-semibold text-body-md text-on-error-container">
+                  {t('tickets.pending.loadErrorTitle')}
+                </Text>
+                <Text className="font-sans text-label-md text-on-error-container">
+                  {toUserMessage(pendingOrdersQuery.error, t)}
+                </Text>
+              </View>
+            </View>
+            <Button
+              variant="outline"
+              label={t('common.retry')}
+              onPress={() => void pendingOrdersQuery.refetch()}
+            />
+          </View>
+        ) : matchingPendingOrders.length ? (
+          <PendingOrderCarousel
+            orders={matchingPendingOrders}
+            now={now}
+            onContinue={(order) =>
+              router.push({
+                pathname: '/order/[id]',
+                params: { id: order.id },
+              })
+            }
+          />
+        ) : null}
+
+        <ScrollView
+          horizontal
+          contentContainerClassName="gap-2"
+          showsHorizontalScrollIndicator={false}
+        >
+          {FILTERS.map((item) => {
+            const selected = filter === item.value;
+            return (
+              <Pressable
+                key={item.value}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                className={[
+                  'h-touch-target-min items-center justify-center rounded-full border px-4',
+                  selected
+                    ? 'border-primary bg-primary'
+                    : 'border-outline-variant bg-surface-container-lowest',
+                ].join(' ')}
+                onPress={() => setFilter(item.value)}
+              >
+                <Text
+                  className={[
+                    'font-semibold text-label-md',
+                    selected ? 'text-on-primary' : 'text-on-surface-variant',
+                  ].join(' ')}
+                >
+                  {t(`tickets.filters.${item.label}`)}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        {ticketsQuery.isPending ? (
+          <View className="items-center py-8">
+            <ActivityIndicator className="text-primary" />
+          </View>
+        ) : ticketsQuery.isError ? (
+          <EmptyState
+            icon="cloud-off"
+            title={t('tickets.loadErrorTitle')}
+            description={toUserMessage(ticketsQuery.error, t)}
+            action={
+              <Button
+                label={t('common.retry')}
+                onPress={() => void ticketsQuery.refetch()}
+              />
+            }
+          />
+        ) : filteredTickets.length ? (
+          filteredTickets.map((ticket) => {
+            return (
+              <Pressable
+                key={ticket.id}
+                accessibilityLabel={t('tickets.openQrForEvent', {
+                  event: ticket.eventTitle,
+                })}
+                accessibilityRole="button"
+                onPress={() => openTicket(ticket)}
+                className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest active:bg-surface-container-low"
+              >
+                <View className="gap-3 p-4">
+                  <TicketStatusBadge
+                    status={ticket.status}
+                    label={t(`tickets.status.${ticket.status.toLowerCase()}`)}
+                  />
+
+                  <Text
+                    numberOfLines={2}
+                    className="font-semibold text-body-lg text-on-surface"
+                  >
+                    {ticket.eventTitle}
+                  </Text>
+
+                  <View className="gap-2">
+                    <View className="flex-row items-start gap-2">
+                      <MaterialIcons name="event" size={19} className="text-primary" />
+                      <Text className="flex-1 font-sans text-label-md text-on-surface-variant">
+                        {formatDateTime(ticket.eventStartAt, i18n.language)}
+                      </Text>
+                    </View>
+                    <View className="flex-row items-start gap-2">
+                      <MaterialIcons name="location-on" size={19} className="text-primary" />
+                      <Text
+                        numberOfLines={2}
+                        className="flex-1 font-sans text-label-md text-on-surface-variant"
+                      >
+                        {ticket.eventVenue}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                <View className="min-h-touch-target-min flex-row items-center justify-between gap-3 border-t border-outline-variant px-4 py-2">
+                  <Text
+                    numberOfLines={1}
+                    className="min-w-0 flex-1 font-medium text-label-md text-on-surface"
+                  >
+                    {ticket.ticketTypeName}
+                  </Text>
+                  <View className="flex-row items-center gap-2">
+                    <MaterialIcons name="qr-code-2" size={20} className="text-primary" />
+                    <Text className="font-semibold text-label-md text-primary">
+                      {t('tickets.viewQr')}
+                    </Text>
+                  </View>
+                </View>
+              </Pressable>
+            );
+          })
+        ) : normalizedQuery && matchingPendingOrders.length === 0 ? (
+          <EmptyState
+            icon="search-off"
+            title={t('tickets.noResultsTitle')}
+            description={t('tickets.noResultsDescription')}
+          />
+        ) : normalizedQuery ? null : tickets.length === 0 && pendingOrders.length ? null : tickets.length === 0 ? (
+          <EmptyState
+            icon="confirmation-number"
+            title={t('tickets.emptyTitle')}
+            description={t('tickets.emptyDescription')}
+            action={
+              <Button
+                variant="outline"
+                label={t('tickets.emptyAction')}
+                onPress={() => router.replace('/')}
+              />
+            }
+          />
+        ) : (
+          <EmptyState
+            icon="filter-list-off"
+            title={t('tickets.filterEmptyTitle')}
+            description={t('tickets.filterEmptyDescription')}
+          />
+        )}
       </ScrollView>
 
       <Modal

@@ -18,7 +18,7 @@ import {
   getEvent,
   type TicketTypeSummary,
 } from '@/lib/api/events';
-import { createOrder, ticketsKeys } from '@/lib/api/orders';
+import { createOrder, ordersKeys, ticketsKeys } from '@/lib/api/orders';
 import { formatDateTime, formatVndAmount } from '@/lib/format';
 
 /** A per-purchase idempotency key so a retried Buy never orders twice. */
@@ -33,6 +33,7 @@ export default function EventDetailScreen() {
   const queryClient = useQueryClient();
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [orderError, setOrderError] = useState<string | null>(null);
+  const [orderErrorCode, setOrderErrorCode] = useState<string | null>(null);
   const requestId = useRef<string | null>(null);
   const eventId = Array.isArray(params.id) ? params.id[0] : (params.id ?? '');
 
@@ -46,6 +47,7 @@ export default function EventDetailScreen() {
   useEffect(() => {
     setQuantities({});
     setOrderError(null);
+    setOrderErrorCode(null);
     requestId.current = null;
   }, [eventId]);
 
@@ -59,11 +61,14 @@ export default function EventDetailScreen() {
     },
     onSuccess: (order) => {
       requestId.current = null;
+      setOrderErrorCode(null);
+      void queryClient.invalidateQueries({ queryKey: ordersKeys.pending() });
       void queryClient.invalidateQueries({ queryKey: ticketsKeys.mine() });
       router.replace({ pathname: '/order/[id]', params: { id: order.id } });
     },
     onError: (error) => {
       setOrderError(toUserMessage(error, t));
+      setOrderErrorCode(error instanceof ApiError ? error.code : null);
       // A sold-out race means our remaining counts are stale; pull fresh ones.
       if (error instanceof ApiError && error.code === 'SOLD_OUT') {
         void eventQuery.refetch();
@@ -218,7 +223,27 @@ export default function EventDetailScreen() {
           style={{ paddingBottom: insets.bottom + 16 }}
         >
           {orderError ? (
-            <Text className="font-sans text-label-md text-error">{orderError}</Text>
+            <View className="gap-2 rounded-md bg-error-container p-3">
+              <Text className="font-sans text-label-md text-on-error-container">
+                {orderError}
+              </Text>
+              {orderErrorCode === 'PENDING_ORDER_LIMIT_REACHED' ? (
+                <Pressable
+                  accessibilityRole="button"
+                  className="min-h-touch-target-min flex-row items-center justify-center gap-2 self-start rounded-full border border-primary px-4 active:bg-primary/10"
+                  onPress={() => router.replace('/tickets')}
+                >
+                  <MaterialIcons
+                    name="schedule"
+                    size={20}
+                    className="text-primary"
+                  />
+                  <Text className="font-semibold text-label-md text-primary">
+                    {t('order.viewPendingOrders')}
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
           ) : null}
 
           <View className="flex-row items-center justify-between gap-4">
@@ -242,6 +267,7 @@ export default function EventDetailScreen() {
               disabled={selectedCount === 0}
               onPress={() => {
                 setOrderError(null);
+                setOrderErrorCode(null);
                 orderMutation.mutate();
               }}
             />

@@ -29,13 +29,25 @@ export class OrdersController {
   })
   @ApiCreatedResponse({ type: OrderResponseDto })
   @ApiConflictResponse({
-    description: 'EVENT_NOT_PURCHASABLE | SOLD_OUT',
+    description:
+      'EVENT_NOT_PURCHASABLE | PENDING_ORDER_LIMIT_REACHED | SOLD_OUT',
   })
   create(
     @CurrentUser() user: CurrentUserData,
     @Body() dto: CreateOrderDto,
   ): Promise<OrderResponseDto> {
     return this.orders.create(user.id, dto);
+  }
+
+  @Get('pending')
+  @ApiOperation({
+    summary: "List the current user's unexpired pending orders.",
+  })
+  @ApiOkResponse({ type: [OrderResponseDto] })
+  listPending(
+    @CurrentUser() user: CurrentUserData,
+  ): Promise<OrderResponseDto[]> {
+    return this.orders.listPending(user.id);
   }
 
   @Get(':id')

@@ -66,3 +66,11 @@ export function formatDayMonth(iso: string, locale: string): string {
 export function formatDateTime(iso: string, locale: string): string {
   return dateTimeFormat(locale).format(new Date(iso));
 }
+
+/** Formats a millisecond span as mm:ss, clamped at zero. */
+export function formatCountdown(ms: number): string {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+  const seconds = String(totalSeconds % 60).padStart(2, '0');
+  return `${minutes}:${seconds}`;
+}

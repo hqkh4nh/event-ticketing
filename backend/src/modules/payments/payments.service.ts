@@ -69,7 +69,9 @@ export class PaymentsService {
       const issued = await this.prisma.$transaction(async (tx) => {
         const flipped = await tx.$executeRaw`
           UPDATE "Order" SET status = 'PAID', "paidAt" = now()
-          WHERE id = ${order.id}::uuid AND status = 'PENDING'`;
+          WHERE id = ${order.id}::uuid
+            AND status = 'PENDING'
+            AND "expiresAt" > now()`;
         if (flipped === 0) return false;
         const items = await tx.orderItem.findMany({
           where: { orderId: order.id },
@@ -111,7 +113,10 @@ export class PaymentsService {
     await this.recordPayment({
       ...base,
       status: 'REVIEW_REQUIRED',
-      reviewReason: `Payment received for order in status ${order.status}.`,
+      reviewReason:
+        order.status === 'PENDING'
+          ? 'Payment received after order expiry.'
+          : `Payment received for order in status ${order.status}.`,
     });
     await this.notifyAdmins(sepayTxnId);
   }

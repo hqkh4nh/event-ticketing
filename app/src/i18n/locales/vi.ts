@@ -48,10 +48,30 @@ export const vi = {
     back: 'Quay lại',
   },
   tickets: {
+    searchPlaceholder: 'Tìm vé',
+    clearSearch: 'Xóa nội dung tìm kiếm',
+    filters: {
+      all: 'Tất cả',
+      purchased: 'Vé đã mua',
+      used: 'Đã sử dụng',
+      cancelled: 'Đã hủy',
+    },
+    pending: {
+      title: 'Chờ thanh toán',
+      status: 'Chờ thanh toán',
+      loading: 'Đang tải đơn chờ thanh toán…',
+      loadErrorTitle: 'Không tải được đơn chờ thanh toán',
+      amount: 'Tổng tiền',
+      continuePayment: 'Tiếp tục thanh toán',
+    },
     emptyTitle: 'Chưa có vé nào',
     emptyDescription: 'Vé bạn đặt sẽ xuất hiện ở đây.',
     emptyAction: 'Khám phá sự kiện',
     loadErrorTitle: 'Không tải được vé',
+    noResultsTitle: 'Không tìm thấy vé phù hợp',
+    noResultsDescription: 'Không có vé nào khớp với tên sự kiện bạn đang tìm.',
+    filterEmptyTitle: 'Chưa có vé ở trạng thái này',
+    filterEmptyDescription: 'Hãy chọn bộ lọc khác để xem các vé của bạn.',
     viewQr: 'Xem mã QR',
     openQrForEvent: 'Xem mã QR vé {{event}}',
     detailTitle: 'Chi tiết vé',
@@ -67,7 +87,7 @@ export const vi = {
     status: {
       issued: 'Còn hiệu lực',
       used: 'Đã sử dụng',
-      void: 'Không còn hiệu lực',
+      void: 'Đã hủy',
     },
     close: 'Đóng',
   },
@@ -85,6 +105,11 @@ export const vi = {
     transferNoteHint: 'Giữ nguyên nội dung này để hệ thống đối soát đúng đơn.',
     timeLeft: 'Còn lại {{time}}',
     waiting: 'Đang chờ chuyển khoản…',
+    viewPendingOrders: 'Xem đơn chờ thanh toán',
+    leave: 'Rời đi',
+    leaveConfirmTitle: 'Rời màn thanh toán?',
+    leaveConfirmDescription:
+      'Đơn vẫn được giữ đến khi hết thời gian. Bạn có thể mở lại từ mục Chờ thanh toán trong Vé của tôi.',
     expiredTitle: 'Đơn đã hết hạn',
     expiredBody: 'Cửa sổ thanh toán 15 phút đã đóng. Vui lòng đặt lại.',
     backToEvent: 'Về trang sự kiện',
@@ -574,6 +599,8 @@ export const vi = {
       INVALID_STATE_TRANSITION: 'Không thể thực hiện thao tác này ở trạng thái hiện tại.',
       LAST_TICKET_TYPE:
         'Sự kiện đã xuất bản phải giữ ít nhất một hạng vé. Hãy gỡ xuất bản trước.',
+      PENDING_ORDER_LIMIT_REACHED:
+        'Bạn đã có 3 đơn đang chờ thanh toán. Hãy hoàn tất một đơn hoặc chờ đơn hết hạn trước khi đặt thêm.',
     },
     
 
