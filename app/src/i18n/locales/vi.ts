@@ -20,7 +20,7 @@ export const vi = {
     openFilters: 'Mở bộ lọc',
     activeFilterCount: '{{count}} bộ lọc đang áp dụng',
     allCategories: 'Tất cả',
-    allCities: 'Tất cả thành phố',
+    allCities: 'Tất cả',
     selectedCity: 'Thành phố đã chọn: {{city}}',
     chooseCity: 'Chọn thành phố',
     searchCity: 'Tìm thành phố',

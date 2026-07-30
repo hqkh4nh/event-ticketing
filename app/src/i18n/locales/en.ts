@@ -22,7 +22,7 @@ export const en = {
     activeFilterCount: '{{count}} active filter',
     activeFilterCount_other: '{{count}} active filters',
     allCategories: 'All',
-    allCities: 'All cities',
+    allCities: 'All',
     selectedCity: 'Selected city: {{city}}',
     chooseCity: 'Choose a city',
     searchCity: 'Search cities',
