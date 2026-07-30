@@ -154,6 +154,12 @@ export const vi = {
     leaveConfirmTitle: 'Rời màn thanh toán?',
     leaveConfirmDescription:
       'Đơn vẫn được giữ đến khi hết thời gian. Bạn có thể mở lại từ mục Chờ thanh toán trong Vé của tôi.',
+    cancelPending: 'Hủy đơn',
+    cancelConfirmTitle: 'Hủy đơn chờ thanh toán?',
+    cancelConfirmDescription:
+      'Đơn vé “{{eventTitle}}” sẽ bị hủy và số vé đang giữ sẽ được trả lại ngay.',
+    cancelledTitle: 'Đơn đã được hủy',
+    cancelledBody: 'Đơn chờ thanh toán này đã được hủy và không còn giữ vé.',
     expiredTitle: 'Đơn đã hết hạn',
     expiredBody: 'Cửa sổ thanh toán 15 phút đã đóng. Vui lòng đặt lại.',
     backToEvent: 'Về trang sự kiện',

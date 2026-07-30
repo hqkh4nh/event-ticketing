@@ -1,8 +1,17 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -48,6 +57,23 @@ export class OrdersController {
     @CurrentUser() user: CurrentUserData,
   ): Promise<OrderResponseDto[]> {
     return this.orders.listPending(user.id);
+  }
+
+  @Post(':id/cancel')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary:
+      "Cancel one of the current user's unexpired pending orders and immediately release its held inventory.",
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiNoContentResponse()
+  @ApiNotFoundResponse({ description: 'NOT_FOUND' })
+  @ApiConflictResponse({ description: 'INVALID_STATE_TRANSITION' })
+  cancel(
+    @CurrentUser() user: CurrentUserData,
+    @Param('id') id: string,
+  ): Promise<void> {
+    return this.orders.cancelPending(user.id, id);
   }
 
   @Get(':id')

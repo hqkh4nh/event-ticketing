@@ -238,6 +238,40 @@ export class OrdersService {
     return orders.map((order) => this.toResponse(order));
   }
 
+  /**
+   * Cancels only an unexpired PENDING order owned by the buyer. The guarded
+   * update races safely with the payment webhook: whichever status transition
+   * commits first wins, and the loser cannot overwrite it.
+   */
+  async cancelPending(buyerId: string, orderId: string): Promise<void> {
+    const cancelled = await this.prisma.order.updateMany({
+      where: {
+        id: orderId,
+        buyerId,
+        status: 'PENDING',
+        expiresAt: { gt: new Date() },
+      },
+      data: { status: 'CANCELLED' },
+    });
+    if (cancelled.count === 1) return;
+
+    const existing = await this.prisma.order.findFirst({
+      where: { id: orderId, buyerId },
+      select: { id: true },
+    });
+    if (!existing) {
+      throw new NotFoundException({
+        code: ErrorCode.NOT_FOUND,
+        message: 'Order not found.',
+      });
+    }
+
+    throw new ConflictException({
+      code: ErrorCode.INVALID_STATE_TRANSITION,
+      message: 'Only an unexpired pending order may be cancelled.',
+    });
+  }
+
   async getById(buyerId: string, orderId: string): Promise<OrderResponseDto> {
     const order = await this.prisma.order.findFirst({
       where: { id: orderId, buyerId },

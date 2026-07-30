@@ -1,5 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as MediaLibrary from 'expo-media-library';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -22,17 +22,20 @@ import { PendingOrderCarousel } from '@/components/ticket/pending-order-carousel
 import { TicketImageCard } from '@/components/ticket/ticket-image-card';
 import { TicketStatusBadge } from '@/components/ticket/ticket-status-badge';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
 import { themes } from '@/design/themes';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTokens } from '@/hooks/use-tokens';
 import { toUserMessage } from '@/lib/api/error-message';
 import {
+  cancelPendingOrder,
   getMyTickets,
   getPendingOrders,
   ordersKeys,
   ticketsKeys,
   type MyTicket,
+  type OrderResponse,
 } from '@/lib/api/orders';
 import { formatDateTime } from '@/lib/format';
 
@@ -71,6 +74,8 @@ export default function TicketsScreen() {
   const [now, setNow] = useState(() => Date.now());
   const [isSaving, setIsSaving] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<SaveFeedback>(null);
+  const [cancelTarget, setCancelTarget] = useState<OrderResponse | null>(null);
+  const [cancelError, setCancelError] = useState<string | null>(null);
   const ticketImageRef = useRef<ViewShot>(null);
   const previousPendingIds = useRef<string | null>(null);
   const [mediaPermission, requestMediaPermission] = MediaLibrary.usePermissions({
@@ -88,6 +93,31 @@ export default function TicketsScreen() {
   const ticketsQuery = useQuery({
     queryKey: ticketsKeys.mine(),
     queryFn: getMyTickets,
+  });
+
+  const cancelOrder = useMutation({
+    mutationFn: cancelPendingOrder,
+    onSuccess: (_, orderId) => {
+      queryClient.setQueryData<OrderResponse[]>(
+        ordersKeys.pending(),
+        (current) => current?.filter((order) => order.id !== orderId),
+      );
+      queryClient.setQueryData<OrderResponse>(
+        ordersKeys.detail(orderId),
+        (current) =>
+          current
+            ? { ...current, status: 'CANCELLED', payment: undefined }
+            : current,
+      );
+      setCancelTarget(null);
+      setCancelError(null);
+      void queryClient.invalidateQueries({ queryKey: ordersKeys.pending() });
+    },
+    onError: (error) => {
+      setCancelTarget(null);
+      setCancelError(toUserMessage(error, t));
+      void pendingOrdersQuery.refetch();
+    },
   });
 
   useEffect(() => {
@@ -219,6 +249,34 @@ export default function TicketsScreen() {
           ) : null}
         </View>
 
+        {cancelError ? (
+          <View
+            accessibilityRole="alert"
+            className="flex-row items-start gap-2 rounded-lg bg-error-container p-3"
+          >
+            <MaterialIcons
+              name="error-outline"
+              size={20}
+              className="text-on-error-container"
+            />
+            <Text className="min-w-0 flex-1 font-sans text-label-md text-on-error-container">
+              {cancelError}
+            </Text>
+            <Pressable
+              accessibilityLabel={t('tickets.close')}
+              accessibilityRole="button"
+              className="h-8 w-8 items-center justify-center rounded-full active:bg-error/10"
+              onPress={() => setCancelError(null)}
+            >
+              <MaterialIcons
+                name="close"
+                size={18}
+                className="text-on-error-container"
+              />
+            </Pressable>
+          </View>
+        ) : null}
+
         {pendingOrdersQuery.isPending ? (
           <View className="items-center gap-2 py-4">
             <ActivityIndicator className="text-primary" />
@@ -255,6 +313,10 @@ export default function TicketsScreen() {
                 params: { id: order.id },
               })
             }
+            onCancel={(order) => {
+              setCancelError(null);
+              setCancelTarget(order);
+            }}
           />
         ) : null}
 
@@ -507,6 +569,24 @@ export default function TicketsScreen() {
           ) : null}
         </View>
       </Modal>
+
+      <ConfirmDialog
+        visible={cancelTarget !== null}
+        icon="cancel"
+        title={t('order.cancelConfirmTitle')}
+        description={t('order.cancelConfirmDescription', {
+          eventTitle: cancelTarget?.event.title ?? '',
+        })}
+        cancelLabel={t('common.cancel')}
+        confirmLabel={t('order.cancelPending')}
+        loading={cancelOrder.isPending}
+        onCancel={() => {
+          if (!cancelOrder.isPending) setCancelTarget(null);
+        }}
+        onConfirm={() => {
+          if (cancelTarget) cancelOrder.mutate(cancelTarget.id);
+        }}
+      />
     </View>
   );
 }

@@ -1,5 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -12,8 +12,14 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
 import { NumericText } from '@/components/ui/numeric-text';
-import { getOrder, ordersKeys, ticketsKeys, type OrderResponse } from '@/lib/api/orders';
 import { toUserMessage } from '@/lib/api/error-message';
+import {
+  cancelPendingOrder,
+  getOrder,
+  ordersKeys,
+  ticketsKeys,
+  type OrderResponse,
+} from '@/lib/api/orders';
 import { formatCountdown, formatDateTime, formatVndAmount } from '@/lib/format';
 
 export default function OrderScreen() {
@@ -22,6 +28,8 @@ export default function OrderScreen() {
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const [leaveConfirmVisible, setLeaveConfirmVisible] = useState(false);
+  const [cancelConfirmVisible, setCancelConfirmVisible] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
   const orderId = Array.isArray(params.id) ? params.id[0] : (params.id ?? '');
 
   const orderQuery = useQuery({
@@ -36,6 +44,32 @@ export default function OrderScreen() {
     refetchIntervalInBackground: true,
   });
   const order = orderQuery.data;
+
+  const cancelOrder = useMutation({
+    mutationFn: () => cancelPendingOrder(orderId),
+    onSuccess: () => {
+      queryClient.setQueryData<OrderResponse[]>(
+        ordersKeys.pending(),
+        (current) => current?.filter((item) => item.id !== orderId),
+      );
+      queryClient.setQueryData<OrderResponse>(
+        ordersKeys.detail(orderId),
+        (current) =>
+          current
+            ? { ...current, status: 'CANCELLED', payment: undefined }
+            : current,
+      );
+      setCancelConfirmVisible(false);
+      setCancelError(null);
+      void queryClient.invalidateQueries({ queryKey: ordersKeys.pending() });
+      router.replace('/tickets');
+    },
+    onError: (error) => {
+      setCancelConfirmVisible(false);
+      setCancelError(toUserMessage(error, t));
+      void orderQuery.refetch();
+    },
+  });
 
   useEffect(() => {
     if (order?.status !== 'PAID') return;
@@ -77,14 +111,23 @@ export default function OrderScreen() {
   const remainingMs = order.payment
     ? new Date(order.payment.expiresAt).getTime() - now
     : 0;
+  const isCancelled = order.status === 'CANCELLED';
   const isExpired =
     order.status === 'EXPIRED' ||
-    order.status === 'CANCELLED' ||
     (order.status === 'PENDING' && remainingMs <= 0);
 
   const body =
     order.status === 'PENDING' && !isExpired ? (
-      <PendingPayment order={order} remainingMs={remainingMs} />
+      <PendingPayment
+        order={order}
+        remainingMs={remainingMs}
+        onCancel={() => {
+          setCancelError(null);
+          setCancelConfirmVisible(true);
+        }}
+      />
+    ) : isCancelled ? (
+      <CancelledOrder eventId={order.event.id} />
     ) : isExpired ? (
       <ExpiredOrder eventId={order.event.id} />
     ) : (
@@ -113,6 +156,21 @@ export default function OrderScreen() {
           </Pressable>
         ) : null}
         <EventSummary order={order} />
+        {cancelError ? (
+          <View
+            accessibilityRole="alert"
+            className="flex-row items-start gap-2 rounded-lg bg-error-container p-3"
+          >
+            <MaterialIcons
+              name="error-outline"
+              size={20}
+              className="text-on-error-container"
+            />
+            <Text className="min-w-0 flex-1 font-sans text-label-md text-on-error-container">
+              {cancelError}
+            </Text>
+          </View>
+        ) : null}
         {body}
       </ScrollView>
 
@@ -129,6 +187,21 @@ export default function OrderScreen() {
           setLeaveConfirmVisible(false);
           router.replace('/tickets');
         }}
+      />
+      <ConfirmDialog
+        visible={cancelConfirmVisible}
+        title={t('order.cancelConfirmTitle')}
+        description={t('order.cancelConfirmDescription', {
+          eventTitle: order.event.title,
+        })}
+        cancelLabel={t('common.cancel')}
+        confirmLabel={t('order.cancelPending')}
+        icon="cancel"
+        loading={cancelOrder.isPending}
+        onCancel={() => {
+          if (!cancelOrder.isPending) setCancelConfirmVisible(false);
+        }}
+        onConfirm={() => cancelOrder.mutate()}
       />
     </View>
   );
@@ -150,9 +223,11 @@ function EventSummary({ order }: { order: OrderResponse }) {
 function PendingPayment({
   order,
   remainingMs,
+  onCancel,
 }: {
   order: OrderResponse;
   remainingMs: number;
+  onCancel: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const payment = order.payment;
@@ -208,6 +283,12 @@ function PendingPayment({
           {t('order.waiting')}
         </Text>
       </View>
+      <Button
+        icon="cancel"
+        variant="outline"
+        label={t('order.cancelPending')}
+        onPress={onCancel}
+      />
     </View>
   );
 }
@@ -231,6 +312,36 @@ function ExpiredOrder({ eventId }: { eventId: string }) {
           onPress={() => router.replace({ pathname: '/event/[id]', params: { id: eventId } })}
         />
         <Button variant="outline" label={t('order.backHome')} onPress={() => router.replace('/')} />
+      </View>
+    </View>
+  );
+}
+
+function CancelledOrder({ eventId }: { eventId: string }) {
+  const { t } = useTranslation();
+  return (
+    <View className="items-center gap-4 pt-6">
+      <View className="h-16 w-16 items-center justify-center rounded-full bg-error/10">
+        <MaterialIcons name="cancel" size={40} className="text-error" />
+      </View>
+      <Text className="text-center font-bold text-headline-md text-on-surface">
+        {t('order.cancelledTitle')}
+      </Text>
+      <Text className="text-center font-sans text-body-md text-on-surface-variant">
+        {t('order.cancelledBody')}
+      </Text>
+      <View className="w-full gap-3 pt-2">
+        <Button
+          label={t('order.backToEvent')}
+          onPress={() =>
+            router.replace({ pathname: '/event/[id]', params: { id: eventId } })
+          }
+        />
+        <Button
+          variant="outline"
+          label={t('order.backHome')}
+          onPress={() => router.replace('/')}
+        />
       </View>
     </View>
   );

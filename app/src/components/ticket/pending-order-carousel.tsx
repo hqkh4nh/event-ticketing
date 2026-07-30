@@ -16,12 +16,14 @@ type PendingOrderCarouselProps = {
   orders: OrderResponse[];
   now: number;
   onContinue: (order: OrderResponse) => void;
+  onCancel: (order: OrderResponse) => void;
 };
 
 export function PendingOrderCarousel({
   orders,
   now,
   onContinue,
+  onCancel,
 }: PendingOrderCarouselProps) {
   const { t } = useTranslation();
   const [slideWidth, setSlideWidth] = useState(0);
@@ -65,6 +67,7 @@ export function PendingOrderCarousel({
                     new Date(item.payment?.expiresAt ?? 0).getTime() - now
                   }
                   onContinue={() => onContinue(item)}
+                  onCancel={() => onCancel(item)}
                 />
               </View>
             )}

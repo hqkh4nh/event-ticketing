@@ -157,6 +157,12 @@ export const en = {
     leaveConfirmTitle: 'Leave payment?',
     leaveConfirmDescription:
       'Your order remains reserved until the timer ends. You can reopen it from Awaiting payment in My Tickets.',
+    cancelPending: 'Cancel order',
+    cancelConfirmTitle: 'Cancel pending order?',
+    cancelConfirmDescription:
+      'Your order for “{{eventTitle}}” will be cancelled and its held tickets released immediately.',
+    cancelledTitle: 'Order cancelled',
+    cancelledBody: 'This pending order was cancelled and no longer holds tickets.',
     expiredTitle: 'This order expired',
     expiredBody: 'The 15-minute payment window closed. Please book again.',
     backToEvent: 'Back to event',

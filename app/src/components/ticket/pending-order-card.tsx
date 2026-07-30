@@ -1,6 +1,6 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { NumericText } from '@/components/ui/numeric-text';
@@ -11,12 +11,14 @@ type PendingOrderCardProps = {
   order: OrderResponse;
   remainingMs: number;
   onContinue: () => void;
+  onCancel: () => void;
 };
 
 export function PendingOrderCard({
   order,
   remainingMs,
   onContinue,
+  onCancel,
 }: PendingOrderCardProps) {
   const { t, i18n } = useTranslation();
 
@@ -64,11 +66,24 @@ export function PendingOrderCard({
         </NumericText>
       </View>
 
-      <Button
-        icon="qr-code-2"
-        label={t('tickets.pending.continuePayment')}
-        onPress={onContinue}
-      />
+      <View className="flex-row gap-2">
+        <Pressable
+          accessibilityRole="button"
+          className="h-cta-height items-center justify-center rounded-ctl border border-error px-3 active:scale-[0.98] active:bg-error-container"
+          onPress={onCancel}
+        >
+          <Text className="font-semibold text-body-md text-error">
+            {t('order.cancelPending')}
+          </Text>
+        </Pressable>
+        <View className="min-w-0 flex-1">
+          <Button
+            icon="qr-code-2"
+            label={t('tickets.pending.continuePayment')}
+            onPress={onContinue}
+          />
+        </View>
+      </View>
     </View>
   );
 }

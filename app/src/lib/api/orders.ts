@@ -34,6 +34,12 @@ export function getPendingOrders(): Promise<OrderResponse[]> {
   return apiFetch<OrderResponse[]>('/orders/pending');
 }
 
+export function cancelPendingOrder(id: string): Promise<void> {
+  return apiFetch<void>(`/orders/${encodeURIComponent(id)}/cancel`, {
+    method: 'POST',
+  });
+}
+
 export function getMyTickets(): Promise<MyTicket[]> {
   return apiFetch<MyTicket[]>('/me/tickets');
 }
