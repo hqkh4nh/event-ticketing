@@ -15,6 +15,7 @@ export type CurrentUserData = {
   email: string | null;
   fullName: string;
   phone: string | null;
+  avatarUrl: string | null;
   role: Role;
   status: UserStatus;
   locale: Locale;
@@ -48,6 +49,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             email: true,
             fullName: true,
             phone: true,
+            avatarUrl: true,
             role: true,
             status: true,
             locale: true,

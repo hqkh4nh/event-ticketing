@@ -48,6 +48,13 @@
       "expo-localization",
       "@react-native-community/datetimepicker",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Cho phép eTicket chọn ảnh bìa sự kiện và ảnh đại diện.",
+          "microphonePermission": false
+        }
+      ],
+      [
         "expo-media-library",
         {
           "photosPermission": false,

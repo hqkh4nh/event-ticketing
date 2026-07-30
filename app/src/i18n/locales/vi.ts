@@ -5,6 +5,12 @@ export const vi = {
     done: 'Xong',
     retry: 'Thử lại',
   },
+  media: {
+    chooseImage: 'Chọn ảnh',
+    changeImage: 'Đổi ảnh',
+    removeImage: 'Xóa ảnh',
+    pickerError: 'Không thể mở thư viện ảnh. Vui lòng thử lại.',
+  },
   home: {
     featured: 'Nổi bật',
     upcoming: 'Sắp diễn ra',
@@ -228,7 +234,9 @@ export const vi = {
   accountProfile: {
     title: 'Thông tin tài khoản',
     description: 'Cập nhật tên hiển thị và số điện thoại liên hệ của bạn.',
-    avatarDescription: 'Ảnh đại diện hiện dùng chữ viết tắt từ họ tên.',
+    avatarDescription: 'Ảnh JPG, PNG hoặc WebP, tối đa 5 MB.',
+    avatarSuccess: 'Đã cập nhật ảnh đại diện.',
+    avatarRemoved: 'Đã xóa ảnh đại diện.',
     fullName: 'Họ và tên',
     fullNamePlaceholder: 'Nhập họ và tên',
     email: 'Email đăng nhập',
@@ -802,8 +810,8 @@ export const vi = {
       startAt: 'Bắt đầu',
       endAt: 'Kết thúc',
       dateHint: 'Chọn ngày và giờ',
-      coverImageUrl: 'Ảnh bìa (URL)',
-      coverImageUrlPlaceholder: 'https://…',
+      coverImage: 'Ảnh bìa',
+      coverImageHint: 'Ảnh ngang 16:9, JPG, PNG hoặc WebP, tối đa 5 MB.',
       featured: 'Đưa vào nổi bật',
       save: 'Lưu',
       saving: 'Đang lưu…',
@@ -902,6 +910,12 @@ export const vi = {
       NOT_FOUND: 'Không tìm thấy nội dung.',
       CONFLICT: 'Thao tác bị trùng lặp.',
       INTERNAL_ERROR: 'Máy chủ gặp sự cố. Vui lòng thử lại sau.',
+      MEDIA_UPLOAD_UNAVAILABLE:
+        'Chức năng tải ảnh chưa được cấu hình. Vui lòng thử lại sau.',
+      MEDIA_UPLOAD_FAILED: 'Không thể tải ảnh lên. Vui lòng thử ảnh khác.',
+      MEDIA_DELETE_FAILED: 'Không thể xóa ảnh. Vui lòng thử lại.',
+      MEDIA_FILE_TOO_LARGE: 'Ảnh phải có dung lượng không quá 5 MB.',
+      MEDIA_FORMAT_UNSUPPORTED: 'Chỉ hỗ trợ ảnh JPG, PNG hoặc WebP.',
       EVENT_NOT_PUBLISHABLE: 'Cần ít nhất một hạng vé trước khi xuất bản.',
       INVALID_STATE_TRANSITION: 'Không thể thực hiện thao tác này ở trạng thái hiện tại.',
       LAST_TICKET_TYPE:

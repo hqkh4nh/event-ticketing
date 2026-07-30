@@ -604,6 +604,57 @@ export interface paths {
         patch: operations["AdminController_updateEventFeatured"];
         trace?: never;
     };
+    "/api/uploads/signature": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a signed direct-image upload request */
+        post: operations["UploadsController_signature"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/uploads/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify an uploaded image and save its URL */
+        post: operations["UploadsController_complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an uploaded image and clear its saved URL */
+        delete: operations["UploadsController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -631,6 +682,7 @@ export interface components {
             email: string | null;
             fullName: string;
             phone: string | null;
+            avatarUrl: string | null;
             /** @enum {string} */
             role: "ATTENDEE" | "ORGANIZER" | "SCANNER" | "ADMIN";
             /** @enum {string} */
@@ -742,7 +794,6 @@ export interface components {
              * @example 2026-09-01T15:00:00.000Z
              */
             endAt: string;
-            coverImageUrl?: string | null;
         };
         OrganizerTicketTypeDto: {
             /** Format: uuid */
@@ -801,7 +852,6 @@ export interface components {
              * @example 2026-09-01T15:00:00.000Z
              */
             endAt?: string;
-            coverImageUrl?: string | null;
         };
         CreateTicketTypeDto: {
             /** @example General Admission */
@@ -1065,6 +1115,35 @@ export interface components {
         };
         UpdateEventFeaturedDto: {
             featured: boolean;
+        };
+        UploadRequestDto: {
+            /** @enum {string} */
+            target: "USER_AVATAR" | "EVENT_COVER";
+            /** Format: uuid */
+            eventId?: string;
+        };
+        UploadSignatureDto: {
+            uploadUrl: string;
+            cloudName: string;
+            apiKey: string;
+            uploadPreset: string;
+            timestamp: number;
+            signature: string;
+            publicId: string;
+            overwrite: boolean;
+            invalidate: boolean;
+            allowedFormats: string[];
+        };
+        CompleteUploadRequestDto: {
+            /** @enum {string} */
+            target: "USER_AVATAR" | "EVENT_COVER";
+            /** Format: uuid */
+            eventId?: string;
+            assetId: string;
+            version: number;
+        };
+        CompleteUploadDto: {
+            secureUrl: string;
         };
     };
     responses: never;
@@ -2281,6 +2360,150 @@ export interface operations {
             };
             /** @description code: NOT_FOUND */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UploadsController_signature: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadSignatureDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: MEDIA_UPLOAD_UNAVAILABLE */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UploadsController_complete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteUploadRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompleteUploadDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: MEDIA_UPLOAD_FAILED */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: MEDIA_UPLOAD_UNAVAILABLE */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UploadsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadRequestDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: FORBIDDEN_ROLE */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: MEDIA_DELETE_FAILED */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: MEDIA_UPLOAD_UNAVAILABLE */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

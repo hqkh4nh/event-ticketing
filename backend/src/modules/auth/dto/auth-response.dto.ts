@@ -11,6 +11,7 @@ export class AuthUserDto {
   @ApiProperty({ type: String, nullable: true }) email!: string | null;
   @ApiProperty() fullName!: string;
   @ApiProperty({ type: String, nullable: true }) phone!: string | null;
+  @ApiProperty({ type: String, nullable: true }) avatarUrl!: string | null;
   @ApiProperty({ enum: ['ATTENDEE', 'ORGANIZER', 'SCANNER', 'ADMIN'] })
   role!: string;
   @ApiProperty({ enum: ['ACTIVE', 'PENDING', 'BLOCKED'] }) status!: string;
@@ -28,6 +29,7 @@ export function toAuthUserDto(user: {
   email: string | null;
   fullName: string;
   phone: string | null;
+  avatarUrl: string | null;
   role: string;
   status: string;
   locale: Locale;
@@ -37,6 +39,7 @@ export function toAuthUserDto(user: {
     email: user.email,
     fullName: user.fullName,
     phone: user.phone,
+    avatarUrl: user.avatarUrl,
     role: user.role,
     status: user.status,
     locale: toAppLocale(user.locale),

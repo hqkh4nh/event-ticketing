@@ -121,7 +121,6 @@ export class EventsOrganizerService {
         category: dto.category,
         startAt: new Date(dto.startAt),
         endAt: new Date(dto.endAt),
-        coverImageUrl: dto.coverImageUrl ?? null,
       },
       select: { id: true },
     });
@@ -152,9 +151,6 @@ export class EventsOrganizerService {
           ? { startAt: new Date(dto.startAt) }
           : {}),
         ...(dto.endAt !== undefined ? { endAt: new Date(dto.endAt) } : {}),
-        ...(dto.coverImageUrl !== undefined
-          ? { coverImageUrl: dto.coverImageUrl }
-          : {}),
       },
     });
     return this.toDetail(id, organizerId);

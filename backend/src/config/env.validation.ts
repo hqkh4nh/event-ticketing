@@ -30,6 +30,11 @@ export const envValidationSchema = Joi.object({
   SEPAY_BANK: Joi.string().allow('').default(''),
   SEPAY_ACCOUNT_NUMBER: Joi.string().allow('').default(''),
 
+  CLOUDINARY_CLOUD_NAME: Joi.string().allow('').default(''),
+  CLOUDINARY_API_KEY: Joi.string().allow('').default(''),
+  CLOUDINARY_API_SECRET: Joi.string().allow('').default(''),
+  CLOUDINARY_UPLOAD_PRESET: Joi.string().allow('').default(''),
+
   SMTP_HOST: Joi.string().allow('').default(''),
   SMTP_PORT: Joi.number().default(587),
   SMTP_SECURE: Joi.boolean().default(true),

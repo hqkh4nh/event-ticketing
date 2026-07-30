@@ -58,6 +58,7 @@ export class AuthService {
           email: true,
           fullName: true,
           phone: true,
+          avatarUrl: true,
           role: true,
           status: true,
           locale: true,
@@ -90,6 +91,7 @@ export class AuthService {
         email: true,
         fullName: true,
         phone: true,
+        avatarUrl: true,
         role: true,
         status: true,
         locale: true,
@@ -119,6 +121,7 @@ export class AuthService {
       email: user.email,
       fullName: user.fullName,
       phone: user.phone,
+      avatarUrl: user.avatarUrl,
       role: user.role,
       status: user.status,
       locale: user.locale,
@@ -148,6 +151,7 @@ export class AuthService {
             email: true,
             fullName: true,
             phone: true,
+            avatarUrl: true,
             role: true,
             status: true,
             locale: true,
@@ -200,6 +204,7 @@ export class AuthService {
         email: true,
         fullName: true,
         phone: true,
+        avatarUrl: true,
         role: true,
         status: true,
         locale: true,
@@ -275,6 +280,7 @@ export class AuthService {
       email: string | null;
       fullName: string;
       phone: string | null;
+      avatarUrl: string | null;
       role: Role;
       status: UserStatus;
       locale: Locale;

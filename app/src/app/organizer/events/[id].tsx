@@ -18,7 +18,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { EventForm } from '@/components/organizer/event-form';
+import {
+  EventForm,
+  type EventCoverChange,
+} from '@/components/organizer/event-form';
 import { StaffDevicesSection } from '@/components/organizer/staff-devices-section';
 import { Button } from '@/components/ui/button';
 import { Chip } from '@/components/ui/chip';
@@ -38,6 +41,7 @@ import {
   type OrganizerTicketType,
 } from '@/lib/api/events-organizer';
 import { toUserMessage } from '@/lib/api/error-message';
+import { deleteImage, uploadImage } from '@/lib/api/uploads';
 import { formatVndAmount } from '@/lib/format';
 import { createSocket } from '@/lib/socket/socket';
 import type { Socket } from 'socket.io-client';
@@ -62,7 +66,21 @@ export default function EditEventScreen() {
   }
 
   const update = useMutation({
-    mutationFn: (body: CreateEventBody) => updateEvent(id, body),
+    mutationFn: async ({
+      body,
+      coverChange,
+    }: {
+      body: CreateEventBody;
+      coverChange: EventCoverChange;
+    }) => {
+      const updatedEvent = await updateEvent(id, body);
+      if (coverChange.asset) {
+        await uploadImage(coverChange.asset, 'EVENT_COVER', id);
+      } else if (coverChange.removeExisting) {
+        await deleteImage('EVENT_COVER', id);
+      }
+      return updatedEvent;
+    },
     onSuccess: () => invalidate(),
     onError: (err) => setActionError(toUserMessage(err, t)),
   });
@@ -174,9 +192,9 @@ export default function EditEventScreen() {
               }}
               submitLabel={t('organizer.form.save')}
               submitting={update.isPending}
-              onSubmit={(body) => {
+              onSubmit={(body, coverChange) => {
                 setActionError(null);
-                update.mutate(body);
+                update.mutate({ body, coverChange });
               }}
             />
 

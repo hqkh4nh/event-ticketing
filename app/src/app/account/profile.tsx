@@ -1,4 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons';
+import type { ImagePickerAsset } from 'expo-image-picker';
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -6,9 +7,11 @@ import { Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { DetailScreenShell } from '@/components/ui/detail-screen-shell';
+import { ImagePickerField } from '@/components/ui/image-picker-field';
 import { TextField } from '@/components/ui/text-field';
 import { updateMe } from '@/lib/api/auth';
 import { toFieldErrors, toUserMessage } from '@/lib/api/error-message';
+import { deleteImage, uploadImage } from '@/lib/api/uploads';
 import { useAuthStore } from '@/stores/auth-store';
 
 type FieldErrors = {
@@ -34,6 +37,9 @@ export default function AccountProfileScreen() {
   const updateUser = useAuthStore((state) => state.updateUser);
   const [fullName, setFullName] = useState(user?.fullName ?? '');
   const [phone, setPhone] = useState(user?.phone ?? '');
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(
+    user?.avatarUrl ?? null,
+  );
   const [errors, setErrors] = useState<FieldErrors>({});
   const [feedback, setFeedback] = useState<{
     tone: 'success' | 'error';
@@ -43,6 +49,56 @@ export default function AccountProfileScreen() {
   const mutation = useMutation({
     mutationFn: updateMe,
   });
+  const avatarMutation = useMutation({
+    mutationFn: (asset: ImagePickerAsset) =>
+      uploadImage(asset, 'USER_AVATAR'),
+  });
+  const removeAvatarMutation = useMutation({
+    mutationFn: () => deleteImage('USER_AVATAR'),
+  });
+
+  async function handleAvatar(asset: ImagePickerAsset) {
+    setFeedback(null);
+    const previousAvatar = avatarPreview;
+    setAvatarPreview(asset.uri);
+    try {
+      const avatarUrl = await avatarMutation.mutateAsync(asset);
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser) await updateUser({ ...currentUser, avatarUrl });
+      setAvatarPreview(avatarUrl);
+      setFeedback({
+        tone: 'success',
+        message: t('accountProfile.avatarSuccess'),
+      });
+    } catch (error) {
+      setAvatarPreview(previousAvatar);
+      setFeedback({
+        tone: 'error',
+        message: toUserMessage(error, t),
+      });
+    }
+  }
+
+  async function handleRemoveAvatar() {
+    setFeedback(null);
+    const previousAvatar = avatarPreview;
+    setAvatarPreview(null);
+    try {
+      await removeAvatarMutation.mutateAsync();
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser) await updateUser({ ...currentUser, avatarUrl: null });
+      setFeedback({
+        tone: 'success',
+        message: t('accountProfile.avatarRemoved'),
+      });
+    } catch (error) {
+      setAvatarPreview(previousAvatar);
+      setFeedback({
+        tone: 'error',
+        message: toUserMessage(error, t),
+      });
+    }
+  }
 
   function validate(): boolean {
     const next: FieldErrors = {};
@@ -104,11 +160,19 @@ export default function AccountProfileScreen() {
       description={t('accountProfile.description')}
     >
       <View className="items-center gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-5">
-        <View className="h-20 w-20 items-center justify-center rounded-full bg-primary-container">
-          <Text className="font-bold text-display-sm text-on-primary-container">
-            {initialsOf(fullName)}
-          </Text>
-        </View>
+        <ImagePickerField
+          variant="avatar"
+          uri={avatarPreview}
+          fallbackText={initialsOf(fullName)}
+          loading={
+            avatarMutation.isPending || removeAvatarMutation.isPending
+          }
+          disabled={mutation.isPending}
+          onPick={(asset) => void handleAvatar(asset)}
+          onRemove={
+            avatarPreview ? () => void handleRemoveAvatar() : undefined
+          }
+        />
         <Text className="text-center font-medium text-label-md text-on-surface-variant">
           {t('accountProfile.avatarDescription')}
         </Text>
@@ -208,6 +272,9 @@ export default function AccountProfileScreen() {
         icon="save"
         label={t('accountProfile.save')}
         loading={mutation.isPending}
+        disabled={
+          avatarMutation.isPending || removeAvatarMutation.isPending
+        }
         onPress={() => void handleSave()}
       />
     </DetailScreenShell>

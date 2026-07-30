@@ -13,18 +13,42 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { EventForm } from '@/components/organizer/event-form';
-import { createEvent, type CreateEventBody } from '@/lib/api/events-organizer';
+import {
+  EventForm,
+  type EventCoverChange,
+} from '@/components/organizer/event-form';
+import {
+  createEvent,
+  updateEvent,
+  type CreateEventBody,
+} from '@/lib/api/events-organizer';
 import { toUserMessage } from '@/lib/api/error-message';
+import { uploadImage } from '@/lib/api/uploads';
 
 export default function NewEventScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [createdEventId, setCreatedEventId] = useState<string | null>(null);
 
   const mutation = useMutation({
-    mutationFn: (body: CreateEventBody) => createEvent(body),
+    mutationFn: async ({
+      body,
+      coverChange,
+    }: {
+      body: CreateEventBody;
+      coverChange: EventCoverChange;
+    }) => {
+      const event = createdEventId
+        ? await updateEvent(createdEventId, body)
+        : await createEvent(body);
+      if (!createdEventId) setCreatedEventId(event.id);
+      if (coverChange.asset) {
+        await uploadImage(coverChange.asset, 'EVENT_COVER', event.id);
+      }
+      return event;
+    },
     onSuccess: (event) => {
       void queryClient.invalidateQueries({ queryKey: ['organizer', 'events'] });
       router.replace({
@@ -67,9 +91,9 @@ export default function NewEventScreen() {
               submitLabel={t('organizer.form.createAction')}
               submitting={mutation.isPending}
               serverError={serverError}
-              onSubmit={(body) => {
+              onSubmit={(body, coverChange) => {
                 setServerError(null);
-                mutation.mutate(body);
+                mutation.mutate({ body, coverChange });
               }}
             />
           </View>

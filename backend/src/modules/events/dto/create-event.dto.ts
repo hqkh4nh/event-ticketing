@@ -1,9 +1,8 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import {
   IsEnum,
   IsISO8601,
   IsNotEmpty,
-  IsOptional,
   IsString,
   MaxLength,
 } from 'class-validator';
@@ -46,10 +45,4 @@ export class CreateEventDto {
   @ApiProperty({ format: 'date-time', example: '2026-09-01T15:00:00.000Z' })
   @IsISO8601()
   endAt!: string;
-
-  @ApiPropertyOptional({ type: String, nullable: true, maxLength: 2048 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(2048)
-  coverImageUrl?: string | null;
 }

@@ -27,6 +27,12 @@ export default () => ({
     bank: process.env.SEPAY_BANK ?? '',
     accountNumber: process.env.SEPAY_ACCOUNT_NUMBER ?? '',
   },
+  cloudinary: {
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME ?? '',
+    apiKey: process.env.CLOUDINARY_API_KEY ?? '',
+    apiSecret: process.env.CLOUDINARY_API_SECRET ?? '',
+    uploadPreset: process.env.CLOUDINARY_UPLOAD_PRESET ?? '',
+  },
   mail: {
     host: process.env.SMTP_HOST ?? '',
     port: parseInt(process.env.SMTP_PORT ?? '587', 10),

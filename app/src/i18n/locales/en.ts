@@ -5,6 +5,12 @@ export const en = {
     done: 'Done',
     retry: 'Try again',
   },
+  media: {
+    chooseImage: 'Choose image',
+    changeImage: 'Change image',
+    removeImage: 'Remove image',
+    pickerError: 'Unable to open the photo library. Please try again.',
+  },
   home: {
     featured: 'Featured',
     upcoming: 'Upcoming',
@@ -232,7 +238,9 @@ export const en = {
   accountProfile: {
     title: 'Account information',
     description: 'Update your display name and contact phone number.',
-    avatarDescription: 'Your avatar currently uses initials from your name.',
+    avatarDescription: 'JPG, PNG or WebP, up to 5 MB.',
+    avatarSuccess: 'Profile photo updated.',
+    avatarRemoved: 'Profile photo removed.',
     fullName: 'Full name',
     fullNamePlaceholder: 'Enter your full name',
     email: 'Sign-in email',
@@ -805,8 +813,8 @@ export const en = {
       startAt: 'Starts at',
       endAt: 'Ends at',
       dateHint: 'Select date and time',
-      coverImageUrl: 'Cover image URL',
-      coverImageUrlPlaceholder: 'https://…',
+      coverImage: 'Cover image',
+      coverImageHint: 'Landscape 16:9, JPG, PNG or WebP, up to 5 MB.',
       featured: 'Feature this event',
       save: 'Save',
       saving: 'Saving…',
@@ -905,6 +913,12 @@ export const en = {
       NOT_FOUND: 'Content not found.',
       CONFLICT: 'This action is duplicated or conflicted.',
       INTERNAL_ERROR: 'The server encountered an issue. Please try again later.',
+      MEDIA_UPLOAD_UNAVAILABLE:
+        'Image uploads are not configured yet. Please try again later.',
+      MEDIA_UPLOAD_FAILED: 'Unable to upload the image. Please try another image.',
+      MEDIA_DELETE_FAILED: 'Unable to remove the image. Please try again.',
+      MEDIA_FILE_TOO_LARGE: 'The image must be no larger than 5 MB.',
+      MEDIA_FORMAT_UNSUPPORTED: 'Only JPG, PNG or WebP images are supported.',
       EVENT_NOT_PUBLISHABLE: 'Add at least one ticket type before publishing.',
       INVALID_STATE_TRANSITION: 'This action is not allowed in the current state.',
       LAST_TICKET_TYPE:

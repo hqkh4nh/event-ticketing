@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import type { ImagePickerAsset } from 'expo-image-picker';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
+import { ImagePickerField } from '@/components/ui/image-picker-field';
 import { TextField } from '@/components/ui/text-field';
 import type { CreateEventBody } from '@/lib/api/events-organizer';
 
@@ -49,7 +51,12 @@ type Props = {
   submitLabel: string;
   submitting: boolean;
   serverError?: string | null;
-  onSubmit: (body: CreateEventBody) => void;
+  onSubmit: (body: CreateEventBody, coverChange: EventCoverChange) => void;
+};
+
+export type EventCoverChange = {
+  asset?: ImagePickerAsset;
+  removeExisting: boolean;
 };
 
 /** Shared create/edit form. Owns its field state and client-side validation. */
@@ -65,6 +72,8 @@ export function EventForm({
     ...createEmptyValues(),
     ...initial,
   }));
+  const [coverAsset, setCoverAsset] = useState<ImagePickerAsset>();
+  const [removeExistingCover, setRemoveExistingCover] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof EventFormValues, string>>>(
     {},
   );
@@ -102,16 +111,30 @@ export function EventForm({
     setErrors(next);
     if (Object.keys(next).length > 0 || !startValid || !endValid) return;
 
-    onSubmit({
-      title: values.title.trim(),
-      description: values.description.trim(),
-      venue: values.venue.trim(),
-      city: values.city.trim(),
-      category: values.category,
-      startAt: values.startAt.toISOString(),
-      endAt: values.endAt.toISOString(),
-      coverImageUrl: values.coverImageUrl.trim() || null,
-    });
+    onSubmit(
+      {
+        title: values.title.trim(),
+        description: values.description.trim(),
+        venue: values.venue.trim(),
+        city: values.city.trim(),
+        category: values.category,
+        startAt: values.startAt.toISOString(),
+        endAt: values.endAt.toISOString(),
+      },
+      {
+        asset: coverAsset,
+        removeExisting: removeExistingCover,
+      },
+    );
+  }
+
+  function removeCover() {
+    if (coverAsset) {
+      setCoverAsset(undefined);
+      return;
+    }
+
+    if (values.coverImageUrl) setRemoveExistingCover(true);
   }
 
   return (
@@ -204,14 +227,31 @@ export function EventForm({
           />
         </View>
       </View>
-      <TextField
-        label={t('organizer.form.coverImageUrl')}
-        placeholder={t('organizer.form.coverImageUrlPlaceholder')}
-        value={values.coverImageUrl}
-        onChangeText={(v) => set('coverImageUrl', v)}
-        autoCapitalize="none"
-        keyboardType="url"
-      />
+      <View className="gap-2">
+        <Text className="font-medium text-label-md text-on-surface-variant">
+          {t('organizer.form.coverImage')}
+        </Text>
+        <ImagePickerField
+          variant="cover"
+          uri={
+            coverAsset?.uri ??
+            (removeExistingCover ? undefined : values.coverImageUrl)
+          }
+          disabled={submitting}
+          onPick={(asset) => {
+            setCoverAsset(asset);
+            setRemoveExistingCover(false);
+          }}
+          onRemove={
+            coverAsset || (!removeExistingCover && values.coverImageUrl)
+              ? removeCover
+              : undefined
+          }
+        />
+        <Text className="font-sans text-label-sm text-on-surface-variant">
+          {t('organizer.form.coverImageHint')}
+        </Text>
+      </View>
 
       {serverError ? (
         <View className="rounded-md bg-error-container px-4 py-3">

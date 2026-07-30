@@ -1,4 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -95,10 +96,19 @@ export default function OrganizerAccountScreen() {
           contentContainerClassName="gap-6 px-container-padding py-6"
         >
           <View className="flex-row items-center gap-4 rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
-            <View className="h-16 w-16 items-center justify-center rounded-full bg-primary-container">
-              <Text className="font-bold text-headline-md text-on-primary-container">
-                {initialsOf(user?.fullName)}
-              </Text>
+            <View className="h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-primary-container">
+              {user?.avatarUrl ? (
+                <Image
+                  source={user.avatarUrl}
+                  recyclingKey={user.avatarUrl}
+                  contentFit="cover"
+                  style={{ width: '100%', height: '100%' }}
+                />
+              ) : (
+                <Text className="font-bold text-headline-md text-on-primary-container">
+                  {initialsOf(user?.fullName)}
+                </Text>
+              )}
             </View>
             <View className="min-w-0 flex-1 gap-1">
               <Text numberOfLines={1} className="font-semibold text-body-lg text-on-surface">
