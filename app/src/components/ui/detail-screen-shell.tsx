@@ -5,17 +5,17 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-type SupportScreenShellProps = {
+type DetailScreenShellProps = {
   title: string;
   description?: string;
   children: ReactNode;
 };
 
-export function SupportScreenShell({
+export function DetailScreenShell({
   title,
   description,
   children,
-}: SupportScreenShellProps) {
+}: DetailScreenShellProps) {
   const router = useRouter();
   const { t } = useTranslation();
 

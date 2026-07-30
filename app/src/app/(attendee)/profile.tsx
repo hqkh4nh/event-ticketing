@@ -122,10 +122,10 @@ export default function ProfileScreen() {
                 onPress={showComingSoon}
               />
               <ProfileRow
-                icon="credit-card"
-                label={t('profile.paymentMethods')}
-                description={t('profile.paymentMethodsDescription')}
-                onPress={showComingSoon}
+                icon="account-balance"
+                label={t('profile.payment')}
+                description={t('profile.paymentDescription')}
+                onPress={() => router.push('/account/payment')}
               />
               <ProfileRow
                 icon="security"

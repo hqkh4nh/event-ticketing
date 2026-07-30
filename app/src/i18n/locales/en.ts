@@ -202,8 +202,8 @@ export const en = {
     accountSection: 'Account information',
     editProfile: 'Edit profile',
     editProfileDescription: 'Name, profile photo, and contact details',
-    paymentMethods: 'Payment methods',
-    paymentMethodsDescription: 'Manage your saved payment methods',
+    payment: 'Payments',
+    paymentDescription: 'Fast bank transfer with VietQR',
     security: 'Account security',
     securityDescription: 'Password and signed-in devices',
     preferences: 'Preferences',
@@ -381,6 +381,43 @@ export const en = {
         },
       },
     },
+  },
+  paymentInfo: {
+    title: 'Payments',
+    description:
+      'eTicket currently supports VietQR bank transfers for paid ticket orders.',
+    available: 'Available',
+    vietQr: 'VietQR bank transfer',
+    vietQrDescription:
+      'A QR code is generated for each order with the exact amount and transfer reference required for automatic reconciliation.',
+    howToTitle: 'How to pay',
+    steps: {
+      createOrder: {
+        title: 'Create a ticket order',
+        description:
+          'Select a ticket type and quantity. eTicket will create a pending order with its own payment deadline.',
+      },
+      scanQr: {
+        title: 'Scan the VietQR code',
+        description:
+          'Open your banking app, scan the QR code, and keep the amount and transfer reference unchanged.',
+      },
+      confirmation: {
+        title: 'Wait for confirmation',
+        description:
+          'After the transfer is successfully reconciled, your electronic ticket will automatically appear in My tickets.',
+      },
+    },
+    notesTitle: 'Important notes',
+    notes: {
+      exactAmount:
+        'Transfer the exact amount and do not edit the reference to avoid manual transaction review.',
+      expiresAt:
+        'Each order has its own deadline. An expired order can no longer be paid.',
+      bankSecurity:
+        'eTicket never asks for your banking password, OTP, or online-banking credentials.',
+    },
+    openPendingOrders: 'View pending orders',
   },
   launch: {
     start: 'Get started',

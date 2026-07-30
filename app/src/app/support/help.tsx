@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
-import { SupportScreenShell } from '@/components/support/support-screen-shell';
+import { DetailScreenShell } from '@/components/ui/detail-screen-shell';
 
 const FAQ_ITEMS = [
   { id: 'discover', icon: 'search' },
@@ -24,7 +24,7 @@ export default function HelpCenterScreen() {
   const [expandedId, setExpandedId] = useState<string | null>(FAQ_ITEMS[0].id);
 
   return (
-    <SupportScreenShell
+    <DetailScreenShell
       title={t('support.help.title')}
       description={t('support.help.description')}
     >
@@ -89,6 +89,6 @@ export default function HelpCenterScreen() {
           );
         })}
       </View>
-    </SupportScreenShell>
+    </DetailScreenShell>
   );
 }

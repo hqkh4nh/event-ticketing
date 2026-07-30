@@ -198,8 +198,8 @@ export const vi = {
     accountSection: 'Thông tin tài khoản',
     editProfile: 'Chỉnh sửa hồ sơ',
     editProfileDescription: 'Tên, ảnh đại diện và thông tin liên hệ',
-    paymentMethods: 'Phương thức thanh toán',
-    paymentMethodsDescription: 'Quản lý phương thức thanh toán của bạn',
+    payment: 'Thanh toán',
+    paymentDescription: 'Chuyển khoản nhanh qua VietQR',
     security: 'Bảo mật tài khoản',
     securityDescription: 'Mật khẩu và thiết bị đăng nhập',
     preferences: 'Tùy chọn',
@@ -377,6 +377,43 @@ export const vi = {
         },
       },
     },
+  },
+  paymentInfo: {
+    title: 'Thanh toán',
+    description:
+      'eTicket hiện hỗ trợ chuyển khoản ngân hàng bằng VietQR cho các đơn vé có phí.',
+    available: 'Đang hỗ trợ',
+    vietQr: 'Chuyển khoản VietQR',
+    vietQrDescription:
+      'Mã QR được tạo riêng cho từng đơn hàng, kèm đúng số tiền và nội dung chuyển khoản để hệ thống tự động đối soát.',
+    howToTitle: 'Cách thanh toán',
+    steps: {
+      createOrder: {
+        title: 'Tạo đơn vé',
+        description:
+          'Chọn loại vé và số lượng. eTicket sẽ tạo một đơn chờ thanh toán có thời hạn.',
+      },
+      scanQr: {
+        title: 'Quét mã VietQR',
+        description:
+          'Mở ứng dụng ngân hàng, quét mã QR và giữ nguyên số tiền cùng nội dung chuyển khoản.',
+      },
+      confirmation: {
+        title: 'Chờ xác nhận',
+        description:
+          'Sau khi giao dịch được đối soát thành công, vé điện tử sẽ tự động xuất hiện trong Vé của tôi.',
+      },
+    },
+    notesTitle: 'Lưu ý quan trọng',
+    notes: {
+      exactAmount:
+        'Chuyển đúng số tiền và không sửa nội dung chuyển khoản để tránh giao dịch phải kiểm tra thủ công.',
+      expiresAt:
+        'Mỗi đơn có thời hạn riêng. Đơn hết hạn sẽ không thể tiếp tục thanh toán.',
+      bankSecurity:
+        'eTicket không yêu cầu mật khẩu, mã OTP hoặc thông tin đăng nhập ngân hàng của bạn.',
+    },
+    openPendingOrders: 'Xem đơn chờ thanh toán',
   },
   launch: {
     start: 'Bắt đầu',

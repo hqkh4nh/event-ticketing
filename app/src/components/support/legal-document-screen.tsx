@@ -1,7 +1,7 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { Text, View } from 'react-native';
 
-import { SupportScreenShell } from '@/components/support/support-screen-shell';
+import { DetailScreenShell } from '@/components/ui/detail-screen-shell';
 
 export type LegalSection = {
   id: string;
@@ -27,7 +27,7 @@ export function LegalDocumentScreen({
   sections,
 }: LegalDocumentScreenProps) {
   return (
-    <SupportScreenShell title={title}>
+    <DetailScreenShell title={title}>
       <View className="gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
         <View className="h-11 w-11 items-center justify-center rounded-full bg-primary-container">
           <MaterialIcons name={icon} size={22} className="text-on-primary-container" />
@@ -65,6 +65,6 @@ export function LegalDocumentScreen({
           </View>
         ))}
       </View>
-    </SupportScreenShell>
+    </DetailScreenShell>
   );
 }
