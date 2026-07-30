@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'crypto';
 
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   UnauthorizedException,
@@ -20,6 +21,7 @@ import { Locale, Prisma, Role, UserStatus } from '../../generated/prisma';
 import { ErrorCode } from '../../common/errors/error-code';
 import { LoginDto } from './dto/login.dto';
 import { UpdateMeDto, toPrismaLocale } from './dto/update-me.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 const BCRYPT_ROUNDS = 10;
 
@@ -55,6 +57,7 @@ export class AuthService {
           id: true,
           email: true,
           fullName: true,
+          phone: true,
           role: true,
           status: true,
           locale: true,
@@ -86,6 +89,7 @@ export class AuthService {
         id: true,
         email: true,
         fullName: true,
+        phone: true,
         role: true,
         status: true,
         locale: true,
@@ -114,6 +118,7 @@ export class AuthService {
       id: user.id,
       email: user.email,
       fullName: user.fullName,
+      phone: user.phone,
       role: user.role,
       status: user.status,
       locale: user.locale,
@@ -142,6 +147,7 @@ export class AuthService {
             id: true,
             email: true,
             fullName: true,
+            phone: true,
             role: true,
             status: true,
             locale: true,
@@ -180,11 +186,20 @@ export class AuthService {
   async updateMe(userId: string, dto: UpdateMeDto): Promise<AuthUserDto> {
     const user = await this.prisma.user.update({
       where: { id: userId },
-      data: { locale: toPrismaLocale(dto.locale) },
+      data: {
+        ...(dto.fullName !== undefined ? { fullName: dto.fullName } : {}),
+        ...(dto.phone !== undefined
+          ? { phone: dto.phone?.trim() || null }
+          : {}),
+        ...(dto.locale !== undefined
+          ? { locale: toPrismaLocale(dto.locale) }
+          : {}),
+      },
       select: {
         id: true,
         email: true,
         fullName: true,
+        phone: true,
         role: true,
         status: true,
         locale: true,
@@ -192,6 +207,52 @@ export class AuthService {
     });
 
     return toAuthUserDto(user);
+  }
+
+  async changePassword(
+    userId: string,
+    sessionId: string,
+    dto: ChangePasswordDto,
+  ): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { passwordHash: true },
+    });
+    const currentHash = user?.passwordHash;
+    const currentPasswordOk =
+      currentHash !== null &&
+      currentHash !== undefined &&
+      (await bcrypt.compare(dto.currentPassword, currentHash));
+
+    if (!currentPasswordOk) {
+      throw new BadRequestException({
+        code: ErrorCode.CURRENT_PASSWORD_INCORRECT,
+        message: 'Current password is incorrect.',
+      });
+    }
+
+    if (await bcrypt.compare(dto.newPassword, currentHash)) {
+      throw new BadRequestException({
+        code: ErrorCode.PASSWORD_UNCHANGED,
+        message: 'New password must be different from the current password.',
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(dto.newPassword, BCRYPT_ROUNDS);
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { passwordHash },
+      }),
+      this.prisma.authSession.updateMany({
+        where: {
+          userId,
+          id: { not: sessionId },
+          revokedAt: null,
+        },
+        data: { revokedAt: new Date() },
+      }),
+    ]);
   }
 
   async logout(userId: string, sessionId: string): Promise<void> {
@@ -213,6 +274,7 @@ export class AuthService {
       id: string;
       email: string | null;
       fullName: string;
+      phone: string | null;
       role: Role;
       status: UserStatus;
       locale: Locale;

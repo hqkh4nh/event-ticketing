@@ -11,6 +11,7 @@ export type AuthState = {
   isLoading: boolean;
   hydrate: () => Promise<void>;
   signIn: (token: string, user: AuthUser) => Promise<void>;
+  updateUser: (user: AuthUser) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -35,6 +36,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     queryClient.clear();
     await Promise.all([tokenStorage.set(token), userStorage.set(user)]);
     set({ token, user });
+  },
+
+  async updateUser(user) {
+    await userStorage.set(user);
+    set({ user });
   },
 
   async signOut() {

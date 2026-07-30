@@ -10,6 +10,7 @@ export class AuthUserDto {
   // Null for SCANNER device accounts, which have no login identity.
   @ApiProperty({ type: String, nullable: true }) email!: string | null;
   @ApiProperty() fullName!: string;
+  @ApiProperty({ type: String, nullable: true }) phone!: string | null;
   @ApiProperty({ enum: ['ATTENDEE', 'ORGANIZER', 'SCANNER', 'ADMIN'] })
   role!: string;
   @ApiProperty({ enum: ['ACTIVE', 'PENDING', 'BLOCKED'] }) status!: string;
@@ -26,6 +27,7 @@ export function toAuthUserDto(user: {
   id: string;
   email: string | null;
   fullName: string;
+  phone: string | null;
   role: string;
   status: string;
   locale: Locale;
@@ -34,6 +36,7 @@ export function toAuthUserDto(user: {
     id: user.id,
     email: user.email,
     fullName: user.fullName,
+    phone: user.phone,
     role: user.role,
     status: user.status,
     locale: toAppLocale(user.locale),

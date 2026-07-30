@@ -124,7 +124,7 @@ export default function OrganizerAccountScreen() {
                 icon="person-outline"
                 label={t('organizer.account.editProfile')}
                 description={t('organizer.account.editProfileDescription')}
-                onPress={showComingSoon}
+                onPress={() => router.push('/account/profile')}
               />
               <AccountRow
                 icon="business"
@@ -137,7 +137,7 @@ export default function OrganizerAccountScreen() {
                 label={t('organizer.account.security')}
                 description={t('organizer.account.securityDescription')}
                 last
-                onPress={showComingSoon}
+                onPress={() => router.push('/account/security')}
               />
             </View>
           </View>

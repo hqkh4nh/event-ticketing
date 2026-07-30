@@ -2,7 +2,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
@@ -74,10 +74,6 @@ export default function ProfileScreen() {
   const setTheme = useThemeStore((state) => state.setPreference);
   const [signOutDialogVisible, setSignOutDialogVisible] = useState(false);
 
-  function showComingSoon() {
-    Alert.alert(t('profile.comingSoonTitle'), t('profile.comingSoonDescription'));
-  }
-
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-surface">
       <View className="w-full max-w-content flex-1 self-center">
@@ -119,7 +115,7 @@ export default function ProfileScreen() {
                 icon="person-outline"
                 label={t('profile.editProfile')}
                 description={t('profile.editProfileDescription')}
-                onPress={showComingSoon}
+                onPress={() => router.push('/account/profile')}
               />
               <ProfileRow
                 icon="account-balance"
@@ -132,7 +128,7 @@ export default function ProfileScreen() {
                 label={t('profile.security')}
                 description={t('profile.securityDescription')}
                 last
-                onPress={showComingSoon}
+                onPress={() => router.push('/account/security')}
               />
             </View>
           </View>

@@ -10,6 +10,7 @@ import {
 import {
   ApiBearerAuth,
   ApiConflictResponse,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -26,6 +27,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { StaffConnectDto } from './dto/staff-connect.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { CurrentUser } from './decorators/current-user.decorator';
 
 import type { CurrentUserData } from './jwt.strategy';
@@ -85,6 +87,18 @@ export class AuthController {
     @Body() dto: UpdateMeDto,
   ): Promise<AuthUserDto> {
     return this.auth.updateMe(user.id, dto);
+  }
+
+  @Patch('password')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Change the current user password' })
+  @ApiNoContentResponse()
+  changePassword(
+    @CurrentUser() user: CurrentUserData,
+    @Body() dto: ChangePasswordDto,
+  ): Promise<void> {
+    return this.auth.changePassword(user.id, user.sessionId, dto);
   }
 
   @Post('logout')

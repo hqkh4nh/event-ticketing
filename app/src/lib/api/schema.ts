@@ -89,6 +89,23 @@ export interface paths {
         patch: operations["AuthController_updateMe"];
         trace?: never;
     };
+    "/api/auth/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change the current user password */
+        patch: operations["AuthController_changePassword"];
+        trace?: never;
+    };
     "/api/auth/logout": {
         parameters: {
             query?: never;
@@ -613,6 +630,7 @@ export interface components {
             id: string;
             email: string | null;
             fullName: string;
+            phone: string | null;
             /** @enum {string} */
             role: "ATTENDEE" | "ORGANIZER" | "SCANNER" | "ADMIN";
             /** @enum {string} */
@@ -638,8 +656,15 @@ export interface components {
             code: string;
         };
         UpdateMeDto: {
+            fullName?: string;
+            /** @example +84 912 345 678 */
+            phone?: string | null;
             /** @enum {string} */
-            locale: "vi" | "en";
+            locale?: "vi" | "en";
+        };
+        ChangePasswordDto: {
+            currentPassword: string;
+            newPassword: string;
         };
         EventSummaryDto: {
             /** Format: uuid */
@@ -1196,6 +1221,27 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AuthUserDto"];
                 };
+            };
+        };
+    };
+    AuthController_changePassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

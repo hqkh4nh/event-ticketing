@@ -14,6 +14,7 @@ export type CurrentUserData = {
   // Null for SCANNER device accounts, which have no login identity.
   email: string | null;
   fullName: string;
+  phone: string | null;
   role: Role;
   status: UserStatus;
   locale: Locale;
@@ -46,6 +47,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             id: true,
             email: true,
             fullName: true,
+            phone: true,
             role: true,
             status: true,
             locale: true,
