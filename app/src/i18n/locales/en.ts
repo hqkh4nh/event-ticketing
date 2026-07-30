@@ -1,6 +1,7 @@
 export const en = {
   common: {
     cancel: 'Cancel',
+    back: 'Back',
     done: 'Done',
     retry: 'Try again',
   },
@@ -221,13 +222,165 @@ export const en = {
     helpCenter: 'Help center',
     terms: 'Terms of service',
     privacy: 'Privacy policy',
-    rateApp: 'Rate the app',
     comingSoonTitle: 'Coming soon',
     comingSoonDescription: 'This feature is currently under development.',
     version: 'Version {{version}}',
     signOut: 'Sign out',
     signOutConfirmTitle: 'Sign out of your account?',
     signOutConfirmDescription: 'You will need to sign in again to continue using the app.',
+  },
+  support: {
+    common: {
+      updatedAt: 'Last updated: July 30, 2026',
+    },
+    help: {
+      title: 'Help center',
+      description:
+        'Find answers and short guides for the most common actions in eTicket.',
+      guideTitle: 'Quick guide',
+      guideDescription: 'Tap a question to view its guidance.',
+      faqTitle: 'Frequently asked questions',
+      items: {
+        discover: {
+          question: 'How do I find the right event?',
+          answer:
+            'Open the Discover tab and enter an event name in Search. You can also select a province or city and a category to narrow the results.',
+        },
+        pendingPayment: {
+          question: 'How do I reopen a pending payment?',
+          answer:
+            'Open My tickets, find the Pending payment card, then select Continue payment. The VietQR code will reopen while the order is still valid.',
+        },
+        cancelPending: {
+          question: 'Can I cancel a pending order?',
+          answer:
+            'Yes. Select Cancel order on the pending-order card and confirm. Only unpaid orders that are still pending can be cancelled.',
+        },
+        ticketIssued: {
+          question: 'When is my electronic ticket issued?',
+          answer:
+            'A ticket is issued after the system confirms a successful payment. It will appear in My tickets and will also be sent to your account email.',
+        },
+        ticketQr: {
+          question: 'How do I use my ticket QR code?',
+          answer:
+            'Open the ticket in My tickets and present its QR code to check-in staff. Do not share it because each code can only be used for one valid check-in.',
+        },
+        ticketStatus: {
+          question: 'What do the ticket statuses mean?',
+          answer:
+            'Purchased tickets are valid, Used tickets have been checked in, and Cancelled tickets are no longer valid. Use the filters in My tickets to view each group.',
+        },
+        eventChanged: {
+          question: 'What happens if an event changes or is cancelled?',
+          answer:
+            'New information will appear in Notifications. Review the event update and the refund policy published by the organizer.',
+        },
+        featuredEvent: {
+          question: 'How are featured events selected?',
+          answer:
+            'Organizers create and manage events. An eTicket administrator reviews and decides whether an event appears in the Featured section.',
+        },
+      },
+    },
+    terms: {
+      title: 'Terms of service',
+      description:
+        'These terms govern how attendees and organizers use the eTicket platform.',
+      notice:
+        'Ticket sales, schedule changes, cancellation, and refund policies may vary by event. Review them carefully before ordering.',
+      sections: {
+        acceptance: {
+          title: 'Accepting these terms',
+          body:
+            'By creating an account or using eTicket, you confirm that you have read and accepted these terms. If you do not agree, you should stop using the service.',
+        },
+        account: {
+          title: 'Account and security',
+          body:
+            'You must provide accurate information, protect your sign-in details, and take responsibility for activity under your account. Report any unauthorized access when discovered.',
+        },
+        organizer: {
+          title: 'Organizer responsibilities',
+          body:
+            'Organizers are responsible for accurate event information, schedules, venues, ticket capacity, admission rights, and the policies that apply to buyers.',
+        },
+        orders: {
+          title: 'Orders and payments',
+          body:
+            'An order is considered paid only after eTicket receives valid confirmation. Pending orders may expire or be cancelled and do not reserve a place indefinitely.',
+        },
+        tickets: {
+          title: 'Electronic tickets and check-in',
+          body:
+            'Electronic tickets are issued after payment confirmation. Each ticket code is unique and must not be copied, resold without authorization, or shared in a way that enables fraudulent use.',
+        },
+        cancellation: {
+          title: 'Cancellation and refunds',
+          body:
+            'You may cancel an order while it is still pending payment. Cancellation of paid tickets, rescheduling, and refunds depend on the event policy and applicable rules at the time of processing.',
+        },
+        prohibited: {
+          title: 'Prohibited conduct',
+          body:
+            'You must not interfere with the system, create false transactions, use tickets fraudulently, collect data without permission, impersonate others, or use eTicket for unlawful activity.',
+        },
+        changes: {
+          title: 'Changes to the service and terms',
+          body:
+            'eTicket may update features or these terms to reflect operational and legal requirements. The latest update date will be shown on this page.',
+        },
+      },
+    },
+    privacy: {
+      title: 'Privacy policy',
+      description:
+        'This policy explains what data eTicket processes and how it is used when you use the app.',
+      notice:
+        'eTicket only processes data needed to provide the service, protect accounts, reconcile payments, and operate events.',
+      sections: {
+        collection: {
+          title: 'Data we collect',
+          body:
+            'eTicket may process your name, email, account role, event information, orders, tickets, check-in history, notifications, and technical data required to maintain a signed-in session.',
+        },
+        purpose: {
+          title: 'How data is used',
+          body:
+            'Data is used to authenticate accounts, display events, process orders, issue tickets, support check-in, send relevant updates, and prevent fraudulent activity.',
+        },
+        payment: {
+          title: 'Payment data',
+          body:
+            'eTicket processes reconciliation details needed to identify transactions and order status. The app does not ask for your banking password or online-banking credentials.',
+        },
+        sharing: {
+          title: 'Data sharing',
+          body:
+            'Data is shared only as needed with the relevant organizer, infrastructure or service providers, and competent authorities when required by law.',
+        },
+        retention: {
+          title: 'Data retention',
+          body:
+            'Data is retained for as long as needed to provide the service, resolve transactions, secure the system, and meet applicable record-retention obligations.',
+        },
+        security: {
+          title: 'Protecting data',
+          body:
+            'eTicket applies appropriate technical and organizational safeguards against unauthorized access, alteration, disclosure, or loss. No system can eliminate every risk.',
+        },
+        rights: {
+          title: 'Your rights and choices',
+          body:
+            'You may request access to, correction of, or other handling of your personal data where permitted by law. eTicket will publish an official request channel before the service is released.',
+        },
+        changes: {
+          title: 'Policy updates',
+          body:
+            'This policy may change when eTicket data practices or legal requirements change. The latest version and its effective date will be displayed here.',
+        },
+      },
+    },
   },
   launch: {
     start: 'Get started',
@@ -512,7 +665,6 @@ export const en = {
       helpCenter: 'Help center',
       terms: 'Terms of service',
       privacy: 'Privacy policy',
-      rateApp: 'Rate the app',
       comingSoonTitle: 'Coming soon',
       comingSoonDescription: 'This feature is currently under development.',
       version: 'Version {{version}}',

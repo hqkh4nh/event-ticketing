@@ -1,4 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
@@ -64,6 +65,7 @@ function initialsOf(fullName?: string): string {
 
 export default function OrganizerAccountScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const signOut = useAuthStore((state) => state.signOut);
   const language = useLanguageStore((state) => state.language);
@@ -249,23 +251,18 @@ export default function OrganizerAccountScreen() {
               <AccountRow
                 icon="help-outline"
                 label={t('organizer.account.helpCenter')}
-                onPress={showComingSoon}
+                onPress={() => router.push('/support/help')}
               />
               <AccountRow
                 icon="description"
                 label={t('organizer.account.terms')}
-                onPress={showComingSoon}
+                onPress={() => router.push('/support/terms')}
               />
               <AccountRow
                 icon="privacy-tip"
                 label={t('organizer.account.privacy')}
-                onPress={showComingSoon}
-              />
-              <AccountRow
-                icon="star-outline"
-                label={t('organizer.account.rateApp')}
                 last
-                onPress={showComingSoon}
+                onPress={() => router.push('/support/privacy')}
               />
             </View>
           </View>

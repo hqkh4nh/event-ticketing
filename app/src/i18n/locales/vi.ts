@@ -1,6 +1,7 @@
 export const vi = {
   common: {
     cancel: 'Huỷ',
+    back: 'Quay lại',
     done: 'Xong',
     retry: 'Thử lại',
   },
@@ -217,13 +218,165 @@ export const vi = {
     helpCenter: 'Trung tâm hỗ trợ',
     terms: 'Điều khoản dịch vụ',
     privacy: 'Chính sách quyền riêng tư',
-    rateApp: 'Đánh giá ứng dụng',
     comingSoonTitle: 'Sắp ra mắt',
     comingSoonDescription: 'Tính năng này đang được phát triển.',
     version: 'Phiên bản {{version}}',
     signOut: 'Đăng xuất',
     signOutConfirmTitle: 'Đăng xuất khỏi tài khoản?',
     signOutConfirmDescription: 'Bạn sẽ cần đăng nhập lại để tiếp tục sử dụng ứng dụng.',
+  },
+  support: {
+    common: {
+      updatedAt: 'Cập nhật lần cuối: 30/07/2026',
+    },
+    help: {
+      title: 'Trung tâm hỗ trợ',
+      description:
+        'Tìm câu trả lời và hướng dẫn nhanh cho những thao tác thường dùng trên eTicket.',
+      guideTitle: 'Hướng dẫn nhanh',
+      guideDescription: 'Chạm vào từng câu hỏi để xem nội dung hướng dẫn.',
+      faqTitle: 'Câu hỏi thường gặp',
+      items: {
+        discover: {
+          question: 'Làm sao để tìm sự kiện phù hợp?',
+          answer:
+            'Tại tab Khám phá, nhập tên sự kiện vào ô Tìm kiếm. Bạn cũng có thể chọn tỉnh, thành phố và danh mục để thu hẹp kết quả.',
+        },
+        pendingPayment: {
+          question: 'Làm sao mở lại đơn đang chờ thanh toán?',
+          answer:
+            'Mở tab Vé của tôi, tìm thẻ Chờ thanh toán rồi chọn Tiếp tục thanh toán. Mã VietQR sẽ được mở lại nếu đơn vẫn còn thời hạn.',
+        },
+        cancelPending: {
+          question: 'Có thể hủy đơn chờ thanh toán không?',
+          answer:
+            'Có. Trong thẻ đơn chờ thanh toán, chọn Hủy đơn và xác nhận. Chỉ đơn chưa thanh toán và còn ở trạng thái chờ mới có thể hủy.',
+        },
+        ticketIssued: {
+          question: 'Khi nào vé điện tử được cấp?',
+          answer:
+            'Vé được cấp sau khi hệ thống xác nhận thanh toán thành công. Vé mới sẽ xuất hiện trong tab Vé của tôi và được gửi qua email tài khoản.',
+        },
+        ticketQr: {
+          question: 'Sử dụng mã QR của vé như thế nào?',
+          answer:
+            'Mở vé trong tab Vé của tôi và đưa mã QR cho nhân viên soát vé. Không chia sẻ mã cho người khác vì mỗi mã chỉ được dùng để check-in hợp lệ một lần.',
+        },
+        ticketStatus: {
+          question: 'Các trạng thái vé có ý nghĩa gì?',
+          answer:
+            'Vé đã mua là vé còn hiệu lực; Đã sử dụng là vé đã check-in; Đã hủy là vé không còn giá trị sử dụng. Bộ lọc trong tab Vé của tôi giúp xem từng nhóm.',
+        },
+        eventChanged: {
+          question: 'Nếu sự kiện thay đổi hoặc bị hủy thì sao?',
+          answer:
+            'Thông tin mới sẽ được hiển thị trong tab Thông báo. Hãy kiểm tra nội dung sự kiện và chính sách hoàn tiền được nhà tổ chức công bố.',
+        },
+        featuredEvent: {
+          question: 'Sự kiện nổi bật được lựa chọn như thế nào?',
+          answer:
+            'Nhà tổ chức tạo và quản lý sự kiện. Quản trị viên eTicket xem xét và quyết định sự kiện có được hiển thị trong khu vực Nổi bật hay không.',
+        },
+      },
+    },
+    terms: {
+      title: 'Điều khoản dịch vụ',
+      description:
+        'Các điều khoản dưới đây quy định việc sử dụng nền tảng eTicket của người tham dự và nhà tổ chức.',
+      notice:
+        'Chính sách bán vé, đổi lịch, hủy và hoàn tiền có thể khác nhau theo từng sự kiện. Vui lòng kiểm tra kỹ trước khi đặt vé.',
+      sections: {
+        acceptance: {
+          title: 'Chấp nhận điều khoản',
+          body:
+            'Khi tạo tài khoản hoặc sử dụng eTicket, bạn xác nhận đã đọc và đồng ý với các điều khoản này. Nếu không đồng ý, bạn không nên tiếp tục sử dụng dịch vụ.',
+        },
+        account: {
+          title: 'Tài khoản và bảo mật',
+          body:
+            'Bạn phải cung cấp thông tin chính xác, bảo vệ thông tin đăng nhập và chịu trách nhiệm với hoạt động phát sinh từ tài khoản của mình. Hãy thông báo khi phát hiện truy cập trái phép.',
+        },
+        organizer: {
+          title: 'Trách nhiệm của nhà tổ chức',
+          body:
+            'Nhà tổ chức chịu trách nhiệm về tính chính xác của thông tin sự kiện, lịch tổ chức, địa điểm, số lượng vé, quyền tham dự và chính sách áp dụng cho người mua.',
+        },
+        orders: {
+          title: 'Đơn hàng và thanh toán',
+          body:
+            'Đơn hàng chỉ được xem là thanh toán thành công sau khi eTicket nhận được xác nhận hợp lệ. Đơn chờ thanh toán có thể hết hạn hoặc bị hủy và không đảm bảo giữ chỗ vô thời hạn.',
+        },
+        tickets: {
+          title: 'Vé điện tử và check-in',
+          body:
+            'Vé điện tử được cấp sau khi thanh toán được xác nhận. Mỗi mã vé là duy nhất; người dùng không được sao chép, bán lại trái phép hoặc chia sẻ mã theo cách có thể gây sử dụng gian lận.',
+        },
+        cancellation: {
+          title: 'Hủy và hoàn tiền',
+          body:
+            'Bạn có thể chủ động hủy đơn còn chờ thanh toán. Việc hủy vé đã thanh toán, đổi lịch hoặc hoàn tiền phụ thuộc vào chính sách của sự kiện và quy định áp dụng tại thời điểm xử lý.',
+        },
+        prohibited: {
+          title: 'Hành vi không được phép',
+          body:
+            'Không được can thiệp hệ thống, tạo giao dịch giả, sử dụng vé gian lận, thu thập dữ liệu trái phép, mạo danh người khác hoặc dùng eTicket cho hoạt động vi phạm pháp luật.',
+        },
+        changes: {
+          title: 'Thay đổi dịch vụ và điều khoản',
+          body:
+            'eTicket có thể cập nhật tính năng hoặc điều khoản để phù hợp với hoạt động vận hành và yêu cầu pháp luật. Ngày cập nhật sẽ được hiển thị trên trang này.',
+        },
+      },
+    },
+    privacy: {
+      title: 'Chính sách quyền riêng tư',
+      description:
+        'Chính sách này giải thích loại dữ liệu eTicket xử lý và cách dữ liệu được sử dụng khi bạn dùng ứng dụng.',
+      notice:
+        'eTicket chỉ xử lý dữ liệu cần thiết cho việc cung cấp dịch vụ, bảo mật, thanh toán và vận hành sự kiện.',
+      sections: {
+        collection: {
+          title: 'Dữ liệu được thu thập',
+          body:
+            'eTicket có thể xử lý họ tên, email, vai trò tài khoản, thông tin sự kiện, đơn hàng, vé, lịch sử check-in, thông báo và dữ liệu kỹ thuật cần thiết để duy trì phiên đăng nhập.',
+        },
+        purpose: {
+          title: 'Mục đích sử dụng',
+          body:
+            'Dữ liệu được dùng để xác thực tài khoản, hiển thị sự kiện, xử lý đơn hàng, cấp vé, hỗ trợ check-in, gửi cập nhật liên quan và phòng ngừa hành vi gian lận.',
+        },
+        payment: {
+          title: 'Dữ liệu thanh toán',
+          body:
+            'eTicket xử lý thông tin đối soát cần thiết để xác định giao dịch và trạng thái đơn hàng. Ứng dụng không yêu cầu bạn cung cấp mật khẩu hoặc thông tin đăng nhập ngân hàng.',
+        },
+        sharing: {
+          title: 'Chia sẻ dữ liệu',
+          body:
+            'Dữ liệu chỉ được chia sẻ trong phạm vi cần thiết với nhà tổ chức liên quan, nhà cung cấp hạ tầng hoặc dịch vụ hỗ trợ, và cơ quan có thẩm quyền khi pháp luật yêu cầu.',
+        },
+        retention: {
+          title: 'Thời gian lưu trữ',
+          body:
+            'Dữ liệu được lưu trong thời gian cần thiết để cung cấp dịch vụ, giải quyết giao dịch, bảo đảm an toàn hệ thống và đáp ứng nghĩa vụ lưu trữ theo quy định áp dụng.',
+        },
+        security: {
+          title: 'Bảo vệ dữ liệu',
+          body:
+            'eTicket áp dụng biện pháp kỹ thuật và quản lý phù hợp để hạn chế truy cập, thay đổi, tiết lộ hoặc mất dữ liệu trái phép. Không hệ thống nào có thể loại bỏ hoàn toàn mọi rủi ro.',
+        },
+        rights: {
+          title: 'Quyền và lựa chọn của bạn',
+          body:
+            'Bạn có thể yêu cầu xem, cập nhật hoặc xử lý dữ liệu cá nhân của mình trong phạm vi pháp luật cho phép. Kênh tiếp nhận yêu cầu chính thức sẽ được eTicket công bố trước khi phát hành dịch vụ.',
+        },
+        changes: {
+          title: 'Cập nhật chính sách',
+          body:
+            'Chính sách có thể được cập nhật khi cách eTicket xử lý dữ liệu hoặc yêu cầu pháp luật thay đổi. Phiên bản mới và ngày hiệu lực sẽ được hiển thị tại đây.',
+        },
+      },
+    },
   },
   launch: {
     start: 'Bắt đầu',
@@ -509,7 +662,6 @@ export const vi = {
       helpCenter: 'Trung tâm hỗ trợ',
       terms: 'Điều khoản dịch vụ',
       privacy: 'Chính sách quyền riêng tư',
-      rateApp: 'Đánh giá ứng dụng',
       comingSoonTitle: 'Sắp ra mắt',
       comingSoonDescription: 'Tính năng này đang được phát triển.',
       version: 'Phiên bản {{version}}',

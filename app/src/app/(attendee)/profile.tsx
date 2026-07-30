@@ -1,4 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
@@ -64,6 +65,7 @@ function initialsOf(fullName?: string): string {
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const signOut = useAuthStore((state) => state.signOut);
   const language = useLanguageStore((state) => state.language);
@@ -244,23 +246,18 @@ export default function ProfileScreen() {
               <ProfileRow
                 icon="help-outline"
                 label={t('profile.helpCenter')}
-                onPress={showComingSoon}
+                onPress={() => router.push('/support/help')}
               />
               <ProfileRow
                 icon="description"
                 label={t('profile.terms')}
-                onPress={showComingSoon}
+                onPress={() => router.push('/support/terms')}
               />
               <ProfileRow
                 icon="privacy-tip"
                 label={t('profile.privacy')}
-                onPress={showComingSoon}
-              />
-              <ProfileRow
-                icon="star-outline"
-                label={t('profile.rateApp')}
                 last
-                onPress={showComingSoon}
+                onPress={() => router.push('/support/privacy')}
               />
             </View>
           </View>
