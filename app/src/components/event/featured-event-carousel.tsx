@@ -29,6 +29,8 @@ export function FeaturedEventCarousel({
   const [activeIndex, setActiveIndex] = useState(0);
   const [isInteracting, setIsInteracting] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
+  const eventIdsKey = events.map((event) => event.id).join(',');
+  const safeActiveIndex = Math.min(activeIndex, Math.max(events.length - 1, 0));
   const cardWidth = Math.min(slideWidth, MAX_CARD_WIDTH);
   const posterHeight = cardWidth / POSTER_ASPECT_RATIO;
 
@@ -49,6 +51,16 @@ export function FeaturedEventCarousel({
   }, []);
 
   useEffect(() => {
+    if (resumeTimeoutRef.current) {
+      clearTimeout(resumeTimeoutRef.current);
+      resumeTimeoutRef.current = null;
+    }
+    setActiveIndex(0);
+    setIsInteracting(false);
+    listRef.current?.scrollToOffset({ animated: false, offset: 0 });
+  }, [eventIdsKey]);
+
+  useEffect(() => {
     if (
       events.length <= 1 ||
       slideWidth <= 0 ||
@@ -60,7 +72,8 @@ export function FeaturedEventCarousel({
 
     const interval = setInterval(() => {
       setActiveIndex((current) => {
-        const next = (current + 1) % events.length;
+        const currentIndex = Math.min(current, events.length - 1);
+        const next = (currentIndex + 1) % events.length;
         listRef.current?.scrollToOffset({
           animated: true,
           offset: next * slideWidth,
@@ -100,7 +113,7 @@ export function FeaturedEventCarousel({
       slideWidth > 0
         ? Math.round(event.nativeEvent.contentOffset.x / slideWidth)
         : 0;
-    setActiveIndex(Math.min(Math.max(nextIndex, 0), events.length - 1));
+    setActiveIndex(Math.max(0, Math.min(nextIndex, events.length - 1)));
     setIsInteracting(false);
   }
 
@@ -114,6 +127,7 @@ export function FeaturedEventCarousel({
     >
       {slideWidth > 0 ? (
         <FlatList
+          key={eventIdsKey}
           ref={listRef}
           horizontal
           pagingEnabled
@@ -147,7 +161,7 @@ export function FeaturedEventCarousel({
       {events.length > 1 ? (
         <View
           accessibilityLabel={t('home.featuredSlide', {
-            current: activeIndex + 1,
+            current: safeActiveIndex + 1,
             total: events.length,
           })}
           className="h-2 flex-row items-center justify-center gap-2"
@@ -157,7 +171,7 @@ export function FeaturedEventCarousel({
               key={event.id}
               className={[
                 'h-2 rounded-full',
-                index === activeIndex
+                index === safeActiveIndex
                   ? 'w-5 bg-primary'
                   : 'w-2 bg-outline-variant',
               ].join(' ')}
