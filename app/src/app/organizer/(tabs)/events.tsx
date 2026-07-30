@@ -8,6 +8,7 @@ import {
   FlatList,
   Pressable,
   Text,
+  TextInput,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -16,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { OrganizerEventCard } from '@/components/organizer/organizer-event-card';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
+import { useTokens } from '@/hooks/use-tokens';
 import {
   listMyEvents,
   type OrganizerEventSummary,
@@ -39,14 +41,26 @@ const GRID_CONTENT_STYLE = {
 const GRID_COLUMN_STYLE = { gap: 12 } as const;
 const GRID_CELL_STYLE = { flex: 1 } as const;
 
+function normalizeEventTitle(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLocaleLowerCase('vi-VN')
+    .trim();
+}
+
 export default function OrganizerEventsScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const tokens = useTokens();
   const { width } = useWindowDimensions();
   const isWide = width >= 768;
   const columns = isWide ? 2 : 1;
   const isGrid = columns > 1;
   const [filter, setFilter] = useState<EventFilter>('ALL');
+  const [query, setQuery] = useState('');
 
   const eventsQuery = useQuery({
     queryKey: ['organizer', 'events'],
@@ -54,13 +68,19 @@ export default function OrganizerEventsScreen() {
   });
 
   const events = eventsQuery.data ?? EMPTY_EVENTS;
-  const visibleEvents = useMemo(
-    () =>
-      filter === 'ALL'
-        ? events
-        : events.filter((event) => event.status === filter),
-    [events, filter],
-  );
+  const visibleEvents = useMemo(() => {
+    const normalizedQuery = normalizeEventTitle(query);
+
+    return events.filter((event) => {
+      const matchesStatus = filter === 'ALL' || event.status === filter;
+      const matchesTitle =
+        !normalizedQuery ||
+        normalizeEventTitle(event.title).includes(normalizedQuery);
+
+      return matchesStatus && matchesTitle;
+    });
+  }, [events, filter, query]);
+  const hasQuery = query.trim().length > 0;
 
   const listHeader = (
     <View className="gap-5 pb-5 pt-5">
@@ -83,6 +103,37 @@ export default function OrganizerEventsScreen() {
 
       {events.length > 0 ? (
         <>
+          <View className="h-touch-target-min flex-row items-center gap-2 rounded-full border border-outline-variant bg-surface-container-lowest px-4">
+            <MaterialIcons
+              name="search"
+              size={20}
+              className="text-on-surface-variant"
+            />
+            <TextInput
+              accessibilityLabel={t('organizer.dashboard.searchPlaceholder')}
+              className="h-full min-w-0 flex-1 py-0 font-sans text-body-md text-on-surface"
+              onChangeText={setQuery}
+              placeholder={t('organizer.dashboard.searchPlaceholder')}
+              placeholderTextColor={tokens['on-surface-variant']}
+              returnKeyType="search"
+              textAlignVertical="center"
+              value={query}
+            />
+            {hasQuery ? (
+              <Pressable
+                accessibilityLabel={t('organizer.dashboard.clearSearch')}
+                accessibilityRole="button"
+                className="h-9 w-9 items-center justify-center rounded-full active:bg-surface-container-high"
+                onPress={() => setQuery('')}
+              >
+                <MaterialIcons
+                  name="close"
+                  size={20}
+                  className="text-on-surface-variant"
+                />
+              </Pressable>
+            ) : null}
+          </View>
           <StatusFilter value={filter} onChange={setFilter} />
           <View className="flex-row items-center justify-between">
             <Text className="font-semibold text-headline-md text-on-surface">
@@ -126,6 +177,21 @@ export default function OrganizerEventsScreen() {
           icon="add"
           label={t('organizer.create')}
           onPress={() => router.push('/organizer/events/new')}
+        />
+      }
+    />
+  ) : hasQuery ? (
+    <EmptyState
+      icon="search-off"
+      title={t('organizer.dashboard.searchEmptyTitle')}
+      description={t('organizer.dashboard.searchEmptyDescription', {
+        query: query.trim(),
+      })}
+      action={
+        <Button
+          variant="outline"
+          label={t('organizer.dashboard.clearSearch')}
+          onPress={() => setQuery('')}
         />
       }
     />
@@ -179,6 +245,8 @@ export default function OrganizerEventsScreen() {
           ItemSeparatorComponent={isGrid ? undefined : () => <View className="h-3" />}
           ListHeaderComponent={listHeader}
           ListEmptyComponent={listEmpty}
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
           refreshing={eventsQuery.isRefetching && !eventsQuery.isPending}
           onRefresh={() => void eventsQuery.refetch()}
           showsVerticalScrollIndicator={false}
