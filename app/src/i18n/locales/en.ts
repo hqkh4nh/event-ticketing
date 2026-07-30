@@ -818,6 +818,11 @@ export const en = {
       priceHint: 'Enter 0 for a free ticket',
       quantity: 'Quantity',
       free: 'Free',
+      edit: 'Edit',
+      editTitle: 'Edit ticket type',
+      saveEdit: 'Save',
+      cancelEdit: 'Cancel',
+      minimumQuantity: 'Minimum {{count}} tickets reserved or sold',
       remove: 'Remove',
       soldSuffix: '{{sold}}/{{total}} sold',
     },
@@ -844,6 +849,8 @@ export const en = {
       ticketNameRequired: 'Please enter a name',
       priceInvalid: 'Enter a price of 0 or more',
       quantityInvalid: 'Enter a quantity of 1 or more',
+      quantityBelowReserved:
+        'Quantity cannot be lower than {{count}} tickets reserved or sold',
     },
   },
 
@@ -898,6 +905,8 @@ export const en = {
       INVALID_STATE_TRANSITION: 'This action is not allowed in the current state.',
       LAST_TICKET_TYPE:
         'A published event must keep at least one ticket type. Unpublish it first.',
+      TICKET_QUANTITY_BELOW_RESERVED:
+        'Quantity cannot be lower than the number of tickets reserved or sold.',
       EVENT_NOT_PURCHASABLE: 'This event is not on sale.',
       PAYMENT_NOT_AVAILABLE: 'Paid tickets are not available yet.',
       PENDING_ORDER_LIMIT_REACHED:

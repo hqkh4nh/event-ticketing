@@ -32,8 +32,10 @@ import {
   publishEvent,
   unpublishEvent,
   updateEvent,
+  updateTicketType,
   type CreateEventBody,
   type OrganizerEvent,
+  type OrganizerTicketType,
 } from '@/lib/api/events-organizer';
 import { toUserMessage } from '@/lib/api/error-message';
 import { formatVndAmount } from '@/lib/format';
@@ -364,7 +366,17 @@ function TicketTypesSection({
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [editingTicketType, setEditingTicketType] =
+    useState<OrganizerTicketType | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editPrice, setEditPrice] = useState('');
+  const [editQuantity, setEditQuantity] = useState('');
   const [errors, setErrors] = useState<{
+    name?: string;
+    price?: string;
+    quantity?: string;
+  }>({});
+  const [editErrors, setEditErrors] = useState<{
     name?: string;
     price?: string;
     quantity?: string;
@@ -397,6 +409,73 @@ function TicketTypesSection({
     onError: (err) => onError(toUserMessage(err, t)),
   });
 
+  const editType = useMutation({
+    mutationFn: ({
+      ticketTypeId,
+      body,
+    }: {
+      ticketTypeId: string;
+      body: {
+        name: string;
+        priceVnd: number;
+        quantityTotal: number;
+      };
+    }) => updateTicketType(event.id, ticketTypeId, body),
+    onSuccess: () => {
+      setEditingTicketType(null);
+      setEditErrors({});
+      invalidate();
+    },
+    onError: (err) => onError(toUserMessage(err, t)),
+  });
+
+  function beginEdit(ticketType: OrganizerTicketType) {
+    setEditingTicketType(ticketType);
+    setEditName(ticketType.name);
+    setEditPrice(String(ticketType.priceVnd));
+    setEditQuantity(String(ticketType.quantityTotal));
+    setEditErrors({});
+  }
+
+  function cancelEdit() {
+    setEditingTicketType(null);
+    setEditErrors({});
+  }
+
+  function submitEdit() {
+    if (!editingTicketType) return;
+
+    const next: typeof editErrors = {};
+    if (!editName.trim()) next.name = t('organizer.error.ticketNameRequired');
+    const priceNum = Number(editPrice);
+    if (
+      editPrice.trim() === '' ||
+      !Number.isInteger(priceNum) ||
+      priceNum < 0
+    ) {
+      next.price = t('organizer.error.priceInvalid');
+    }
+    const qtyNum = Number(editQuantity);
+    if (!Number.isInteger(qtyNum) || qtyNum < 1) {
+      next.quantity = t('organizer.error.quantityInvalid');
+    } else if (qtyNum < editingTicketType.soldCount) {
+      next.quantity = t('organizer.error.quantityBelowReserved', {
+        count: editingTicketType.soldCount,
+      });
+    }
+    setEditErrors(next);
+    if (Object.keys(next).length > 0) return;
+
+    editType.mutate({
+      ticketTypeId: editingTicketType.id,
+      body: {
+        name: editName.trim(),
+        priceVnd: priceNum,
+        quantityTotal: qtyNum,
+      },
+    });
+  }
+
   function submit() {
     const next: typeof errors = {};
     if (!name.trim()) next.name = t('organizer.error.ticketNameRequired');
@@ -424,34 +503,107 @@ function TicketTypesSection({
       ) : (
         <View className="gap-2">
           {event.ticketTypes.map((tt) => (
-            <View
-              key={tt.id}
-              className="flex-row items-center gap-3 rounded-md bg-surface-container px-4 py-3"
-            >
-              <View className="flex-1 gap-0.5">
-                <Text className="font-semibold text-body-md text-on-surface">
-                  {tt.name}
-                </Text>
-                <Text className="font-sans text-label-md text-on-surface-variant">
-                  {tt.priceVnd === 0
-                    ? t('organizer.ticketTypes.free')
-                    : `${formatVndAmount(tt.priceVnd, locale)}₫`}{' '}
-                  ·{' '}
-                  {t('organizer.ticketTypes.soldSuffix', {
-                    sold: tt.soldCount,
-                    total: tt.quantityTotal,
-                  })}
-                </Text>
+            <View key={tt.id} className="gap-2">
+              <View className="flex-row items-center gap-3 rounded-md bg-surface-container px-4 py-3">
+                <View className="min-w-0 flex-1 gap-0.5">
+                  <Text
+                    numberOfLines={1}
+                    className="font-semibold text-body-md text-on-surface"
+                  >
+                    {tt.name}
+                  </Text>
+                  <Text className="font-sans text-label-md text-on-surface-variant">
+                    {tt.priceVnd === 0
+                      ? t('organizer.ticketTypes.free')
+                      : `${formatVndAmount(tt.priceVnd, locale)}₫`}{' '}
+                    ·{' '}
+                    {t('organizer.ticketTypes.soldSuffix', {
+                      sold: tt.soldCount,
+                      total: tt.quantityTotal,
+                    })}
+                  </Text>
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('organizer.ticketTypes.edit')}
+                  disabled={editType.isPending || removeType.isPending}
+                  onPress={() => beginEdit(tt)}
+                  className="h-10 w-10 items-center justify-center rounded-full active:bg-primary-container"
+                >
+                  <MaterialIcons name="edit" size={21} className="text-primary" />
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('organizer.ticketTypes.remove')}
+                  disabled={editType.isPending || removeType.isPending}
+                  onPress={() => removeType.mutate(tt.id)}
+                  className="h-10 w-10 items-center justify-center rounded-full active:bg-error-container"
+                >
+                  <MaterialIcons
+                    name="delete-outline"
+                    size={22}
+                    className="text-error"
+                  />
+                </Pressable>
               </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t('organizer.ticketTypes.remove')}
-                disabled={removeType.isPending}
-                onPress={() => removeType.mutate(tt.id)}
-                className="active:opacity-60"
-              >
-                <MaterialIcons name="delete-outline" size={22} className="text-error" />
-              </Pressable>
+
+              {editingTicketType?.id === tt.id ? (
+                <View className="gap-3 rounded-md border border-primary bg-surface-container-lowest p-4">
+                  <Text className="font-semibold text-body-md text-on-surface">
+                    {t('organizer.ticketTypes.editTitle')}
+                  </Text>
+                  <TextField
+                    label={t('organizer.ticketTypes.name')}
+                    placeholder={t('organizer.ticketTypes.namePlaceholder')}
+                    value={editName}
+                    onChangeText={setEditName}
+                    error={editErrors.name}
+                  />
+                  <View className="flex-row gap-3">
+                    <View className="flex-1">
+                      <TextField
+                        label={t('organizer.ticketTypes.price')}
+                        placeholder="0"
+                        helper={t('organizer.ticketTypes.priceHint')}
+                        value={editPrice}
+                        onChangeText={setEditPrice}
+                        error={editErrors.price}
+                        keyboardType="number-pad"
+                      />
+                    </View>
+                    <View className="flex-1">
+                      <TextField
+                        label={t('organizer.ticketTypes.quantity')}
+                        placeholder="100"
+                        helper={t('organizer.ticketTypes.minimumQuantity', {
+                          count: tt.soldCount,
+                        })}
+                        value={editQuantity}
+                        onChangeText={setEditQuantity}
+                        error={editErrors.quantity}
+                        keyboardType="number-pad"
+                      />
+                    </View>
+                  </View>
+                  <View className="flex-row gap-3">
+                    <View className="flex-1">
+                      <Button
+                        variant="outline"
+                        label={t('organizer.ticketTypes.cancelEdit')}
+                        disabled={editType.isPending}
+                        onPress={cancelEdit}
+                      />
+                    </View>
+                    <View className="flex-1">
+                      <Button
+                        label={t('organizer.ticketTypes.saveEdit')}
+                        loading={editType.isPending}
+                        onPress={submitEdit}
+                      />
+                    </View>
+                  </View>
+                </View>
+              ) : null}
             </View>
           ))}
         </View>

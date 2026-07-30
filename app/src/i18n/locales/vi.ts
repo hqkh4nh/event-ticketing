@@ -815,6 +815,11 @@ export const vi = {
       priceHint: 'Nhập 0 cho vé miễn phí',
       quantity: 'Số lượng',
       free: 'Miễn phí',
+      edit: 'Chỉnh sửa',
+      editTitle: 'Chỉnh sửa hạng vé',
+      saveEdit: 'Lưu',
+      cancelEdit: 'Hủy',
+      minimumQuantity: 'Tối thiểu {{count}} vé đang được giữ hoặc đã bán',
       remove: 'Xoá',
       soldSuffix: 'Đã bán {{sold}}/{{total}}',
     },
@@ -841,6 +846,8 @@ export const vi = {
       ticketNameRequired: 'Vui lòng nhập tên',
       priceInvalid: 'Nhập giá từ 0 trở lên',
       quantityInvalid: 'Nhập số lượng từ 1 trở lên',
+      quantityBelowReserved:
+        'Số lượng không thể thấp hơn {{count}} vé đang được giữ hoặc đã bán',
     },
   },
 
@@ -895,6 +902,8 @@ export const vi = {
       INVALID_STATE_TRANSITION: 'Không thể thực hiện thao tác này ở trạng thái hiện tại.',
       LAST_TICKET_TYPE:
         'Sự kiện đã xuất bản phải giữ ít nhất một hạng vé. Hãy gỡ xuất bản trước.',
+      TICKET_QUANTITY_BELOW_RESERVED:
+        'Số lượng không thể thấp hơn số vé đang được giữ hoặc đã bán.',
       PENDING_ORDER_LIMIT_REACHED:
         'Bạn đã có 3 đơn đang chờ thanh toán. Hãy hoàn tất một đơn hoặc chờ đơn hết hạn trước khi đặt thêm.',
     },

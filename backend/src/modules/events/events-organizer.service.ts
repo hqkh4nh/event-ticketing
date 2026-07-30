@@ -38,6 +38,18 @@ export function assertTransition(from: EventStatus, to: EventStatus): void {
   }
 }
 
+export function assertTicketQuantityNotBelowReserved(
+  quantityTotal: number,
+  reservedQuantity: number,
+): void {
+  if (quantityTotal < reservedQuantity) {
+    throw new ConflictException({
+      code: ErrorCode.TICKET_QUANTITY_BELOW_RESERVED,
+      message: 'Ticket quantity cannot be lower than the reserved quantity.',
+    });
+  }
+}
+
 const ticketTypeSelect = {
   id: true,
   name: true,
@@ -227,48 +239,75 @@ export class EventsOrganizerService {
     dto: UpdateTicketTypeDto,
   ): Promise<OrganizerEventDto> {
     await this.loadOwnedEvent(organizerId, eventId);
-    const existing = await this.prisma.ticketType.findFirst({
-      where: { id: ticketTypeId, eventId },
-      select: { salesStartAt: true, salesEndAt: true },
-    });
-    if (!existing) {
-      throw new NotFoundException({
-        code: ErrorCode.NOT_FOUND,
-        message: 'Ticket type not found.',
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`
+        SELECT id
+        FROM "TicketType"
+        WHERE id = ${ticketTypeId}::uuid
+          AND "eventId" = ${eventId}::uuid
+        FOR UPDATE
+      `;
+
+      const existing = await tx.ticketType.findFirst({
+        where: { id: ticketTypeId, eventId },
+        select: { salesStartAt: true, salesEndAt: true },
       });
-    }
+      if (!existing) {
+        throw new NotFoundException({
+          code: ErrorCode.NOT_FOUND,
+          message: 'Ticket type not found.',
+        });
+      }
 
-    const salesStartAt =
-      dto.salesStartAt !== undefined
-        ? dto.salesStartAt
-        : existing.salesStartAt?.toISOString();
-    const salesEndAt =
-      dto.salesEndAt !== undefined
-        ? dto.salesEndAt
-        : existing.salesEndAt?.toISOString();
-    this.assertSalesWindow(salesStartAt, salesEndAt);
+      const salesStartAt =
+        dto.salesStartAt !== undefined
+          ? dto.salesStartAt
+          : existing.salesStartAt?.toISOString();
+      const salesEndAt =
+        dto.salesEndAt !== undefined
+          ? dto.salesEndAt
+          : existing.salesEndAt?.toISOString();
+      this.assertSalesWindow(salesStartAt, salesEndAt);
 
-    await this.prisma.ticketType.update({
-      where: { id: ticketTypeId },
-      data: {
-        ...(dto.name !== undefined ? { name: dto.name } : {}),
-        ...(dto.priceVnd !== undefined
-          ? { priceVnd: BigInt(dto.priceVnd) }
-          : {}),
-        ...(dto.quantityTotal !== undefined
-          ? { quantityTotal: dto.quantityTotal }
-          : {}),
-        ...(dto.salesStartAt !== undefined
-          ? {
-              salesStartAt: dto.salesStartAt
-                ? new Date(dto.salesStartAt)
-                : null,
-            }
-          : {}),
-        ...(dto.salesEndAt !== undefined
-          ? { salesEndAt: dto.salesEndAt ? new Date(dto.salesEndAt) : null }
-          : {}),
-      },
+      if (dto.quantityTotal !== undefined) {
+        const reserved = await tx.orderItem.aggregate({
+          where: {
+            eventId,
+            ticketTypeId,
+            order: { status: { in: ['PENDING', 'PAID'] } },
+          },
+          _sum: { quantity: true },
+        });
+        assertTicketQuantityNotBelowReserved(
+          dto.quantityTotal,
+          reserved._sum.quantity ?? 0,
+        );
+      }
+
+      await tx.ticketType.update({
+        where: { id: ticketTypeId },
+        data: {
+          ...(dto.name !== undefined ? { name: dto.name } : {}),
+          ...(dto.priceVnd !== undefined
+            ? { priceVnd: BigInt(dto.priceVnd) }
+            : {}),
+          ...(dto.quantityTotal !== undefined
+            ? { quantityTotal: dto.quantityTotal }
+            : {}),
+          ...(dto.salesStartAt !== undefined
+            ? {
+                salesStartAt: dto.salesStartAt
+                  ? new Date(dto.salesStartAt)
+                  : null,
+              }
+            : {}),
+          ...(dto.salesEndAt !== undefined
+            ? {
+                salesEndAt: dto.salesEndAt ? new Date(dto.salesEndAt) : null,
+              }
+            : {}),
+        },
+      });
     });
     return this.toDetail(eventId, organizerId);
   }
