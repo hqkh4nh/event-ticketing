@@ -117,27 +117,6 @@ export default function LoginScreen() {
               <Button label={t('auth.login.submit')} loading={loading} onPress={onSubmit} />
             </View>
 
-            <View className="gap-3">
-              <View className="flex-row items-center gap-4">
-                <View className="h-px flex-1 bg-outline-variant" />
-                {/* `outline` is a border role. As text on `surface` it lands at
-                    4.26:1, under AA, so the divider label uses the text role. */}
-                <Text className="font-sans text-label-sm uppercase text-on-surface-variant">
-                  {t('auth.social.divider')}
-                </Text>
-                <View className="h-px flex-1 bg-outline-variant" />
-              </View>
-
-              {/* OAuth is not wired up yet. The button stays disabled rather than
-                  rendering as tappable and doing nothing when pressed. */}
-              <Button
-                variant="outline"
-                label={`${t('auth.social.google')} (${t('auth.social.comingSoon')})`}
-                disabled
-                onPress={() => {}}
-              />
-            </View>
-
             <View className="flex-row justify-center gap-1">
               <Text className="font-sans text-body-md text-on-surface-variant">
                 {t('auth.login.noAccount')}
