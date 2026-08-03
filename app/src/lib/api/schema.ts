@@ -190,7 +190,7 @@ export interface paths {
         delete: operations["EventsOrganizerController_remove"];
         options?: never;
         head?: never;
-        /** Edit an event (draft or published) */
+        /** Edit a draft event */
         patch: operations["EventsOrganizerController_update"];
         trace?: never;
     };
@@ -203,7 +203,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Publish an event (needs >= 1 ticket type) */
+        /** Submit a draft event for Admin review (needs >= 1 ticket type) */
         post: operations["EventsOrganizerController_publish"];
         delete?: never;
         options?: never;
@@ -220,7 +220,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Move a published event back to draft */
+        /** Move a pending-review or published event back to draft */
         post: operations["EventsOrganizerController_unpublish"];
         delete?: never;
         options?: never;
@@ -604,6 +604,23 @@ export interface paths {
         patch: operations["AdminController_updateEventFeatured"];
         trace?: never;
     };
+    "/api/admin/events/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve an event waiting for publication review. */
+        post: operations["AdminController_approveEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/uploads/signature": {
         parameters: {
             query?: never;
@@ -767,7 +784,7 @@ export interface components {
             /** @enum {string} */
             category: "MUSIC" | "TECH" | "ART" | "SPORT" | "WORKSHOP";
             /** @enum {string} */
-            status: "DRAFT" | "PUBLISHED" | "CANCELLED" | "HIDDEN";
+            status: "DRAFT" | "PENDING_REVIEW" | "PUBLISHED" | "CANCELLED" | "HIDDEN";
             featured: boolean;
             /** Format: date-time */
             startAt: string;
@@ -821,7 +838,7 @@ export interface components {
             /** @enum {string} */
             category: "MUSIC" | "TECH" | "ART" | "SPORT" | "WORKSHOP";
             /** @enum {string} */
-            status: "DRAFT" | "PUBLISHED" | "CANCELLED" | "HIDDEN";
+            status: "DRAFT" | "PENDING_REVIEW" | "PUBLISHED" | "CANCELLED" | "HIDDEN";
             featured: boolean;
             /** Format: date-time */
             startAt: string;
@@ -963,7 +980,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** @enum {string} */
-            type: "TICKET_ISSUED" | "EVENT_FEATURED" | "PAYMENT_REVIEW_REQUIRED";
+            type: "TICKET_ISSUED" | "EVENT_SUBMITTED" | "EVENT_APPROVED" | "EVENT_FEATURED" | "PAYMENT_REVIEW_REQUIRED";
             data: {
                 [key: string]: unknown;
             } | null;
@@ -1029,7 +1046,7 @@ export interface components {
             /** Format: date-time */
             startAt: string;
             /** @enum {string} */
-            status: "DRAFT" | "PUBLISHED" | "CANCELLED" | "HIDDEN";
+            status: "DRAFT" | "PENDING_REVIEW" | "PUBLISHED" | "CANCELLED" | "HIDDEN";
         };
         CreateStaffDto: {
             /** @example Gate 1 */
@@ -1100,7 +1117,7 @@ export interface components {
             title: string;
             venue: string;
             /** @enum {string} */
-            status: "DRAFT" | "PUBLISHED" | "CANCELLED" | "HIDDEN";
+            status: "DRAFT" | "PENDING_REVIEW" | "PUBLISHED" | "CANCELLED" | "HIDDEN";
             featured: boolean;
             /** Format: date-time */
             startAt: string;
@@ -2299,7 +2316,7 @@ export interface operations {
     AdminController_listEvents: {
         parameters: {
             query?: {
-                status?: "DRAFT" | "PUBLISHED" | "CANCELLED" | "HIDDEN";
+                status?: "DRAFT" | "PENDING_REVIEW" | "PUBLISHED" | "CANCELLED" | "HIDDEN";
                 /** @description Case-insensitive match against event or organizer name. */
                 search?: string;
                 page?: number;
@@ -2360,6 +2377,48 @@ export interface operations {
             };
             /** @description code: NOT_FOUND */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AdminController_approveEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminEventDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: INVALID_STATE_TRANSITION */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

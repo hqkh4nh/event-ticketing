@@ -80,7 +80,7 @@ export class EventsOrganizerController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Edit an event (draft or published)' })
+  @ApiOperation({ summary: 'Edit a draft event' })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ type: OrganizerEventDto })
   @ApiNotFoundResponse({ description: 'code: NOT_FOUND' })
@@ -108,7 +108,9 @@ export class EventsOrganizerController {
 
   @Post(':id/publish')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Publish an event (needs >= 1 ticket type)' })
+  @ApiOperation({
+    summary: 'Submit a draft event for Admin review (needs >= 1 ticket type)',
+  })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ type: OrganizerEventDto })
   @ApiConflictResponse({
@@ -123,7 +125,9 @@ export class EventsOrganizerController {
 
   @Post(':id/unpublish')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Move a published event back to draft' })
+  @ApiOperation({
+    summary: 'Move a pending-review or published event back to draft',
+  })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ type: OrganizerEventDto })
   @ApiConflictResponse({ description: 'code: INVALID_STATE_TRANSITION' })

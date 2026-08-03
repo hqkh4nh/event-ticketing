@@ -97,6 +97,7 @@ function summarize(events: OrganizerEventSummary[]): Counts {
     {
       total: 0,
       DRAFT: 0,
+      PENDING_REVIEW: 0,
       PUBLISHED: 0,
       CANCELLED: 0,
       HIDDEN: 0,

@@ -24,6 +24,7 @@ enum UserStatus {
 
 enum EventStatus {
   DRAFT
+  PENDING_REVIEW
   PUBLISHED
   CANCELLED
   HIDDEN
@@ -74,6 +75,8 @@ enum Locale {
 
 enum NotificationType {
   TICKET_ISSUED
+  EVENT_SUBMITTED
+  EVENT_APPROVED
   EVENT_FEATURED
   PAYMENT_REVIEW_REQUIRED
 }

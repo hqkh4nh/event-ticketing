@@ -19,7 +19,8 @@ import { UpdateEventDto } from './dto/update-event.dto';
 import { UpdateTicketTypeDto } from './dto/update-ticket-type.dto';
 
 const ALLOWED_TRANSITIONS: Record<EventStatus, EventStatus[]> = {
-  DRAFT: [EventStatus.PUBLISHED],
+  DRAFT: [EventStatus.PENDING_REVIEW],
+  PENDING_REVIEW: [EventStatus.DRAFT, EventStatus.PUBLISHED],
   PUBLISHED: [EventStatus.DRAFT, EventStatus.CANCELLED],
   CANCELLED: [],
   HIDDEN: [],
@@ -133,12 +134,13 @@ export class EventsOrganizerService {
     dto: UpdateEventDto,
   ): Promise<OrganizerEventDto> {
     const event = await this.loadOwnedEvent(organizerId, id);
+    this.assertEventEditable(event.status);
     const startAt = dto.startAt ?? event.startAt.toISOString();
     const endAt = dto.endAt ?? event.endAt.toISOString();
     this.assertEventDates(startAt, endAt);
 
-    await this.prisma.event.update({
-      where: { id },
+    const changed = await this.prisma.event.updateMany({
+      where: { id, organizerId, status: EventStatus.DRAFT },
       data: {
         ...(dto.title !== undefined ? { title: dto.title } : {}),
         ...(dto.description !== undefined
@@ -153,6 +155,7 @@ export class EventsOrganizerService {
         ...(dto.endAt !== undefined ? { endAt: new Date(dto.endAt) } : {}),
       },
     });
+    this.assertSingleStateChange(changed.count);
     return this.toDetail(id, organizerId);
   }
 
@@ -164,26 +167,72 @@ export class EventsOrganizerService {
         message: 'Only draft events can be deleted.',
       });
     }
-    await this.prisma.event.delete({ where: { id } });
+    const deleted = await this.prisma.event.deleteMany({
+      where: { id, organizerId, status: EventStatus.DRAFT },
+    });
+    this.assertSingleStateChange(deleted.count);
   }
 
   async publish(organizerId: string, id: string): Promise<OrganizerEventDto> {
-    const event = await this.loadOwnedEvent(organizerId, id);
-    assertTransition(event.status, EventStatus.PUBLISHED);
-
-    const ticketTypeCount = await this.prisma.ticketType.count({
-      where: { eventId: id },
-    });
-    if (ticketTypeCount === 0) {
-      throw new ConflictException({
-        code: ErrorCode.EVENT_NOT_PUBLISHABLE,
-        message: 'An event needs at least one ticket type to be published.',
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`
+        SELECT id
+        FROM "Event"
+        WHERE id = ${id}::uuid
+          AND "organizerId" = ${organizerId}::uuid
+        FOR UPDATE
+      `;
+      const event = await tx.event.findFirst({
+        where: { id, organizerId },
+        select: { title: true, status: true },
       });
-    }
+      if (!event) {
+        throw new NotFoundException({
+          code: ErrorCode.NOT_FOUND,
+          message: 'Event not found.',
+        });
+      }
+      assertTransition(event.status, EventStatus.PENDING_REVIEW);
 
-    await this.prisma.event.update({
-      where: { id },
-      data: { status: EventStatus.PUBLISHED },
+      const ticketTypeCount = await tx.ticketType.count({
+        where: { eventId: id },
+      });
+      if (ticketTypeCount === 0) {
+        throw new ConflictException({
+          code: ErrorCode.EVENT_NOT_PUBLISHABLE,
+          message: 'An event needs at least one ticket type to be published.',
+        });
+      }
+
+      const changed = await tx.event.updateMany({
+        where: { id, organizerId, status: EventStatus.DRAFT },
+        data: { status: EventStatus.PENDING_REVIEW },
+      });
+      if (changed.count !== 1) {
+        throw new ConflictException({
+          code: ErrorCode.INVALID_STATE_TRANSITION,
+          message: 'The event is no longer a draft.',
+        });
+      }
+
+      const admins = await tx.user.findMany({
+        where: { role: 'ADMIN', status: 'ACTIVE' },
+        select: { id: true },
+      });
+      if (admins.length > 0) {
+        await tx.notification.createMany({
+          data: admins.map((admin) => ({
+            userId: admin.id,
+            type: 'EVENT_SUBMITTED' as const,
+            data: {
+              eventId: id,
+              eventTitle: event.title,
+              organizerId,
+              url: '/admin/events?status=PENDING_REVIEW',
+            },
+          })),
+        });
+      }
     });
     return this.toDetail(id, organizerId);
   }
@@ -191,20 +240,22 @@ export class EventsOrganizerService {
   async unpublish(organizerId: string, id: string): Promise<OrganizerEventDto> {
     const event = await this.loadOwnedEvent(organizerId, id);
     assertTransition(event.status, EventStatus.DRAFT);
-    await this.prisma.event.update({
-      where: { id },
+    const changed = await this.prisma.event.updateMany({
+      where: { id, organizerId, status: event.status },
       data: { status: EventStatus.DRAFT, featured: false },
     });
+    this.assertSingleStateChange(changed.count);
     return this.toDetail(id, organizerId);
   }
 
   async cancel(organizerId: string, id: string): Promise<OrganizerEventDto> {
     const event = await this.loadOwnedEvent(organizerId, id);
     assertTransition(event.status, EventStatus.CANCELLED);
-    await this.prisma.event.update({
-      where: { id },
+    const changed = await this.prisma.event.updateMany({
+      where: { id, organizerId, status: EventStatus.PUBLISHED },
       data: { status: EventStatus.CANCELLED, featured: false },
     });
+    this.assertSingleStateChange(changed.count);
     return this.toDetail(id, organizerId);
   }
 
@@ -213,17 +264,19 @@ export class EventsOrganizerService {
     eventId: string,
     dto: CreateTicketTypeDto,
   ): Promise<OrganizerEventDto> {
-    await this.loadOwnedEvent(organizerId, eventId);
     this.assertSalesWindow(dto.salesStartAt, dto.salesEndAt);
-    await this.prisma.ticketType.create({
-      data: {
-        eventId,
-        name: dto.name,
-        priceVnd: BigInt(dto.priceVnd),
-        quantityTotal: dto.quantityTotal,
-        salesStartAt: dto.salesStartAt ? new Date(dto.salesStartAt) : null,
-        salesEndAt: dto.salesEndAt ? new Date(dto.salesEndAt) : null,
-      },
+    await this.prisma.$transaction(async (tx) => {
+      await this.lockEditableEvent(tx, organizerId, eventId);
+      await tx.ticketType.create({
+        data: {
+          eventId,
+          name: dto.name,
+          priceVnd: BigInt(dto.priceVnd),
+          quantityTotal: dto.quantityTotal,
+          salesStartAt: dto.salesStartAt ? new Date(dto.salesStartAt) : null,
+          salesEndAt: dto.salesEndAt ? new Date(dto.salesEndAt) : null,
+        },
+      });
     });
     return this.toDetail(eventId, organizerId);
   }
@@ -234,8 +287,8 @@ export class EventsOrganizerService {
     ticketTypeId: string,
     dto: UpdateTicketTypeDto,
   ): Promise<OrganizerEventDto> {
-    await this.loadOwnedEvent(organizerId, eventId);
     await this.prisma.$transaction(async (tx) => {
+      await this.lockEditableEvent(tx, organizerId, eventId);
       await tx.$queryRaw`
         SELECT id
         FROM "TicketType"
@@ -313,32 +366,21 @@ export class EventsOrganizerService {
     eventId: string,
     ticketTypeId: string,
   ): Promise<OrganizerEventDto> {
-    const event = await this.loadOwnedEvent(organizerId, eventId);
-    const ticketType = await this.prisma.ticketType.findFirst({
-      where: { id: ticketTypeId, eventId },
-      select: { id: true },
-    });
-    if (!ticketType) {
-      throw new NotFoundException({
-        code: ErrorCode.NOT_FOUND,
-        message: 'Ticket type not found.',
+    await this.prisma.$transaction(async (tx) => {
+      await this.lockEditableEvent(tx, organizerId, eventId);
+      const ticketType = await tx.ticketType.findFirst({
+        where: { id: ticketTypeId, eventId },
+        select: { id: true },
       });
-    }
-
-    if (event.status === EventStatus.PUBLISHED) {
-      const remaining = await this.prisma.ticketType.count({
-        where: { eventId },
-      });
-      if (remaining <= 1) {
-        throw new ConflictException({
-          code: ErrorCode.LAST_TICKET_TYPE,
-          message:
-            'A published event must keep at least one ticket type; unpublish it first.',
+      if (!ticketType) {
+        throw new NotFoundException({
+          code: ErrorCode.NOT_FOUND,
+          message: 'Ticket type not found.',
         });
       }
-    }
 
-    await this.prisma.ticketType.delete({ where: { id: ticketTypeId } });
+      await tx.ticketType.delete({ where: { id: ticketTypeId } });
+    });
     return this.toDetail(eventId, organizerId);
   }
 
@@ -349,7 +391,13 @@ export class EventsOrganizerService {
   private async loadOwnedEvent(organizerId: string, id: string) {
     const event = await this.prisma.event.findFirst({
       where: { id, organizerId },
-      select: { id: true, status: true, startAt: true, endAt: true },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        startAt: true,
+        endAt: true,
+      },
     });
     if (!event) {
       throw new NotFoundException({
@@ -366,6 +414,49 @@ export class EventsOrganizerService {
         code: ErrorCode.VALIDATION_FAILED,
         message: 'startAt must be before endAt.',
         fields: [{ field: 'endAt', rule: 'afterStartAt' }],
+      });
+    }
+  }
+
+  private assertEventEditable(status: EventStatus): void {
+    if (status !== EventStatus.DRAFT) {
+      throw new ConflictException({
+        code: ErrorCode.INVALID_STATE_TRANSITION,
+        message: 'Only draft events can be edited.',
+      });
+    }
+  }
+
+  private async lockEditableEvent(
+    tx: Prisma.TransactionClient,
+    organizerId: string,
+    eventId: string,
+  ): Promise<void> {
+    await tx.$queryRaw`
+      SELECT id
+      FROM "Event"
+      WHERE id = ${eventId}::uuid
+        AND "organizerId" = ${organizerId}::uuid
+      FOR UPDATE
+    `;
+    const event = await tx.event.findFirst({
+      where: { id: eventId, organizerId },
+      select: { status: true },
+    });
+    if (!event) {
+      throw new NotFoundException({
+        code: ErrorCode.NOT_FOUND,
+        message: 'Event not found.',
+      });
+    }
+    this.assertEventEditable(event.status);
+  }
+
+  private assertSingleStateChange(count: number): void {
+    if (count !== 1) {
+      throw new ConflictException({
+        code: ErrorCode.INVALID_STATE_TRANSITION,
+        message: 'The event state changed. Please refresh and try again.',
       });
     }
   }

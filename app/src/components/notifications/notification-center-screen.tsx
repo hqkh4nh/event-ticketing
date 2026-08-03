@@ -30,6 +30,8 @@ const NOTIFICATION_ICON: Record<
   ComponentProps<typeof MaterialIcons>['name']
 > = {
   TICKET_ISSUED: 'confirmation-number',
+  EVENT_SUBMITTED: 'rate-review',
+  EVENT_APPROVED: 'verified',
   PAYMENT_REVIEW_REQUIRED: 'error-outline',
   EVENT_FEATURED: 'star',
 };

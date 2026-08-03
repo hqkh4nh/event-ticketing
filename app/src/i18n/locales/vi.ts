@@ -184,6 +184,14 @@ export const vi = {
         title: 'Vé của bạn đã sẵn sàng',
         body: 'Bạn có {{count}} vé cho {{eventTitle}}.',
       },
+      EVENT_SUBMITTED: {
+        title: 'Sự kiện mới chờ duyệt',
+        body: 'Sự kiện “{{eventTitle}}” đã được gửi để duyệt xuất bản.',
+      },
+      EVENT_APPROVED: {
+        title: 'Sự kiện đã được duyệt',
+        body: 'Sự kiện “{{eventTitle}}” đã được xuất bản công khai.',
+      },
       EVENT_FEATURED: {
         title: 'Sự kiện được duyệt nổi bật',
         body: 'Sự kiện “{{eventTitle}}” đã được duyệt nổi bật.',
@@ -545,6 +553,7 @@ export const vi = {
       overview: 'Tổng quan',
       accounts: 'Tài khoản',
       events: 'Sự kiện',
+      notifications: 'Thông báo',
       profile: 'Quản trị',
     },
     overview: {
@@ -589,6 +598,7 @@ export const vi = {
       show: 'Hiện lại',
       feature: 'Nổi bật',
       unfeature: 'Bỏ nổi bật',
+      approveEvent: 'Duyệt sự kiện',
     },
     roles: {
       ORGANIZER: 'Organizer',
@@ -636,12 +646,14 @@ export const vi = {
     },
     eventFilters: {
       ALL: 'Tất cả',
+      PENDING_REVIEW: 'Chờ duyệt',
       PUBLISHED: 'Đã xuất bản',
       DRAFT: 'Bản nháp',
       HIDDEN: 'Đã ẩn',
       CANCELLED: 'Đã hủy',
     },
     eventStatus: {
+      PENDING_REVIEW: 'Chờ duyệt',
       PUBLISHED: 'Đã xuất bản',
       DRAFT: 'Bản nháp',
       HIDDEN: 'Đã ẩn',
@@ -666,6 +678,10 @@ export const vi = {
       confirmFeatureAction: 'Đánh dấu nổi bật',
       featuredSuccess: 'Đã đánh dấu sự kiện nổi bật và gửi thông báo cho Organizer.',
       unfeaturedSuccess: 'Đã bỏ đánh dấu nổi bật khỏi sự kiện.',
+      confirmApproveTitle: 'Duyệt xuất bản sự kiện?',
+      confirmApproveDescription:
+        '“{{event}}” sẽ được xuất bản công khai và Organizer sẽ nhận được thông báo.',
+      approvedSuccess: 'Đã duyệt xuất bản sự kiện và thông báo cho Organizer.',
     },
     profile: {
       title: 'Tài khoản quản trị',
@@ -773,6 +789,7 @@ export const vi = {
       cancelled: 'Đã huỷ',
       filter: {
         ALL: 'Tất cả',
+        PENDING_REVIEW: 'Chờ duyệt',
         PUBLISHED: 'Đã đăng',
         DRAFT: 'Nháp',
         CANCELLED: 'Đã huỷ',
@@ -791,6 +808,7 @@ export const vi = {
     },
     status: {
       DRAFT: 'Nháp',
+      PENDING_REVIEW: 'Chờ duyệt',
       PUBLISHED: 'Đã xuất bản',
       CANCELLED: 'Đã huỷ',
       HIDDEN: 'Đã ẩn',
@@ -816,6 +834,9 @@ export const vi = {
       save: 'Lưu',
       saving: 'Đang lưu…',
       createAction: 'Tạo sự kiện',
+      lockedTitle: 'Nội dung đang được khóa',
+      lockedDescription:
+        'Đưa sự kiện về bản nháp trước khi chỉnh sửa thông tin, ảnh bìa hoặc hạng vé.',
     },
     ticketTypes: {
       heading: 'Hạng vé',
@@ -837,6 +858,8 @@ export const vi = {
     },
     actions: {
       publish: 'Xuất bản',
+      submitForReview: 'Gửi duyệt xuất bản',
+      withdrawReview: 'Hủy yêu cầu duyệt',
       unpublish: 'Gỡ xuất bản',
       cancel: 'Huỷ sự kiện',
       delete: 'Xoá',

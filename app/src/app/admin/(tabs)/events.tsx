@@ -19,6 +19,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
 import {
   adminKeys,
+  approveAdminEvent,
   type AdminEvent,
   type AdminEventStatus,
   listAdminEvents,
@@ -30,6 +31,7 @@ type EventFilter = 'ALL' | AdminEventStatus;
 
 const FILTERS: EventFilter[] = [
   'ALL',
+  'PENDING_REVIEW',
   'PUBLISHED',
   'DRAFT',
   'HIDDEN',
@@ -51,6 +53,8 @@ export default function AdminEventsScreen() {
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [pendingFeatureEvent, setPendingFeatureEvent] =
+    useState<AdminEvent | null>(null);
+  const [pendingApprovalEvent, setPendingApprovalEvent] =
     useState<AdminEvent | null>(null);
 
   useEffect(() => {
@@ -96,6 +100,22 @@ export default function AdminEventsScreen() {
     },
     onError: (error) => {
       setPendingFeatureEvent(null);
+      setFeedback({ tone: 'error', message: toUserMessage(error, t) });
+    },
+  });
+
+  const approvalMutation = useMutation({
+    mutationFn: (id: string) => approveAdminEvent(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: adminKeys.events() });
+      setPendingApprovalEvent(null);
+      setFeedback({
+        tone: 'success',
+        message: t('admin.events.approvedSuccess'),
+      });
+    },
+    onError: (error) => {
+      setPendingApprovalEvent(null);
       setFeedback({ tone: 'error', message: toUserMessage(error, t) });
     },
   });
@@ -262,8 +282,10 @@ export default function AdminEventsScreen() {
             <View className="flex-row flex-wrap justify-between gap-y-3">
               {events.map((event) => {
                 const busy =
-                  featuredMutation.isPending &&
-                  featuredMutation.variables?.id === event.id;
+                  (featuredMutation.isPending &&
+                    featuredMutation.variables?.id === event.id) ||
+                  (approvalMutation.isPending &&
+                    approvalMutation.variables === event.id);
 
                 return (
                   <View key={event.id} className="w-full md:w-[48%]">
@@ -278,6 +300,7 @@ export default function AdminEventsScreen() {
                       featuredLabel={t('admin.events.featured')}
                       featureLabel={t('admin.actions.feature')}
                       unfeatureLabel={t('admin.actions.unfeature')}
+                      approveLabel={t('admin.actions.approveEvent')}
                       formattedDate={new Intl.DateTimeFormat(i18n.language, {
                         dateStyle: 'medium',
                         timeStyle: 'short',
@@ -292,6 +315,10 @@ export default function AdminEventsScreen() {
                         } else {
                           setPendingFeatureEvent(event);
                         }
+                      }}
+                      onApprove={() => {
+                        setFeedback(null);
+                        setPendingApprovalEvent(event);
                       }}
                     />
                   </View>
@@ -326,6 +353,23 @@ export default function AdminEventsScreen() {
             id: pendingFeatureEvent.id,
             featured: true,
           });
+        }}
+      />
+      <ConfirmDialog
+        visible={pendingApprovalEvent !== null}
+        title={t('admin.events.confirmApproveTitle')}
+        description={t('admin.events.confirmApproveDescription', {
+          event: pendingApprovalEvent?.title ?? '',
+        })}
+        cancelLabel={t('common.cancel')}
+        confirmLabel={t('admin.actions.approveEvent')}
+        icon="verified"
+        tone="primary"
+        loading={approvalMutation.isPending}
+        onCancel={() => setPendingApprovalEvent(null)}
+        onConfirm={() => {
+          if (!pendingApprovalEvent) return;
+          approvalMutation.mutate(pendingApprovalEvent.id);
         }}
       />
     </SafeAreaView>

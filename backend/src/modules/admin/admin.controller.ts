@@ -2,13 +2,17 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Patch,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiConflictResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -91,5 +95,19 @@ export class AdminController {
     @Body() dto: UpdateEventFeaturedDto,
   ): Promise<AdminEventDto> {
     return this.admin.updateEventFeatured(user.id, id, dto);
+  }
+
+  @Post('events/:id/approve')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Approve an event waiting for publication review.' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOkResponse({ type: AdminEventDto })
+  @ApiNotFoundResponse({ description: 'code: NOT_FOUND' })
+  @ApiConflictResponse({ description: 'code: INVALID_STATE_TRANSITION' })
+  approveEvent(
+    @CurrentUser() user: CurrentUserData,
+    @Param('id') id: string,
+  ): Promise<AdminEventDto> {
+    return this.admin.approveEvent(user.id, id);
   }
 }

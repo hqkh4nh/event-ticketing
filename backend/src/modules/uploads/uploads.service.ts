@@ -1,5 +1,6 @@
 import {
   BadGatewayException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -9,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary } from 'cloudinary';
 
 import { ErrorCode } from '../../common/errors/error-code';
+import { EventStatus } from '../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { CurrentUserData } from '../auth/jwt.strategy';
 import type {
@@ -81,7 +83,60 @@ export class UploadsService {
   ): Promise<CompleteUploadDto> {
     this.configureCloudinary();
     const publicId = await this.resolvePublicId(user, dto);
+    const secureUrl = await this.verifyUploadedResource(dto, publicId);
 
+    if (dto.target === UploadTarget.USER_AVATAR) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { avatarUrl: secureUrl },
+      });
+    } else {
+      const changed = await this.prisma.event.updateMany({
+        where: {
+          id: dto.eventId,
+          organizerId: user.id,
+          status: EventStatus.DRAFT,
+        },
+        data: { coverImageUrl: secureUrl },
+      });
+      this.assertDraftCoverChange(changed.count);
+    }
+
+    return { secureUrl };
+  }
+
+  async deleteUpload(
+    user: CurrentUserData,
+    dto: UploadRequestDto,
+  ): Promise<void> {
+    this.configureCloudinary();
+    const publicId = await this.resolvePublicId(user, dto);
+
+    if (dto.target === UploadTarget.EVENT_COVER) {
+      const changed = await this.prisma.event.updateMany({
+        where: {
+          id: dto.eventId,
+          organizerId: user.id,
+          status: EventStatus.DRAFT,
+        },
+        data: { coverImageUrl: null },
+      });
+      this.assertDraftCoverChange(changed.count);
+      await this.destroyUpload(publicId).catch(() => undefined);
+      return;
+    }
+
+    await this.destroyUpload(publicId);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { avatarUrl: null },
+    });
+  }
+
+  private async verifyUploadedResource(
+    dto: CompleteUploadRequestDto,
+    publicId: string,
+  ): Promise<string> {
     let resource: CloudinaryImageResource;
     try {
       resource = (await cloudinary.api.resource(publicId, {
@@ -116,44 +171,14 @@ export class UploadsService {
       throw this.uploadFailed();
     }
 
-    if (dto.target === UploadTarget.USER_AVATAR) {
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: { avatarUrl: secureUrl },
-      });
-    } else {
-      await this.prisma.event.update({
-        where: { id: dto.eventId },
-        data: { coverImageUrl: secureUrl },
-      });
-    }
-
-    return { secureUrl };
+    return secureUrl;
   }
 
-  async deleteUpload(
-    user: CurrentUserData,
-    dto: UploadRequestDto,
-  ): Promise<void> {
-    this.configureCloudinary();
-    const publicId = await this.resolvePublicId(user, dto);
-
+  private async destroyUpload(publicId: string): Promise<void> {
     try {
       await cloudinary.uploader.destroy(publicId, { invalidate: true });
     } catch {
       throw this.deleteFailed();
-    }
-
-    if (dto.target === UploadTarget.USER_AVATAR) {
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: { avatarUrl: null },
-      });
-    } else {
-      await this.prisma.event.update({
-        where: { id: dto.eventId },
-        data: { coverImageUrl: null },
-      });
     }
   }
 
@@ -181,7 +206,7 @@ export class UploadsService {
 
     const event = await this.prisma.event.findFirst({
       where: { id: dto.eventId, organizerId: user.id },
-      select: { id: true },
+      select: { id: true, status: true },
     });
     if (!event) {
       throw new NotFoundException({
@@ -189,8 +214,27 @@ export class UploadsService {
         message: 'Event not found.',
       });
     }
+    this.assertDraftEvent(event.status);
 
     return buildUploadPublicId(dto.target, user.id, event.id);
+  }
+
+  private assertDraftEvent(status: EventStatus): void {
+    if (status !== EventStatus.DRAFT) {
+      throw new ConflictException({
+        code: ErrorCode.INVALID_STATE_TRANSITION,
+        message: 'Only draft event covers can be changed.',
+      });
+    }
+  }
+
+  private assertDraftCoverChange(count: number): void {
+    if (count !== 1) {
+      throw new ConflictException({
+        code: ErrorCode.INVALID_STATE_TRANSITION,
+        message: 'The event is no longer editable.',
+      });
+    }
   }
 
   private configureCloudinary() {

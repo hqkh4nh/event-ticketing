@@ -11,8 +11,10 @@ export function AdminEventCard({
   featuredLabel,
   featureLabel,
   unfeatureLabel,
+  approveLabel,
   formattedDate,
   onToggleFeatured,
+  onApprove,
   busy = false,
 }: {
   event: AdminEvent;
@@ -21,8 +23,10 @@ export function AdminEventCard({
   featuredLabel: string;
   featureLabel: string;
   unfeatureLabel: string;
+  approveLabel: string;
   formattedDate: string;
   onToggleFeatured: () => void;
+  onApprove: () => void;
   busy?: boolean;
 }) {
   const featureDisabled =
@@ -80,25 +84,40 @@ export function AdminEventCard({
       </View>
 
       <View className="flex-row gap-2 border-t border-outline-variant p-3">
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ busy, disabled: featureDisabled }}
-          disabled={featureDisabled}
-          onPress={onToggleFeatured}
-          className={[
-            'h-touch-target-min flex-1 flex-row items-center justify-center gap-2 rounded-full border border-outline active:bg-surface-container',
-            featureDisabled ? 'opacity-40' : '',
-          ].join(' ')}
-        >
-          <MaterialIcons
-            name={event.featured ? 'star-outline' : 'star'}
-            size={18}
-            className="text-on-surface"
-          />
-          <Text className="font-semibold text-label-sm text-on-surface">
-            {event.featured ? unfeatureLabel : featureLabel}
-          </Text>
-        </Pressable>
+        {event.status === 'PENDING_REVIEW' ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ busy, disabled: busy }}
+            disabled={busy}
+            onPress={onApprove}
+            className="h-touch-target-min flex-1 flex-row items-center justify-center gap-2 rounded-full bg-primary active:opacity-80"
+          >
+            <MaterialIcons name="verified" size={18} className="text-on-primary" />
+            <Text className="font-semibold text-label-sm text-on-primary">
+              {approveLabel}
+            </Text>
+          </Pressable>
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ busy, disabled: featureDisabled }}
+            disabled={featureDisabled}
+            onPress={onToggleFeatured}
+            className={[
+              'h-touch-target-min flex-1 flex-row items-center justify-center gap-2 rounded-full border border-outline active:bg-surface-container',
+              featureDisabled ? 'opacity-40' : '',
+            ].join(' ')}
+          >
+            <MaterialIcons
+              name={event.featured ? 'star-outline' : 'star'}
+              size={18}
+              className="text-on-surface"
+            />
+            <Text className="font-semibold text-label-sm text-on-surface">
+              {event.featured ? unfeatureLabel : featureLabel}
+            </Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );

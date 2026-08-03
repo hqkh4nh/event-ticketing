@@ -188,6 +188,14 @@ export const en = {
         body_one: 'You have 1 ticket for {{eventTitle}}.',
         body_other: 'You have {{count}} tickets for {{eventTitle}}.',
       },
+      EVENT_SUBMITTED: {
+        title: 'Event awaiting review',
+        body: '“{{eventTitle}}” was submitted for publication review.',
+      },
+      EVENT_APPROVED: {
+        title: 'Event approved',
+        body: '“{{eventTitle}}” is now publicly available.',
+      },
       EVENT_FEATURED: {
         title: 'Event approved as featured',
         body: '“{{eventTitle}}” has been approved as featured.',
@@ -549,6 +557,7 @@ export const en = {
       overview: 'Overview',
       accounts: 'Accounts',
       events: 'Events',
+      notifications: 'Notifications',
       profile: 'Admin',
     },
     overview: {
@@ -593,6 +602,7 @@ export const en = {
       show: 'Show again',
       feature: 'Feature',
       unfeature: 'Unfeature',
+      approveEvent: 'Approve event',
     },
     roles: {
       ORGANIZER: 'Organizer',
@@ -640,12 +650,14 @@ export const en = {
     },
     eventFilters: {
       ALL: 'All',
+      PENDING_REVIEW: 'Awaiting review',
       PUBLISHED: 'Published',
       DRAFT: 'Draft',
       HIDDEN: 'Hidden',
       CANCELLED: 'Cancelled',
     },
     eventStatus: {
+      PENDING_REVIEW: 'Awaiting review',
       PUBLISHED: 'Published',
       DRAFT: 'Draft',
       HIDDEN: 'Hidden',
@@ -670,6 +682,10 @@ export const en = {
       confirmFeatureAction: 'Mark as featured',
       featuredSuccess: 'Event featured and the Organizer was notified.',
       unfeaturedSuccess: 'Event removed from the featured section.',
+      confirmApproveTitle: 'Approve this event for publication?',
+      confirmApproveDescription:
+        '“{{event}}” will become public and its Organizer will be notified.',
+      approvedSuccess: 'Event published and the Organizer was notified.',
     },
     profile: {
       title: 'Admin account',
@@ -776,6 +792,7 @@ export const en = {
       cancelled: 'Cancelled',
       filter: {
         ALL: 'All',
+        PENDING_REVIEW: 'Awaiting review',
         PUBLISHED: 'Published',
         DRAFT: 'Draft',
         CANCELLED: 'Cancelled',
@@ -794,6 +811,7 @@ export const en = {
     },
     status: {
       DRAFT: 'Draft',
+      PENDING_REVIEW: 'Awaiting review',
       PUBLISHED: 'Published',
       CANCELLED: 'Cancelled',
       HIDDEN: 'Hidden',
@@ -819,6 +837,9 @@ export const en = {
       save: 'Save',
       saving: 'Saving…',
       createAction: 'Create event',
+      lockedTitle: 'Event content is locked',
+      lockedDescription:
+        'Move the event back to draft before editing details, cover image, or ticket types.',
     },
     ticketTypes: {
       heading: 'Ticket types',
@@ -840,6 +861,8 @@ export const en = {
     },
     actions: {
       publish: 'Publish',
+      submitForReview: 'Submit for publication review',
+      withdrawReview: 'Withdraw review request',
       unpublish: 'Unpublish',
       cancel: 'Cancel event',
       delete: 'Delete',

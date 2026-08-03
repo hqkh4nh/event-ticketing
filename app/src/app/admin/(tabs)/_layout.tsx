@@ -7,6 +7,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppTabIcon } from '@/components/navigation/app-tab-bar';
 import { useTokens } from '@/hooks/use-tokens';
 import { adminKeys, listAdminOrganizers } from '@/lib/api/admin';
+import {
+  getUnreadNotificationCount,
+  notificationsKeys,
+} from '@/lib/api/notifications';
 
 const SIDEBAR_BREAKPOINT = 900;
 const PENDING_COUNT_QUERY = { status: 'PENDING', page: 1, limit: 1 } as const;
@@ -22,6 +26,12 @@ export default function AdminTabsLayout() {
     queryFn: () => listAdminOrganizers(PENDING_COUNT_QUERY),
   });
   const pendingCount = pendingQuery.data?.total;
+  const unreadQuery = useQuery({
+    queryKey: notificationsKeys.unread(),
+    queryFn: getUnreadNotificationCount,
+    refetchOnMount: 'always',
+  });
+  const unreadCount = unreadQuery.data?.count;
 
   return (
     <Tabs
@@ -86,6 +96,14 @@ export default function AdminTabsLayout() {
         options={{
           title: t('admin.tabs.events'),
           tabBarIcon: (props) => <AppTabIcon name="event-note" {...props} />,
+        }}
+      />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          title: t('admin.tabs.notifications'),
+          tabBarBadge: unreadCount ? unreadCount : undefined,
+          tabBarIcon: (props) => <AppTabIcon name="notifications" {...props} />,
         }}
       />
       <Tabs.Screen

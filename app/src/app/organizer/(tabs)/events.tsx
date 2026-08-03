@@ -27,7 +27,13 @@ import { toUserMessage } from '@/lib/api/error-message';
 type EventStatus = OrganizerEventSummary['status'];
 type EventFilter = 'ALL' | Exclude<EventStatus, 'HIDDEN'>;
 
-const FILTERS: EventFilter[] = ['ALL', 'PUBLISHED', 'DRAFT', 'CANCELLED'];
+const FILTERS: EventFilter[] = [
+  'ALL',
+  'PENDING_REVIEW',
+  'PUBLISHED',
+  'DRAFT',
+  'CANCELLED',
+];
 const EMPTY_EVENTS: OrganizerEventSummary[] = [];
 const LIST_CONTENT_STYLE = {
   paddingHorizontal: 20,

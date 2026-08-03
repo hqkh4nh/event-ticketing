@@ -108,6 +108,11 @@ const STATUS_TONES = {
     text: 'text-on-success-container',
     icon: 'public' as const,
   },
+  PENDING_REVIEW: {
+    surface: 'bg-warning-container',
+    text: 'text-on-warning-container',
+    icon: 'pending-actions' as const,
+  },
   DRAFT: {
     surface: 'bg-surface-container',
     text: 'text-on-surface-variant',

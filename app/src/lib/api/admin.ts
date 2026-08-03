@@ -92,3 +92,10 @@ export function updateAdminEventFeatured(
     },
   );
 }
+
+export function approveAdminEvent(id: string): Promise<AdminEvent> {
+  return apiFetch<AdminEvent>(
+    `/admin/events/${encodeURIComponent(id)}/approve`,
+    { method: 'POST' },
+  );
+}

@@ -179,24 +179,42 @@ export default function EditEventScreen() {
               </View>
             ) : null}
 
-            <EventForm
-              initial={{
-                title: event.title,
-                description: event.description,
-                venue: event.venue,
-                city: event.city,
-                category: event.category,
-                startAt: new Date(event.startAt),
-                endAt: new Date(event.endAt),
-                coverImageUrl: event.coverImageUrl ?? '',
-              }}
-              submitLabel={t('organizer.form.save')}
-              submitting={update.isPending}
-              onSubmit={(body, coverChange) => {
-                setActionError(null);
-                update.mutate({ body, coverChange });
-              }}
-            />
+            {event.status === 'DRAFT' ? (
+              <EventForm
+                initial={{
+                  title: event.title,
+                  description: event.description,
+                  venue: event.venue,
+                  city: event.city,
+                  category: event.category,
+                  startAt: new Date(event.startAt),
+                  endAt: new Date(event.endAt),
+                  coverImageUrl: event.coverImageUrl ?? '',
+                }}
+                submitLabel={t('organizer.form.save')}
+                submitting={update.isPending}
+                onSubmit={(body, coverChange) => {
+                  setActionError(null);
+                  update.mutate({ body, coverChange });
+                }}
+              />
+            ) : (
+              <View className="flex-row items-start gap-3 rounded-md bg-surface-container px-4 py-4">
+                <MaterialIcons
+                  name="lock-outline"
+                  size={22}
+                  className="text-on-surface-variant"
+                />
+                <View className="min-w-0 flex-1 gap-1">
+                  <Text className="font-semibold text-body-md text-on-surface">
+                    {t('organizer.form.lockedTitle')}
+                  </Text>
+                  <Text className="font-sans text-label-md text-on-surface-variant">
+                    {t('organizer.form.lockedDescription')}
+                  </Text>
+                </View>
+              </View>
+            )}
 
             <TicketTypesSection
               event={event}
@@ -218,7 +236,7 @@ export default function EditEventScreen() {
             <View className="gap-3 border-t border-outline-variant pt-6">
               {event.status === 'DRAFT' ? (
                 <Button
-                  label={t('organizer.actions.publish')}
+                  label={t('organizer.actions.submitForReview')}
                   loading={publish.isPending}
                   disabled={busy}
                   onPress={() => {
@@ -228,10 +246,15 @@ export default function EditEventScreen() {
                 />
               ) : null}
 
-              {event.status === 'PUBLISHED' ? (
+              {event.status === 'PUBLISHED' ||
+              event.status === 'PENDING_REVIEW' ? (
                 <Button
                   variant="outline"
-                  label={t('organizer.actions.unpublish')}
+                  label={t(
+                    event.status === 'PENDING_REVIEW'
+                      ? 'organizer.actions.withdrawReview'
+                      : 'organizer.actions.unpublish',
+                  )}
                   loading={unpublish.isPending}
                   disabled={busy}
                   onPress={() => {
@@ -380,6 +403,7 @@ function TicketTypesSection({
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const eventKey = ['organizer', 'events', event.id];
+  const editable = event.status === 'DRAFT';
 
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
@@ -541,31 +565,35 @@ function TicketTypesSection({
                     })}
                   </Text>
                 </View>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={t('organizer.ticketTypes.edit')}
-                  disabled={editType.isPending || removeType.isPending}
-                  onPress={() => beginEdit(tt)}
-                  className="h-10 w-10 items-center justify-center rounded-full active:bg-primary-container"
-                >
-                  <MaterialIcons name="edit" size={21} className="text-primary" />
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={t('organizer.ticketTypes.remove')}
-                  disabled={editType.isPending || removeType.isPending}
-                  onPress={() => removeType.mutate(tt.id)}
-                  className="h-10 w-10 items-center justify-center rounded-full active:bg-error-container"
-                >
-                  <MaterialIcons
-                    name="delete-outline"
-                    size={22}
-                    className="text-error"
-                  />
-                </Pressable>
+                {editable ? (
+                  <>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={t('organizer.ticketTypes.edit')}
+                      disabled={editType.isPending || removeType.isPending}
+                      onPress={() => beginEdit(tt)}
+                      className="h-10 w-10 items-center justify-center rounded-full active:bg-primary-container"
+                    >
+                      <MaterialIcons name="edit" size={21} className="text-primary" />
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={t('organizer.ticketTypes.remove')}
+                      disabled={editType.isPending || removeType.isPending}
+                      onPress={() => removeType.mutate(tt.id)}
+                      className="h-10 w-10 items-center justify-center rounded-full active:bg-error-container"
+                    >
+                      <MaterialIcons
+                        name="delete-outline"
+                        size={22}
+                        className="text-error"
+                      />
+                    </Pressable>
+                  </>
+                ) : null}
               </View>
 
-              {editingTicketType?.id === tt.id ? (
+              {editable && editingTicketType?.id === tt.id ? (
                 <View className="gap-3 rounded-md border border-primary bg-surface-container-lowest p-4">
                   <Text className="font-semibold text-body-md text-on-surface">
                     {t('organizer.ticketTypes.editTitle')}
@@ -627,7 +655,8 @@ function TicketTypesSection({
         </View>
       )}
 
-      <View className="gap-3 rounded-md border border-outline-variant p-4">
+      {editable ? (
+        <View className="gap-3 rounded-md border border-outline-variant p-4">
         <TextField
           label={t('organizer.ticketTypes.name')}
           placeholder={t('organizer.ticketTypes.namePlaceholder')}
@@ -664,7 +693,8 @@ function TicketTypesSection({
           loading={add.isPending}
           onPress={submit}
         />
-      </View>
+        </View>
+      ) : null}
     </View>
   );
 }

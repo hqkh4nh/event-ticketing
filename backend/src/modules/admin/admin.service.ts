@@ -59,6 +59,15 @@ type AdminEventRow = Prisma.EventGetPayload<{
   select: typeof adminEventSelect;
 }>;
 
+export function assertAdminApprovalTransition(status: EventStatus): void {
+  if (status !== EventStatus.PENDING_REVIEW) {
+    throw new ConflictException({
+      code: ErrorCode.INVALID_STATE_TRANSITION,
+      message: 'Only events waiting for review can be approved.',
+    });
+  }
+}
+
 @Injectable()
 export class AdminService {
   constructor(
@@ -244,6 +253,53 @@ export class AdminService {
       'Admin updated event featured status',
     );
 
+    return toAdminEventDto(event);
+  }
+
+  async approveEvent(adminId: string, eventId: string): Promise<AdminEventDto> {
+    const event = await this.prisma.$transaction(async (tx) => {
+      const existing = await tx.event.findUnique({
+        where: { id: eventId },
+        select: adminEventSelect,
+      });
+      if (!existing) {
+        throw new NotFoundException({
+          code: ErrorCode.NOT_FOUND,
+          message: 'Event not found.',
+        });
+      }
+
+      assertAdminApprovalTransition(existing.status);
+      const changed = await tx.event.updateMany({
+        where: { id: eventId, status: EventStatus.PENDING_REVIEW },
+        data: { status: EventStatus.PUBLISHED },
+      });
+      if (changed.count !== 1) {
+        throw new ConflictException({
+          code: ErrorCode.INVALID_STATE_TRANSITION,
+          message: 'The event is no longer waiting for review.',
+        });
+      }
+
+      await tx.notification.create({
+        data: {
+          userId: existing.organizerId,
+          type: 'EVENT_APPROVED',
+          data: {
+            eventId: existing.id,
+            eventTitle: existing.title,
+            url: `/organizer/events/${existing.id}`,
+          },
+        },
+      });
+
+      return tx.event.findUniqueOrThrow({
+        where: { id: eventId },
+        select: adminEventSelect,
+      });
+    });
+
+    this.logger.info({ adminId, eventId }, 'Admin approved event publication');
     return toAdminEventDto(event);
   }
 
