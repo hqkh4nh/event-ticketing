@@ -9,7 +9,7 @@ export default function AccountLayout() {
 
   if (isLoading) return null;
   if (!token) return <Redirect href="/auth/login" />;
-  if (role !== 'ATTENDEE' && role !== 'ORGANIZER') {
+  if (role !== 'ATTENDEE' && role !== 'ORGANIZER' && role !== 'ADMIN') {
     return <Redirect href="/" />;
   }
 

@@ -1,8 +1,9 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AdminScreenHeader } from '@/components/admin/admin-ui';
@@ -67,6 +68,7 @@ function AdminProfileRow({
 
 export default function AdminProfileScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const signOut = useAuthStore((state) => state.signOut);
   const language = useLanguageStore((state) => state.language);
@@ -74,10 +76,6 @@ export default function AdminProfileScreen() {
   const theme = useThemeStore((state) => state.preference);
   const setTheme = useThemeStore((state) => state.setPreference);
   const [signOutDialogVisible, setSignOutDialogVisible] = useState(false);
-
-  function showComingSoon() {
-    Alert.alert(t('profile.comingSoonTitle'), t('profile.comingSoonDescription'));
-  }
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-surface">
@@ -129,21 +127,21 @@ export default function AdminProfileScreen() {
 
           <View className="gap-3">
             <Text className="font-semibold text-headline-md text-on-surface">
-              {t('admin.profile.securitySection')}
+              {t('profile.accountSection')}
             </Text>
             <View className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest">
               <AdminProfileRow
-                icon="security"
-                label={t('admin.profile.security')}
-                description={t('admin.profile.securityDescription')}
-                onPress={showComingSoon}
+                icon="person-outline"
+                label={t('profile.editProfile')}
+                description={t('profile.editProfileDescription')}
+                onPress={() => router.push('/account/profile')}
               />
               <AdminProfileRow
-                icon="history"
-                label={t('admin.profile.auditLog')}
-                description={t('admin.profile.auditLogDescription')}
+                icon="security"
+                label={t('profile.security')}
+                description={t('profile.securityDescription')}
                 last
-                onPress={showComingSoon}
+                onPress={() => router.push('/account/security')}
               />
             </View>
           </View>
