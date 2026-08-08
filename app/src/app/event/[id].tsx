@@ -4,22 +4,44 @@ import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  useWindowDimensions,
+  View,
+  type ViewStyle,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
 import { Chip } from '@/components/ui/chip';
 import { EmptyState } from '@/components/ui/empty-state';
 import { NumericText } from '@/components/ui/numeric-text';
+import { DESKTOP_BREAKPOINT } from '@/constants/breakpoints';
 import { ApiError } from '@/lib/api/client';
 import { toUserMessage } from '@/lib/api/error-message';
 import {
   eventsKeys,
   getEvent,
+  type EventDetail,
   type TicketTypeSummary,
 } from '@/lib/api/events';
 import { createOrder, ordersKeys, ticketsKeys } from '@/lib/api/orders';
 import { formatDateTime, formatVndAmount } from '@/lib/format';
+
+const PHONE_POSTER_HEIGHT = 280;
+const PANEL_WIDTH = 380;
+
+/**
+ * `position: sticky` keeps the purchase panel in view while the description
+ * scrolls, without taking the page scroll away from the wheel the way a second
+ * scroll pane would. It is a web value that React Native's style types do not
+ * carry, hence the cast, and it is only ever applied on web.
+ */
+const STICKY_PANEL = { position: 'sticky', top: 24 } as unknown as ViewStyle;
 
 /** A per-purchase idempotency key so a retried Buy never orders twice. */
 function newRequestId(): string {
@@ -30,12 +52,14 @@ export default function EventDetailScreen() {
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const queryClient = useQueryClient();
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [orderError, setOrderError] = useState<string | null>(null);
   const [orderErrorCode, setOrderErrorCode] = useState<string | null>(null);
   const requestId = useRef<string | null>(null);
   const eventId = Array.isArray(params.id) ? params.id[0] : (params.id ?? '');
+  const isDesktop = width >= DESKTOP_BREAKPOINT;
 
   const eventQuery = useQuery({
     queryKey: eventsKeys.detail(eventId),
@@ -136,22 +160,153 @@ export default function EventDetailScreen() {
     );
   }
 
+  const ticketPicker = (
+    <View className="gap-3">
+      <Text className="font-semibold text-headline-md text-on-surface">
+        {t('event.chooseTickets')}
+      </Text>
+
+      {event.ticketTypes.map((ticketType) => (
+        <TicketTypeRow
+          key={ticketType.id}
+          ticketType={ticketType}
+          quantity={quantities[ticketType.id] ?? 0}
+          onChange={(next) =>
+            setQuantities((prev) => ({ ...prev, [ticketType.id]: next }))
+          }
+        />
+      ))}
+    </View>
+  );
+
+  const orderErrorNotice = orderError ? (
+    <View className="gap-2 rounded-md bg-error-container p-3">
+      <Text className="font-sans text-label-md text-on-error-container">
+        {orderError}
+      </Text>
+      {orderErrorCode === 'PENDING_ORDER_LIMIT_REACHED' ? (
+        <Pressable
+          accessibilityRole="button"
+          className="min-h-touch-target-min flex-row items-center justify-center gap-2 self-start rounded-full border border-primary px-4 active:bg-primary/10"
+          onPress={() => router.replace('/tickets')}
+        >
+          <MaterialIcons name="schedule" size={20} className="text-primary" />
+          <Text className="font-semibold text-label-md text-primary">
+            {t('order.viewPendingOrders')}
+          </Text>
+        </Pressable>
+      ) : null}
+    </View>
+  ) : null;
+
+  const totalLine = (
+    <View>
+      <Text className="font-sans text-label-md text-on-surface-variant">
+        {t('event.total')}
+      </Text>
+      {/* "Free" is a claim about the order, so it may only appear once
+          something is actually in it. With nothing selected the total is
+          zero, and zero is what it has to say. */}
+      <NumericText className="font-bold text-display-sm text-primary">
+        {selectedCount > 0 && total === 0
+          ? t('event.free')
+          : t('event.price', { price: formatVndAmount(total, i18n.language) })}
+      </NumericText>
+    </View>
+  );
+
+  const buyButton = (
+    <Button
+      label={t('event.buy')}
+      loading={orderMutation.isPending}
+      disabled={selectedCount === 0}
+      onPress={() => {
+        setOrderError(null);
+        setOrderErrorCode(null);
+        orderMutation.mutate();
+      }}
+    />
+  );
+
+  if (isDesktop) {
+    return (
+      <View className="flex-1 bg-surface">
+        <ScrollView
+          className="w-full max-w-wide flex-1 self-center"
+          contentContainerClassName="px-container-padding pb-12 pt-6 gap-6"
+          showsVerticalScrollIndicator={false}
+        >
+          <Pressable
+            accessibilityLabel={t('event.back')}
+            accessibilityRole="button"
+            className="min-h-touch-target-min flex-row items-center gap-1 self-start rounded-full pr-4 active:bg-surface-container"
+            onPress={goBack}
+          >
+            <MaterialIcons
+              name="chevron-left"
+              size={24}
+              className="text-on-surface-variant"
+            />
+            <Text className="font-medium text-label-md text-on-surface-variant">
+              {t('event.back')}
+            </Text>
+          </Pressable>
+
+          <View className="flex-row items-start gap-8">
+            <View className="min-w-0 flex-1 gap-8">
+              <View
+                className="overflow-hidden rounded-card border border-outline-variant"
+                style={{ aspectRatio: 16 / 9 }}
+              >
+                <EventPoster event={event} />
+              </View>
+
+              <View className="gap-4">
+                <EventTags event={event} />
+                <Text className="font-display text-display-lg text-on-surface">
+                  {event.title}
+                </Text>
+              </View>
+
+              <EventFacts event={event} />
+
+              <View className="gap-3">
+                <Text className="font-semibold text-headline-md text-on-surface">
+                  {t('event.about')}
+                </Text>
+                <Text className="font-sans text-body-md text-on-surface-variant">
+                  {event.description}
+                </Text>
+              </View>
+            </View>
+
+            <View
+              style={[
+                { width: PANEL_WIDTH },
+                Platform.OS === 'web' ? STICKY_PANEL : null,
+              ]}
+            >
+              <View className="gap-4 rounded-card border border-outline-variant bg-surface-container-lowest p-5">
+                {ticketPicker}
+                <View className="h-px bg-outline-variant" />
+                {orderErrorNotice}
+                {totalLine}
+                {buyButton}
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
   return (
     <View className="flex-1 bg-surface">
       <View className="w-full max-w-content flex-1 self-center">
         <ScrollView showsVerticalScrollIndicator={false}>
-          {event.coverImageUrl ? (
-            <Image
-              source={event.coverImageUrl}
-              contentFit="cover"
-              transition={200}
-              style={{ width: '100%', height: 280 }}
-            />
-          ) : (
-            <View className="h-[280px] items-center justify-center bg-surface-container-low">
-              <MaterialIcons name="image-not-supported" size={40} className="text-outline" />
-            </View>
-          )}
+          <View style={{ height: PHONE_POSTER_HEIGHT }}>
+            <EventPoster event={event} />
+          </View>
 
           <Pressable
             accessibilityRole="button"
@@ -165,30 +320,13 @@ export default function EventDetailScreen() {
 
           <View className="-mt-6 gap-6 rounded-t-xl bg-surface px-container-padding pb-8 pt-6">
             <View className="gap-3">
-              <View className="flex-row gap-2">
-                <Chip label={t(`event.category.${event.category}`)} />
-                {event.featured ? (
-                  <Chip label={t('event.hot')} tone="promo" icon="local-fire-department" />
-                ) : null}
-              </View>
-
-              <Text className="font-bold text-display-sm text-on-surface">{event.title}</Text>
+              <EventTags event={event} />
+              <Text className="font-display text-display-sm text-on-surface">
+                {event.title}
+              </Text>
             </View>
 
-            <View className="gap-4">
-              <InfoRow icon="calendar-today">
-                <Text className="font-medium text-body-md text-on-surface">
-                  {formatDateTime(event.startAt, i18n.language)}
-                </Text>
-                <Text className="font-sans text-label-md text-on-surface-variant">
-                  {t('event.endsAt', { datetime: formatDateTime(event.endAt, i18n.language) })}
-                </Text>
-              </InfoRow>
-
-              <InfoRow icon="place">
-                <Text className="font-medium text-body-md text-on-surface">{event.venue}</Text>
-              </InfoRow>
-            </View>
+            <EventFacts event={event} />
 
             <View className="gap-3">
               <Text className="font-semibold text-headline-md text-on-surface">
@@ -199,22 +337,7 @@ export default function EventDetailScreen() {
               </Text>
             </View>
 
-            <View className="gap-3">
-              <Text className="font-semibold text-headline-md text-on-surface">
-                {t('event.chooseTickets')}
-              </Text>
-
-              {event.ticketTypes.map((ticketType) => (
-                <TicketTypeRow
-                  key={ticketType.id}
-                  ticketType={ticketType}
-                  quantity={quantities[ticketType.id] ?? 0}
-                  onChange={(next) =>
-                    setQuantities((prev) => ({ ...prev, [ticketType.id]: next }))
-                  }
-                />
-              ))}
-            </View>
+            {ticketPicker}
           </View>
         </ScrollView>
 
@@ -222,58 +345,67 @@ export default function EventDetailScreen() {
           className="gap-3 border-t border-outline-variant bg-surface-container-lowest px-container-padding pt-4"
           style={{ paddingBottom: insets.bottom + 16 }}
         >
-          {orderError ? (
-            <View className="gap-2 rounded-md bg-error-container p-3">
-              <Text className="font-sans text-label-md text-on-error-container">
-                {orderError}
-              </Text>
-              {orderErrorCode === 'PENDING_ORDER_LIMIT_REACHED' ? (
-                <Pressable
-                  accessibilityRole="button"
-                  className="min-h-touch-target-min flex-row items-center justify-center gap-2 self-start rounded-full border border-primary px-4 active:bg-primary/10"
-                  onPress={() => router.replace('/tickets')}
-                >
-                  <MaterialIcons
-                    name="schedule"
-                    size={20}
-                    className="text-primary"
-                  />
-                  <Text className="font-semibold text-label-md text-primary">
-                    {t('order.viewPendingOrders')}
-                  </Text>
-                </Pressable>
-              ) : null}
-            </View>
-          ) : null}
+          {orderErrorNotice}
 
           <View className="flex-row items-center justify-between gap-4">
-            <View>
-              <Text className="font-sans text-label-md text-on-surface-variant">
-                {t('event.total')}
-              </Text>
-              {/* "Free" is a claim about the order, so it may only appear once
-                  something is actually in it. With nothing selected the total is
-                  zero, and zero is what it has to say. */}
-              <NumericText className="font-bold text-display-sm text-primary">
-                {selectedCount > 0 && total === 0
-                  ? t('event.free')
-                  : t('event.price', { price: formatVndAmount(total, i18n.language) })}
-              </NumericText>
-            </View>
-
-            <Button
-              label={t('event.buy')}
-              loading={orderMutation.isPending}
-              disabled={selectedCount === 0}
-              onPress={() => {
-                setOrderError(null);
-                setOrderErrorCode(null);
-                orderMutation.mutate();
-              }}
-            />
+            {totalLine}
+            {buyButton}
           </View>
         </View>
       </View>
+    </View>
+  );
+}
+
+function EventPoster({ event }: { event: EventDetail }) {
+  if (!event.coverImageUrl) {
+    return (
+      <View className="h-full items-center justify-center bg-surface-container-low">
+        <MaterialIcons name="image-not-supported" size={40} className="text-outline" />
+      </View>
+    );
+  }
+
+  return (
+    <Image
+      source={event.coverImageUrl}
+      contentFit="cover"
+      transition={200}
+      style={{ width: '100%', height: '100%' }}
+    />
+  );
+}
+
+function EventTags({ event }: { event: EventDetail }) {
+  const { t } = useTranslation();
+
+  return (
+    <View className="flex-row gap-2">
+      <Chip label={t(`event.category.${event.category}`)} />
+      {event.featured ? (
+        <Chip label={t('event.hot')} tone="promo" icon="local-fire-department" />
+      ) : null}
+    </View>
+  );
+}
+
+function EventFacts({ event }: { event: EventDetail }) {
+  const { t, i18n } = useTranslation();
+
+  return (
+    <View className="gap-4">
+      <InfoRow icon="calendar-today">
+        <Text className="font-medium text-body-md text-on-surface">
+          {formatDateTime(event.startAt, i18n.language)}
+        </Text>
+        <Text className="font-sans text-label-md text-on-surface-variant">
+          {t('event.endsAt', { datetime: formatDateTime(event.endAt, i18n.language) })}
+        </Text>
+      </InfoRow>
+
+      <InfoRow icon="place">
+        <Text className="font-medium text-body-md text-on-surface">{event.venue}</Text>
+      </InfoRow>
     </View>
   );
 }
@@ -324,7 +456,7 @@ function TicketTypeRow({
         .filter(Boolean)
         .join(' ')}
     >
-      <View className="flex-1 gap-1">
+      <View className="min-w-0 flex-1 gap-1">
         <Text className="font-semibold text-body-lg text-on-surface">{ticketType.name}</Text>
 
         <NumericText className="font-medium text-body-md text-primary">
