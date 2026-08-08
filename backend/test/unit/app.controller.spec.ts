@@ -3,14 +3,14 @@ import { ConflictException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary } from 'cloudinary';
 import { PinoLogger } from 'nestjs-pino';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { buildUploadPublicId } from './modules/uploads/upload-target';
-import { UploadsService } from './modules/uploads/uploads.service';
-import { PrismaService } from './prisma/prisma.service';
-import type { CurrentUserData } from './modules/auth/jwt.strategy';
-import { AdminService } from './modules/admin/admin.service';
-import { StatisticsService } from './modules/statistics/statistics.service';
+import { AppController } from '../../src/app.controller';
+import { AppService } from '../../src/app.service';
+import { AdminService } from '../../src/modules/admin/admin.service';
+import type { CurrentUserData } from '../../src/modules/auth/jwt.strategy';
+import { StatisticsService } from '../../src/modules/statistics/statistics.service';
+import { buildUploadPublicId } from '../../src/modules/uploads/upload-target';
+import { UploadsService } from '../../src/modules/uploads/uploads.service';
+import { PrismaService } from '../../src/prisma/prisma.service';
 
 jest.mock('cloudinary', () => ({
   v2: {

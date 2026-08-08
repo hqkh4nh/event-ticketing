@@ -1,6 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 
-import { TicketSignerService } from './ticket-signer.service';
+import { TicketSignerService } from '../../src/modules/tickets/ticket-signer.service';
 
 function makeSigner(
   secret = 'unit-test-ticket-hmac-secret-1234',
