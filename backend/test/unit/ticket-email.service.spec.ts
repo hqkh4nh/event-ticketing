@@ -1,6 +1,9 @@
 import { PinoLogger } from 'nestjs-pino';
 
-import { MailService, type MailMessage } from '../../src/modules/mail/mail.service';
+import {
+  MailService,
+  type MailMessage,
+} from '../../src/modules/mail/mail.service';
 import { TicketEmailService } from '../../src/modules/mail/ticket-email.service';
 import { TicketSignerService } from '../../src/modules/tickets/ticket-signer.service';
 import { PrismaService } from '../../src/prisma/prisma.service';
