@@ -718,6 +718,23 @@ export const vi = {
       confirmApproveDescription:
         '“{{event}}” sẽ được xuất bản công khai và Organizer sẽ nhận được thông báo.',
       approvedSuccess: 'Đã duyệt xuất bản sự kiện và thông báo cho Organizer.',
+      openDetail: 'Mở chi tiết sự kiện {{event}}',
+    },
+    eventDetail: {
+      title: 'Chi tiết sự kiện',
+      loadErrorTitle: 'Không tải được sự kiện này',
+      soldLabel: 'Vé đã bán',
+      revenueLabel: 'Doanh thu',
+      checkedInLabel: 'Đã check-in',
+      ticketTypeLabel: 'Hạng vé',
+      organizer: 'Organizer',
+      schedule: 'Thời gian',
+      venue: 'Địa điểm',
+      category: 'Danh mục',
+      descriptionTitle: 'Mô tả',
+      ticketTypesTitle: 'Các hạng vé',
+      ticketTypeSold: 'Đã bán {{sold}}/{{total}}',
+      noTicketTypes: 'Sự kiện này chưa có hạng vé nào.',
     },
     withdrawalFilters: {
       ALL: 'Tất cả',

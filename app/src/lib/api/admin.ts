@@ -10,6 +10,9 @@ export type UpdateAdminOrganizerStatus =
 export type AdminEvent = components['schemas']['AdminEventDto'];
 export type AdminEventList = components['schemas']['AdminEventListDto'];
 export type AdminEventStatus = AdminEvent['status'];
+export type AdminEventDetail = components['schemas']['AdminEventDetailDto'];
+export type AdminEventTicketType =
+  components['schemas']['AdminEventTicketTypeDto'];
 
 export type ListAdminOrganizersQuery = {
   status?: AdminOrganizerStatus;
@@ -33,6 +36,7 @@ export const adminKeys = {
   events: () => [...adminKeys.all, 'events'] as const,
   eventList: (query: ListAdminEventsQuery) =>
     [...adminKeys.events(), query] as const,
+  eventDetail: (id: string) => [...adminKeys.events(), 'detail', id] as const,
 };
 
 export function listAdminOrganizers(
@@ -77,6 +81,12 @@ export function listAdminEvents(
   const search = params.toString();
   return apiFetch<AdminEventList>(
     `/admin/events${search ? `?${search}` : ''}`,
+  );
+}
+
+export function getAdminEvent(id: string): Promise<AdminEventDetail> {
+  return apiFetch<AdminEventDetail>(
+    `/admin/events/${encodeURIComponent(id)}`,
   );
 }
 

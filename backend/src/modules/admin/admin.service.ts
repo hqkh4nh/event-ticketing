@@ -8,6 +8,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { ErrorCode } from '../../common/errors/error-code';
 import { EventStatus, Prisma, UserStatus } from '../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
+import { AdminEventDetailDto } from './dto/admin-event-detail.dto';
 import { AdminEventDto, AdminEventListDto } from './dto/admin-event.dto';
 import {
   AdminOrganizerDto,
@@ -57,6 +58,39 @@ const adminEventSelect = {
 
 type AdminEventRow = Prisma.EventGetPayload<{
   select: typeof adminEventSelect;
+}>;
+
+const adminEventDetailSelect = {
+  id: true,
+  organizerId: true,
+  title: true,
+  description: true,
+  venue: true,
+  city: true,
+  category: true,
+  status: true,
+  featured: true,
+  startAt: true,
+  endAt: true,
+  coverImageUrl: true,
+  organizer: { select: { fullName: true, email: true } },
+  ticketTypes: {
+    orderBy: { priceVnd: 'asc' as const },
+    select: {
+      id: true,
+      name: true,
+      priceVnd: true,
+      quantityTotal: true,
+      orderItems: {
+        where: { order: { status: { in: ['PENDING', 'PAID'] as const } } },
+        select: { quantity: true },
+      },
+    },
+  },
+} satisfies Prisma.EventSelect;
+
+type AdminEventDetailRow = Prisma.EventGetPayload<{
+  select: typeof adminEventDetailSelect;
 }>;
 
 export function assertAdminApprovalTransition(status: EventStatus): void {
@@ -177,6 +211,40 @@ export class AdminService {
       page: query.page,
       limit: query.limit,
     };
+  }
+
+  /**
+   * Full detail for moderation. Unlike the public endpoint this ignores status,
+   * because the events an admin most needs to read are the ones still waiting
+   * for review.
+   */
+  async getEvent(eventId: string): Promise<AdminEventDetailDto> {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+      select: adminEventDetailSelect,
+    });
+    if (!event) {
+      throw new NotFoundException({
+        code: ErrorCode.NOT_FOUND,
+        message: 'Event not found.',
+      });
+    }
+
+    const [paidOrders, checkedInCount] = await Promise.all([
+      this.prisma.order.aggregate({
+        where: { eventId, status: 'PAID' },
+        _sum: { totalVnd: true },
+      }),
+      this.prisma.ticket.count({
+        where: { status: 'USED', orderItem: { order: { eventId } } },
+      }),
+    ]);
+
+    return toAdminEventDetailDto(
+      event,
+      Number(paidOrders._sum.totalVnd ?? 0n),
+      checkedInCount,
+    );
   }
 
   async updateEventFeatured(
@@ -325,6 +393,48 @@ function toAdminOrganizerDto(row: OrganizerRow): AdminOrganizerDto {
     eventCount: row._count.events,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+function toAdminEventDetailDto(
+  row: AdminEventDetailRow,
+  revenueVnd: number,
+  checkedInCount: number,
+): AdminEventDetailDto {
+  const ticketTypes = row.ticketTypes.map((ticketType) => ({
+    id: ticketType.id,
+    name: ticketType.name,
+    priceVnd: Number(ticketType.priceVnd),
+    quantityTotal: ticketType.quantityTotal,
+    soldCount: ticketType.orderItems.reduce(
+      (total, item) => total + item.quantity,
+      0,
+    ),
+  }));
+
+  return {
+    id: row.id,
+    organizerId: row.organizerId,
+    organizerName: row.organizer.fullName,
+    organizerEmail: row.organizer.email,
+    title: row.title,
+    description: row.description,
+    venue: row.venue,
+    city: row.city,
+    category: row.category,
+    status: row.status,
+    featured: row.featured,
+    startAt: row.startAt.toISOString(),
+    endAt: row.endAt.toISOString(),
+    coverImageUrl: row.coverImageUrl,
+    ticketTypes,
+    sold: ticketTypes.reduce((total, type) => total + type.soldCount, 0),
+    capacity: ticketTypes.reduce(
+      (total, type) => total + type.quantityTotal,
+      0,
+    ),
+    revenueVnd,
+    checkedInCount,
   };
 }
 

@@ -26,6 +26,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import type { CurrentUserData } from '../auth/jwt.strategy';
 import { AdminService } from './admin.service';
+import { AdminEventDetailDto } from './dto/admin-event-detail.dto';
 import { AdminEventDto, AdminEventListDto } from './dto/admin-event.dto';
 import {
   AdminOrganizerDto,
@@ -80,6 +81,15 @@ export class AdminController {
     @Query() query: ListAdminEventsQueryDto,
   ): Promise<AdminEventListDto> {
     return this.admin.listEvents(query);
+  }
+
+  @Get('events/:id')
+  @ApiOperation({ summary: 'Read one event in full, whatever its status.' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOkResponse({ type: AdminEventDetailDto })
+  @ApiNotFoundResponse({ description: 'code: NOT_FOUND' })
+  getEvent(@Param('id') id: string): Promise<AdminEventDetailDto> {
+    return this.admin.getEvent(id);
   }
 
   @Patch('events/:id/featured')

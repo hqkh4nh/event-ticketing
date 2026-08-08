@@ -12,9 +12,11 @@ export function AdminEventCard({
   featureLabel,
   unfeatureLabel,
   approveLabel,
+  openLabel,
   formattedDate,
   onToggleFeatured,
   onApprove,
+  onOpen,
   busy = false,
 }: {
   event: AdminEvent;
@@ -24,9 +26,11 @@ export function AdminEventCard({
   featureLabel: string;
   unfeatureLabel: string;
   approveLabel: string;
+  openLabel: string;
   formattedDate: string;
   onToggleFeatured: () => void;
   onApprove: () => void;
+  onOpen: () => void;
   busy?: boolean;
 }) {
   const featureDisabled =
@@ -34,7 +38,12 @@ export function AdminEventCard({
 
   return (
     <View className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest">
-      <View className="flex-row gap-3 p-4">
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={openLabel}
+        onPress={onOpen}
+        className="flex-row gap-3 p-4 active:bg-surface-container-low"
+      >
         <View className="h-20 w-20 items-center justify-center rounded-lg bg-primary-container">
           <MaterialIcons name="event" size={32} className="text-on-primary-container" />
         </View>
@@ -57,7 +66,8 @@ export function AdminEventCard({
             {event.organizerName}
           </Text>
         </View>
-      </View>
+        <MaterialIcons name="chevron-right" size={22} className="self-center text-outline" />
+      </Pressable>
 
       <View className="gap-2 border-t border-outline-variant px-4 py-3">
         <View className="flex-row items-center gap-2">

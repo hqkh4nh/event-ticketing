@@ -1,5 +1,6 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -47,6 +48,7 @@ type Feedback = {
 
 export default function AdminEventsScreen() {
   const { t, i18n } = useTranslation();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<EventFilter>('ALL');
   const [query, setQuery] = useState('');
@@ -301,6 +303,9 @@ export default function AdminEventsScreen() {
                       featureLabel={t('admin.actions.feature')}
                       unfeatureLabel={t('admin.actions.unfeature')}
                       approveLabel={t('admin.actions.approveEvent')}
+                      openLabel={t('admin.events.openDetail', {
+                        event: event.title,
+                      })}
                       formattedDate={new Intl.DateTimeFormat(i18n.language, {
                         dateStyle: 'medium',
                         timeStyle: 'short',
@@ -320,6 +325,7 @@ export default function AdminEventsScreen() {
                         setFeedback(null);
                         setPendingApprovalEvent(event);
                       }}
+                      onOpen={() => router.push(`/admin/events/${event.id}`)}
                     />
                   </View>
                 );

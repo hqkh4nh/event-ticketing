@@ -587,6 +587,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/events/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read one event in full, whatever its status. */
+        get: operations["AdminController_getEvent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/events/{id}/featured": {
         parameters: {
             query?: never;
@@ -1317,6 +1334,45 @@ export interface components {
             total: number;
             page: number;
             limit: number;
+        };
+        AdminEventTicketTypeDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @example 200000 */
+            priceVnd: number;
+            quantityTotal: number;
+            /** @description Held or paid tickets. */
+            soldCount: number;
+        };
+        AdminEventDetailDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            organizerId: string;
+            organizerName: string;
+            organizerEmail: string | null;
+            title: string;
+            description: string;
+            venue: string;
+            city: string;
+            /** @enum {string} */
+            category: "MUSIC" | "TECH" | "ART" | "SPORT" | "WORKSHOP";
+            /** @enum {string} */
+            status: "DRAFT" | "PENDING_REVIEW" | "PUBLISHED" | "CANCELLED" | "HIDDEN";
+            featured: boolean;
+            /** Format: date-time */
+            startAt: string;
+            /** Format: date-time */
+            endAt: string;
+            coverImageUrl: string | null;
+            ticketTypes: components["schemas"]["AdminEventTicketTypeDto"][];
+            sold: number;
+            capacity: number;
+            /** @description Revenue from PAID orders, in VND. */
+            revenueVnd: number;
+            /** @description Guests admitted so far. */
+            checkedInCount: number;
         };
         UpdateEventFeaturedDto: {
             featured: boolean;
@@ -2617,6 +2673,41 @@ export interface operations {
             };
             /** @description code: FORBIDDEN_ROLE */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AdminController_getEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminEventDetailDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: NOT_FOUND */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

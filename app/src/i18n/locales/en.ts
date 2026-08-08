@@ -722,6 +722,23 @@ export const en = {
       confirmApproveDescription:
         '“{{event}}” will become public and its Organizer will be notified.',
       approvedSuccess: 'Event published and the Organizer was notified.',
+      openDetail: 'Open details for {{event}}',
+    },
+    eventDetail: {
+      title: 'Event details',
+      loadErrorTitle: 'Unable to load this event',
+      soldLabel: 'Tickets sold',
+      revenueLabel: 'Revenue',
+      checkedInLabel: 'Checked in',
+      ticketTypeLabel: 'Ticket types',
+      organizer: 'Organizer',
+      schedule: 'Schedule',
+      venue: 'Venue',
+      category: 'Category',
+      descriptionTitle: 'Description',
+      ticketTypesTitle: 'Ticket types',
+      ticketTypeSold: '{{sold}}/{{total}} sold',
+      noTicketTypes: 'This event has no ticket type yet.',
     },
     withdrawalFilters: {
       ALL: 'All',
