@@ -1,10 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { OrganizerStatusSummary } from '@/components/organizer/organizer-status-summary';
+import { RevenueReportDialog } from '@/components/statistics/revenue-report-dialog';
 import { SalesStatisticsDashboard } from '@/components/statistics/sales-statistics-dashboard';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -13,16 +15,14 @@ import {
   type OrganizerEventSummary,
 } from '@/lib/api/events-organizer';
 import { toUserMessage } from '@/lib/api/error-message';
-import {
-  getOrganizerStatistics,
-  statisticsKeys,
-} from '@/lib/api/statistics';
+import { getOrganizerStatistics, statisticsKeys } from '@/lib/api/statistics';
 
 const EMPTY_EVENTS: OrganizerEventSummary[] = [];
 
 export default function OrganizerOverviewScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const [reportOpen, setReportOpen] = useState(false);
   const eventsQuery = useQuery({
     queryKey: ['organizer', 'events'],
     queryFn: listMyEvents,
@@ -95,10 +95,16 @@ export default function OrganizerOverviewScreen() {
               onEventPress={(event) =>
                 router.push(`/organizer/events/${event.id}`)
               }
+              onExportReport={() => setReportOpen(true)}
             />
           )}
         </ScrollView>
       </View>
+      <RevenueReportDialog
+        scope="organizer"
+        visible={reportOpen}
+        onClose={() => setReportOpen(false)}
+      />
     </SafeAreaView>
   );
 }

@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
@@ -75,13 +75,6 @@ export default function OrganizerAccountScreen() {
   const setTheme = useThemeStore((state) => state.setPreference);
   const [signOutDialogVisible, setSignOutDialogVisible] = useState(false);
 
-  function showComingSoon() {
-    Alert.alert(
-      t('organizer.account.comingSoonTitle'),
-      t('organizer.account.comingSoonDescription'),
-    );
-  }
-
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-surface">
       <View className="w-full max-w-content flex-1 self-center">
@@ -135,12 +128,6 @@ export default function OrganizerAccountScreen() {
                 label={t('organizer.account.editProfile')}
                 description={t('organizer.account.editProfileDescription')}
                 onPress={() => router.push('/account/profile')}
-              />
-              <AccountRow
-                icon="business"
-                label={t('organizer.account.organization')}
-                description={t('organizer.account.organizationDescription')}
-                onPress={showComingSoon}
               />
               <AccountRow
                 icon="account-balance-wallet"

@@ -1,7 +1,10 @@
 import { ConfigService } from '@nestjs/config';
 import { PinoLogger } from 'nestjs-pino';
 
-import { MailService, type MailMessage } from './mail.service';
+import {
+  MailService,
+  type MailMessage,
+} from '../../src/modules/mail/mail.service';
 
 const sendMail = jest.fn();
 

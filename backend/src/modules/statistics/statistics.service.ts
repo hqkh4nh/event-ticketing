@@ -1,16 +1,29 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 
-import { EventStatus, OrderStatus, Prisma } from '../../generated/prisma';
+import {
+  EventStatus,
+  Locale,
+  OrderStatus,
+  Prisma,
+} from '../../generated/prisma';
+import { ErrorCode } from '../../common/errors/error-code';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   DailySalesStatisticDto,
   SalesStatisticsDto,
   TopEventStatisticDto,
 } from './dto/sales-statistics.dto';
+import type { RevenueReportQueryDto } from './dto/revenue-report-query.dto';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const RANGE_DAYS = 30;
 const VIETNAM_OFFSET_MS = 7 * 60 * 60 * 1000;
+const MAX_REPORT_DAYS = 366;
+
+export type RevenueReportFile = {
+  filename: string;
+  content: string;
+};
 
 @Injectable()
 export class StatisticsService {
@@ -22,6 +35,158 @@ export class StatisticsService {
 
   getOrganizerStatistics(organizerId: string): Promise<SalesStatisticsDto> {
     return this.getStatistics(organizerId);
+  }
+
+  exportAdminRevenueReport(
+    query: RevenueReportQueryDto,
+    locale: Locale,
+  ): Promise<RevenueReportFile> {
+    return this.exportRevenueReport(query, locale);
+  }
+
+  exportOrganizerRevenueReport(
+    organizerId: string,
+    query: RevenueReportQueryDto,
+    locale: Locale,
+  ): Promise<RevenueReportFile> {
+    return this.exportRevenueReport(query, locale, organizerId);
+  }
+
+  private async exportRevenueReport(
+    query: RevenueReportQueryDto,
+    locale: Locale,
+    organizerId?: string,
+  ): Promise<RevenueReportFile> {
+    const range = parseRevenueReportRange(query.from, query.to);
+    const content =
+      query.type === 'SUMMARY'
+        ? await this.buildSummaryCsv(range, locale, organizerId)
+        : await this.buildDetailCsv(range, locale, organizerId);
+
+    return {
+      filename: `revenue-${query.type.toLowerCase()}_${query.from}_${query.to}.csv`,
+      content,
+    };
+  }
+
+  private async buildSummaryCsv(
+    range: RevenueReportRange,
+    locale: Locale,
+    organizerId?: string,
+  ): Promise<string> {
+    const orderWhere = buildRevenueOrderWhere(range, organizerId);
+    const orderGroups = await this.prisma.order.groupBy({
+      by: ['eventId'],
+      where: orderWhere,
+      _sum: { totalVnd: true },
+      _count: { id: true },
+      orderBy: [{ _sum: { totalVnd: 'desc' } }, { eventId: 'asc' }],
+    });
+    const eventIds = orderGroups.map((row) => row.eventId);
+    const [ticketGroups, events] = eventIds.length
+      ? await Promise.all([
+          this.prisma.orderItem.groupBy({
+            by: ['eventId'],
+            where: { order: orderWhere },
+            _sum: { quantity: true },
+          }),
+          this.prisma.event.findMany({
+            where: { id: { in: eventIds } },
+            select: { id: true, title: true },
+          }),
+        ])
+      : [[], []];
+    const ticketsByEvent = new Map(
+      ticketGroups.map((row) => [row.eventId, row._sum.quantity ?? 0]),
+    );
+    const namesByEvent = new Map(
+      events.map((event) => [event.id, event.title]),
+    );
+    const headers =
+      locale === Locale.VI
+        ? [
+            'Tên sự kiện',
+            'Số đơn đã thanh toán',
+            'Số vé đã bán',
+            'Doanh thu (VND)',
+          ]
+        : ['Event', 'Paid orders', 'Tickets sold', 'Revenue (VND)'];
+    const rows = orderGroups.flatMap((group) => {
+      const title = namesByEvent.get(group.eventId);
+      if (!title) return [];
+      return [
+        [
+          title,
+          group._count.id,
+          ticketsByEvent.get(group.eventId) ?? 0,
+          group._sum.totalVnd ?? 0n,
+        ],
+      ];
+    });
+
+    return buildCsv([headers, ...rows]);
+  }
+
+  private async buildDetailCsv(
+    range: RevenueReportRange,
+    locale: Locale,
+    organizerId?: string,
+  ): Promise<string> {
+    const orders = await this.prisma.order.findMany({
+      where: buildRevenueOrderWhere(range, organizerId),
+      select: {
+        id: true,
+        transferCode: true,
+        paidAt: true,
+        event: { select: { title: true } },
+        items: {
+          select: {
+            quantity: true,
+            unitPriceVnd: true,
+            ticketType: { select: { name: true } },
+          },
+          orderBy: { id: 'asc' },
+        },
+      },
+      orderBy: [{ paidAt: 'asc' }, { id: 'asc' }],
+    });
+    const headers =
+      locale === Locale.VI
+        ? [
+            'Ngày thanh toán',
+            'Mã đơn',
+            'Sự kiện',
+            'Hạng vé',
+            'Số lượng',
+            'Đơn giá (VND)',
+            'Thành tiền (VND)',
+          ]
+        : [
+            'Paid at',
+            'Order code',
+            'Event',
+            'Ticket type',
+            'Quantity',
+            'Unit price (VND)',
+            'Amount (VND)',
+          ];
+    const rows = orders.flatMap((order) => {
+      const paidAt = order.paidAt;
+      if (!paidAt) return [];
+      return order.items.map((item) => {
+        return [
+          formatVietnamDateTime(paidAt),
+          order.transferCode,
+          order.event.title,
+          item.ticketType.name,
+          item.quantity,
+          item.unitPriceVnd,
+          item.unitPriceVnd * BigInt(item.quantity),
+        ];
+      });
+    });
+
+    return buildCsv([headers, ...rows]);
   }
 
   private async getStatistics(
@@ -141,6 +306,74 @@ function buildPaidOrderWhere(
     ...(organizerId ? { event: { organizerId } } : {}),
     ...(from && to ? { paidAt: { gte: from, lte: to } } : {}),
   };
+}
+
+type RevenueReportRange = {
+  start: Date;
+  endExclusive: Date;
+};
+
+function buildRevenueOrderWhere(
+  range: RevenueReportRange,
+  organizerId?: string,
+): Prisma.OrderWhereInput {
+  return {
+    status: OrderStatus.PAID,
+    ...(organizerId ? { event: { organizerId } } : {}),
+    paidAt: { gte: range.start, lt: range.endExclusive },
+  };
+}
+
+function parseRevenueReportRange(from: string, to: string): RevenueReportRange {
+  const start = parseVietnamDate(from);
+  const end = parseVietnamDate(to);
+  const endExclusive = new Date(end.getTime() + DAY_MS);
+  const days = (endExclusive.getTime() - start.getTime()) / DAY_MS;
+
+  if (start > end || days > MAX_REPORT_DAYS) {
+    throw invalidReportRange();
+  }
+
+  return { start, endExclusive };
+}
+
+function parseVietnamDate(value: string): Date {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) throw invalidReportRange();
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day) - VIETNAM_OFFSET_MS);
+  if (toVietnamDateKey(date) !== value) throw invalidReportRange();
+  return date;
+}
+
+function invalidReportRange(): BadRequestException {
+  return new BadRequestException({
+    code: ErrorCode.VALIDATION_FAILED,
+    message: `Report date range must be valid and no longer than ${MAX_REPORT_DAYS} days.`,
+  });
+}
+
+function formatVietnamDateTime(date: Date): string {
+  return new Date(date.getTime() + VIETNAM_OFFSET_MS)
+    .toISOString()
+    .slice(0, 19)
+    .replace('T', ' ');
+}
+
+function buildCsv(rows: Array<Array<string | number | bigint>>): string {
+  const content = rows
+    .map((row) => row.map(escapeCsvValue).join(','))
+    .join('\r\n');
+  return `\uFEFF${content}\r\n`;
+}
+
+function escapeCsvValue(value: string | number | bigint): string {
+  const text = String(value);
+  const spreadsheetSafe =
+    typeof value === 'string' &&
+    /^[=+\-@\t\r\n\uFF1D\uFF0B\uFF0D\uFF20]/u.test(text)
+      ? `'${text}`
+      : text;
+  return `"${spreadsheetSafe.replace(/"/g, '""')}"`;
 }
 
 function getRangeStart(now: Date): Date {

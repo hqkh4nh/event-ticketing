@@ -1,13 +1,13 @@
 import { ConflictException } from '@nestjs/common';
 
-import { ErrorCode } from '../../common/errors/error-code';
-import * as adminServiceModule from '../admin/admin.service';
+import { ErrorCode } from '../../src/common/errors/error-code';
+import * as adminServiceModule from '../../src/modules/admin/admin.service';
 import {
   assertTicketQuantityNotBelowReserved,
   assertTransition,
   EventsOrganizerService,
-} from './events-organizer.service';
-import { PrismaService } from '../../prisma/prisma.service';
+} from '../../src/modules/events/events-organizer.service';
+import { PrismaService } from '../../src/prisma/prisma.service';
 
 describe('assertTransition', () => {
   it('allows an organizer to submit a draft for review', () => {

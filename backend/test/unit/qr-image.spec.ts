@@ -1,4 +1,4 @@
-import { renderQrPng } from './qr-image';
+import { renderQrPng } from '../../src/modules/mail/qr-image';
 
 const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
 

@@ -2,11 +2,11 @@ import {
   INLINE_QR_LIMIT,
   buildTicketIssuedEmail,
   type TicketEmailData,
-} from './ticket-issued.template';
+} from '../../src/modules/mail/templates/ticket-issued.template';
 
 // Real PNG rendering costs ~2s per call under Jest; qr-image.spec.ts covers it
 // for real. What matters here is the copy, the cid wiring and the inline cap.
-jest.mock('../qr-image', () => ({
+jest.mock('../../src/modules/mail/qr-image', () => ({
   renderQrPng: (payload: string) => Promise.resolve(Buffer.from(payload)),
 }));
 

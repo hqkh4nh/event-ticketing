@@ -3,14 +3,14 @@ import { ConflictException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary } from 'cloudinary';
 import { PinoLogger } from 'nestjs-pino';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { buildUploadPublicId } from './modules/uploads/upload-target';
-import { UploadsService } from './modules/uploads/uploads.service';
-import { PrismaService } from './prisma/prisma.service';
-import type { CurrentUserData } from './modules/auth/jwt.strategy';
-import { AdminService } from './modules/admin/admin.service';
-import { StatisticsService } from './modules/statistics/statistics.service';
+import { AppController } from '../../src/app.controller';
+import { AppService } from '../../src/app.service';
+import { AdminService } from '../../src/modules/admin/admin.service';
+import type { CurrentUserData } from '../../src/modules/auth/jwt.strategy';
+import { StatisticsService } from '../../src/modules/statistics/statistics.service';
+import { buildUploadPublicId } from '../../src/modules/uploads/upload-target';
+import { UploadsService } from '../../src/modules/uploads/uploads.service';
+import { PrismaService } from '../../src/prisma/prisma.service';
 
 jest.mock('cloudinary', () => ({
   v2: {
@@ -388,6 +388,111 @@ describe('AppController', () => {
       expect(
         (dailyAggregate.mock.calls[0]?.[0] as { values: unknown[] }).values,
       ).toContain('organizer-1');
+    });
+
+    it('exports a UTF-8 summary CSV for paid orders in the selected Vietnam date range', async () => {
+      const orderGroupBy = jest.fn().mockResolvedValue([
+        {
+          eventId: 'event-1',
+          _sum: { totalVnd: 9_007_199_254_740_993n },
+          _count: { id: 2 },
+        },
+      ]);
+      const ticketGroupBy = jest
+        .fn()
+        .mockResolvedValue([{ eventId: 'event-1', _sum: { quantity: 3 } }]);
+      const prisma = {
+        order: { groupBy: orderGroupBy },
+        orderItem: { groupBy: ticketGroupBy },
+        event: {
+          findMany: jest
+            .fn()
+            .mockResolvedValue([{ id: 'event-1', title: 'Đêm nhạc' }]),
+        },
+      } as unknown as PrismaService;
+      const service = new StatisticsService(prisma);
+
+      const report = await service.exportAdminRevenueReport(
+        { type: 'SUMMARY', from: '2026-08-01', to: '2026-08-08' },
+        'VI',
+      );
+
+      expect(orderGroupBy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            status: 'PAID',
+            paidAt: {
+              gte: new Date('2026-07-31T17:00:00.000Z'),
+              lt: new Date('2026-08-08T17:00:00.000Z'),
+            },
+          },
+        }),
+      );
+      expect(ticketGroupBy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            order: {
+              status: 'PAID',
+              paidAt: {
+                gte: new Date('2026-07-31T17:00:00.000Z'),
+                lt: new Date('2026-08-08T17:00:00.000Z'),
+              },
+            },
+          },
+        }),
+      );
+      expect(report.filename).toBe('revenue-summary_2026-08-01_2026-08-08.csv');
+      expect(report.content.startsWith('\uFEFF')).toBe(true);
+      expect(report.content).toContain(
+        '"Tên sự kiện","Số đơn đã thanh toán","Số vé đã bán","Doanh thu (VND)"',
+      );
+      expect(report.content).toContain('"Đêm nhạc","2","3","9007199254740993"');
+    });
+
+    it('exports detailed paid order items scoped to the organizer', async () => {
+      const findMany = jest.fn().mockResolvedValue([
+        {
+          id: 'order-1',
+          transferCode: 'ETICKET-001',
+          paidAt: new Date('2026-08-05T12:30:00.000Z'),
+          event: { title: '\n=Night, "Live"' },
+          items: [
+            {
+              quantity: 2,
+              unitPriceVnd: 9_007_199_254_740_993n,
+              ticketType: { name: '＝VIP' },
+            },
+          ],
+        },
+      ]);
+      const prisma = { order: { findMany } } as unknown as PrismaService;
+      const service = new StatisticsService(prisma);
+
+      const report = await service.exportOrganizerRevenueReport(
+        'organizer-1',
+        { type: 'DETAIL', from: '2026-08-01', to: '2026-08-08' },
+        'EN',
+      );
+
+      expect(findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            status: 'PAID',
+            event: { organizerId: 'organizer-1' },
+            paidAt: {
+              gte: new Date('2026-07-31T17:00:00.000Z'),
+              lt: new Date('2026-08-08T17:00:00.000Z'),
+            },
+          },
+        }),
+      );
+      expect(report.filename).toBe('revenue-detail_2026-08-01_2026-08-08.csv');
+      expect(report.content).toContain(
+        '"Paid at","Order code","Event","Ticket type","Quantity","Unit price (VND)","Amount (VND)"',
+      );
+      expect(report.content).toContain(
+        '"2026-08-05 19:30:00","ETICKET-001","\'\n=Night, ""Live""","\'＝VIP","2","9007199254740993","18014398509481986"',
+      );
     });
   });
 });

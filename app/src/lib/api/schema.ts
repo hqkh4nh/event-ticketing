@@ -689,6 +689,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/statistics/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export a platform-wide revenue CSV report. */
+        get: operations["AdminStatisticsController_export"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/organizer/statistics": {
         parameters: {
             query?: never;
@@ -698,6 +715,23 @@ export interface paths {
         };
         /** Get sales statistics for my events. */
         get: operations["OrganizerStatisticsController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/organizer/statistics/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export a revenue CSV report for my events. */
+        get: operations["OrganizerStatisticsController_export"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2841,6 +2875,36 @@ export interface operations {
             };
         };
     };
+    AdminStatisticsController_export: {
+        parameters: {
+            query: {
+                type: "SUMMARY" | "DETAIL";
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     OrganizerStatisticsController_get: {
         parameters: {
             query?: never;
@@ -2856,6 +2920,36 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SalesStatisticsDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE | ACCOUNT_PENDING_APPROVAL */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    OrganizerStatisticsController_export: {
+        parameters: {
+            query: {
+                type: "SUMMARY" | "DETAIL";
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
                 };
             };
             /** @description code: FORBIDDEN_ROLE | ACCOUNT_PENDING_APPROVAL */

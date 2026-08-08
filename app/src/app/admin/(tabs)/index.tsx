@@ -1,6 +1,7 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -20,6 +21,7 @@ import {
   AdminActionQueues,
   AdminPlatformOverview,
 } from '@/components/admin/admin-operations-dashboard';
+import { RevenueReportDialog } from '@/components/statistics/revenue-report-dialog';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import {
@@ -28,10 +30,7 @@ import {
   listAdminOrganizers,
 } from '@/lib/api/admin';
 import { toUserMessage } from '@/lib/api/error-message';
-import {
-  getAdminStatistics,
-  statisticsKeys,
-} from '@/lib/api/statistics';
+import { getAdminStatistics, statisticsKeys } from '@/lib/api/statistics';
 import { useAuthStore } from '@/stores/auth-store';
 
 const PENDING_ORGANIZERS_QUERY = {
@@ -49,6 +48,7 @@ export default function AdminOverviewScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const pendingQuery = useQuery({
     queryKey: adminKeys.organizerList(PENDING_ORGANIZERS_QUERY),
@@ -128,6 +128,7 @@ export default function AdminOverviewScreen() {
                 : undefined
             }
             onRetry={() => void statisticsQuery.refetch()}
+            onExportReport={() => setReportOpen(true)}
           />
 
           <View className="gap-3">
@@ -204,6 +205,11 @@ export default function AdminOverviewScreen() {
           </View>
         </ScrollView>
       </View>
+      <RevenueReportDialog
+        scope="admin"
+        visible={reportOpen}
+        onClose={() => setReportOpen(false)}
+      />
     </SafeAreaView>
   );
 }

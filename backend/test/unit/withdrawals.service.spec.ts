@@ -2,12 +2,12 @@ import { BadRequestException, ConflictException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PinoLogger } from 'nestjs-pino';
 
-import { ErrorCode } from '../../common/errors/error-code';
-import { PrismaService } from '../../prisma/prisma.service';
+import { ErrorCode } from '../../src/common/errors/error-code';
+import { PrismaService } from '../../src/prisma/prisma.service';
 import {
   assertWithdrawalTransition,
   WithdrawalsService,
-} from './withdrawals.service';
+} from '../../src/modules/withdrawals/withdrawals.service';
 
 describe('assertWithdrawalTransition', () => {
   it.each([

@@ -1,12 +1,15 @@
 import { PinoLogger } from 'nestjs-pino';
 
-import { PrismaService } from '../../prisma/prisma.service';
-import { TicketSignerService } from '../tickets/ticket-signer.service';
-import { MailService, type MailMessage } from './mail.service';
-import { TicketEmailService } from './ticket-email.service';
+import {
+  MailService,
+  type MailMessage,
+} from '../../src/modules/mail/mail.service';
+import { TicketEmailService } from '../../src/modules/mail/ticket-email.service';
+import { TicketSignerService } from '../../src/modules/tickets/ticket-signer.service';
+import { PrismaService } from '../../src/prisma/prisma.service';
 
 // Real PNG rendering costs ~2s per call under Jest; qr-image.spec.ts covers it.
-jest.mock('./qr-image', () => ({
+jest.mock('../../src/modules/mail/qr-image', () => ({
   renderQrPng: (payload: string) => Promise.resolve(Buffer.from(payload)),
 }));
 
