@@ -4,6 +4,8 @@ export const en = {
     back: 'Back',
     done: 'Done',
     retry: 'Try again',
+    previous: 'Previous',
+    next: 'Next',
   },
   media: {
     chooseImage: 'Choose image',
@@ -44,6 +46,8 @@ export const en = {
     refreshError: 'Unable to refresh events. Tap to try again.',
     featuredCarousel: '{{count}} featured events',
     featuredSlide: 'Featured event {{current}} of {{total}}',
+    goToSlide: 'Go to featured event {{index}}',
+    viewEvent: 'View event',
     filters: {
       title: 'Event filters',
       time: {
@@ -116,6 +120,7 @@ export const en = {
       loadErrorTitle: 'Unable to load pending orders',
       amount: 'Total',
       continuePayment: 'Continue payment',
+      goToOrder: 'Go to pending order {{index}}',
     },
     emptyAction: 'Browse events',
     emptyTitle: 'No tickets yet',

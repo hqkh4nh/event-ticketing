@@ -4,6 +4,8 @@ export const vi = {
     back: 'Quay lại',
     done: 'Xong',
     retry: 'Thử lại',
+    previous: 'Trước',
+    next: 'Tiếp theo',
   },
   media: {
     chooseImage: 'Chọn ảnh',
@@ -42,6 +44,8 @@ export const vi = {
     refreshError: 'Không thể cập nhật sự kiện. Chạm để thử lại.',
     featuredCarousel: '{{count}} sự kiện nổi bật',
     featuredSlide: 'Sự kiện nổi bật {{current}} trên {{total}}',
+    goToSlide: 'Đến sự kiện nổi bật {{index}}',
+    viewEvent: 'Xem chi tiết',
     filters: {
       title: 'Bộ lọc sự kiện',
       time: {
@@ -114,6 +118,7 @@ export const vi = {
       loadErrorTitle: 'Không tải được đơn chờ thanh toán',
       amount: 'Tổng tiền',
       continuePayment: 'Tiếp tục thanh toán',
+      goToOrder: 'Đến đơn chờ thanh toán {{index}}',
     },
     emptyTitle: 'Chưa có vé nào',
     emptyDescription: 'Vé bạn đặt sẽ xuất hiện ở đây.',
