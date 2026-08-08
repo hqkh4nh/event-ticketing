@@ -30,6 +30,10 @@ import {
   listAdminOrganizers,
 } from '@/lib/api/admin';
 import { toUserMessage } from '@/lib/api/error-message';
+import {
+  listPaymentReviews,
+  paymentReviewKeys,
+} from '@/lib/api/payment-reviews';
 import { getAdminStatistics, statisticsKeys } from '@/lib/api/statistics';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -40,6 +44,11 @@ const PENDING_ORGANIZERS_QUERY = {
 } as const;
 const PENDING_EVENTS_QUERY = {
   status: 'PENDING_REVIEW',
+  page: 1,
+  limit: 1,
+} as const;
+const OPEN_PAYMENT_REVIEWS_QUERY = {
+  resolved: false,
   page: 1,
   limit: 1,
 } as const;
@@ -57,6 +66,10 @@ export default function AdminOverviewScreen() {
   const pendingEventsQuery = useQuery({
     queryKey: adminKeys.eventList(PENDING_EVENTS_QUERY),
     queryFn: () => listAdminEvents(PENDING_EVENTS_QUERY),
+  });
+  const paymentReviewQuery = useQuery({
+    queryKey: paymentReviewKeys.list(OPEN_PAYMENT_REVIEWS_QUERY),
+    queryFn: () => listPaymentReviews(OPEN_PAYMENT_REVIEWS_QUERY),
   });
   const statisticsQuery = useQuery({
     queryKey: statisticsKeys.admin(),
@@ -115,8 +128,22 @@ export default function AdminOverviewScreen() {
                       count: pendingEventsQuery.data.total,
                     }
             }
+            paymentQueue={
+              paymentReviewQuery.isPending
+                ? { status: 'pending' }
+                : paymentReviewQuery.isError
+                  ? {
+                      status: 'error',
+                      onRetry: () => void paymentReviewQuery.refetch(),
+                    }
+                  : {
+                      status: 'success',
+                      count: paymentReviewQuery.data.openCount,
+                    }
+            }
             onOpenOrganizers={() => router.push('/admin/accounts')}
             onOpenEvents={() => router.push('/admin/events')}
+            onOpenPayments={() => router.push('/admin/payments/review')}
           />
 
           <AdminPlatformOverview

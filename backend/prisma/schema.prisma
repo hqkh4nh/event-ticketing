@@ -125,6 +125,7 @@ model User {
   authSessions        AuthSession[]
   withdrawals         WithdrawalRequest[] @relation("OrganizerWithdrawals")
   reviewedWithdrawals WithdrawalRequest[] @relation("ReviewedWithdrawals")
+  reviewedPayments    Payment[]           @relation("ReviewedPayments")
 
   @@index([role, status])
   @@index([managedById])
@@ -169,10 +170,10 @@ model Event {
   endAt         DateTime      @db.Timestamptz(3)
   coverImageUrl String?
   status        EventStatus   @default(DRAFT)
-  createdAt     DateTime      @default(now()) @db.Timestamptz(3)
   // Why an admin took the event off the public listing. Cleared on unhide so it
   // never outlives the moderation it explains.
   hiddenReason  String?
+  createdAt     DateTime      @default(now()) @db.Timestamptz(3)
   updatedAt     DateTime      @updatedAt @db.Timestamptz(3)
 
   ticketTypes TicketType[]
@@ -269,10 +270,17 @@ model Payment {
   rawPayload      Json
   receivedAt      DateTime        @default(now()) @db.Timestamptz(3)
   matchedAt       DateTime?       @db.Timestamptz(3)
+  // A payment needing manual reconciliation is closed by stamping these three,
+  // not by moving `status`: the status says why it landed in the queue, these
+  // say whether anyone has dealt with it.
   reviewedAt      DateTime?       @db.Timestamptz(3)
+  reviewedById    String?         @db.Uuid
+  reviewedBy      User?           @relation("ReviewedPayments", fields: [reviewedById], references: [id])
+  adminNote       String?
 
   @@index([orderId, status])
   @@index([status, receivedAt])
+  @@index([status, reviewedAt, receivedAt])
 }
 
 /// An organizer's request to receive settled ticket revenue. The platform never

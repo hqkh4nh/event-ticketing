@@ -450,6 +450,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/payments/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List transfers that arrived without issuing a ticket. */
+        get: operations["PaymentsAdminController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/payments/{id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close a reconciliation case with a note on what was done. */
+        post: operations["PaymentsAdminController_resolve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/events/{eventId}/checkin": {
         parameters: {
             query?: never;
@@ -638,40 +672,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/uploads/signature": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create a signed direct-image upload request */
-        post: operations["UploadsController_signature"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/uploads/complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Verify an uploaded image and save its URL */
-        post: operations["UploadsController_complete"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/admin/events/{id}/hide": {
         parameters: {
             query?: never;
@@ -700,6 +700,40 @@ export interface paths {
         put?: never;
         /** Restore a hidden event to the public listing. */
         post: operations["AdminController_unhideEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/uploads/signature": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a signed direct-image upload request */
+        post: operations["UploadsController_signature"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/uploads/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify an uploaded image and save its URL */
+        post: operations["UploadsController_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1084,6 +1118,8 @@ export interface components {
             /** Format: date-time */
             endAt: string;
             coverImageUrl: string | null;
+            /** @description Why an admin hid this event; null unless the status is HIDDEN. */
+            hiddenReason: string | null;
             ticketTypes: components["schemas"]["OrganizerTicketTypeDto"][];
             /** @description Guests admitted so far (USED tickets of the event). */
             checkedInCount: number;
@@ -1118,8 +1154,6 @@ export interface components {
              */
             priceVnd: number;
             /** @example 500 */
-            /** @description Why an admin hid this event; null unless the status is HIDDEN. */
-            hiddenReason: string | null;
             quantityTotal: number;
             /** Format: date-time */
             salesStartAt?: Record<string, never> | null;
@@ -1258,6 +1292,53 @@ export interface components {
             referenceCode?: string;
             description?: string;
         };
+        PaymentReviewOrderDto: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "PENDING" | "PAID" | "EXPIRED" | "CANCELLED";
+            /** @example 250000 */
+            totalVnd: number;
+            transferCode: string;
+            /** Format: uuid */
+            eventId: string;
+            eventTitle: string;
+            buyerName: string;
+            buyerEmail: string | null;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        PaymentReviewDto: {
+            /** Format: uuid */
+            id: string;
+            sepayTxnId: string;
+            /** @enum {string} */
+            status: "MATCHED" | "UNMATCHED" | "REVIEW_REQUIRED";
+            /** @example 250000 */
+            amountVnd: number;
+            transferContent: string | null;
+            /** @description Why the webhook could not issue tickets for this transfer. */
+            reviewReason: string | null;
+            /** Format: date-time */
+            receivedAt: string;
+            /** Format: date-time */
+            reviewedAt: string | null;
+            reviewedByName: string | null;
+            adminNote: string | null;
+            order?: components["schemas"]["PaymentReviewOrderDto"] | null;
+        };
+        PaymentReviewListDto: {
+            items: components["schemas"]["PaymentReviewDto"][];
+            total: number;
+            /** @description Open cases across both review statuses, ignoring the filters. */
+            openCount: number;
+            page: number;
+            limit: number;
+        };
+        ResolvePaymentDto: {
+            /** @description What was done about the money, since the platform never moves it: a refund reference, a contact log, or why no action was needed. */
+            note: string;
+        };
         CheckinDto: {
             /** @description Ticket QR payload rendered by the client: `code.signature`. */
             qr: string;
@@ -1362,6 +1443,8 @@ export interface components {
             featured: boolean;
             /** Format: date-time */
             startAt: string;
+            /** @description Why the event was hidden; null unless the status is HIDDEN. */
+            hiddenReason: string | null;
             sold: number;
             capacity: number;
         };
@@ -1402,6 +1485,8 @@ export interface components {
             /** Format: date-time */
             endAt: string;
             coverImageUrl: string | null;
+            /** @description Why the event was hidden; null unless the status is HIDDEN. */
+            hiddenReason: string | null;
             ticketTypes: components["schemas"]["AdminEventTicketTypeDto"][];
             sold: number;
             capacity: number;
@@ -1412,6 +1497,10 @@ export interface components {
         };
         UpdateEventFeaturedDto: {
             featured: boolean;
+        };
+        HideEventDto: {
+            /** @description Shown to the organizer, so it must explain the takedown. */
+            reason: string;
         };
         UploadRequestDto: {
             /** @enum {string} */
@@ -1443,8 +1532,6 @@ export interface components {
             secureUrl: string;
         };
         SalesStatisticsSummaryDto: {
-            /** @description Why the event was hidden; null unless the status is HIDDEN. */
-            hiddenReason: string | null;
             paidRevenueVnd: number;
             ticketsSold: number;
             paidOrders: number;
@@ -1485,8 +1572,6 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
-            /** @description Why the event was hidden; null unless the status is HIDDEN. */
-            hiddenReason: string | null;
             organizerId: string;
             organizerName: string;
             organizerEmail?: string | null;
@@ -1498,10 +1583,6 @@ export interface components {
             bankAccountNumber: string;
             bankAccountHolder: string;
             organizerNote?: string | null;
-        HideEventDto: {
-            /** @description Shown to the organizer, so it must explain the takedown. */
-            reason: string;
-        };
             rejectionReason?: string | null;
             transferReference?: string | null;
             adminNote?: string | null;
@@ -2429,6 +2510,85 @@ export interface operations {
             };
         };
     };
+    PaymentsAdminController_list: {
+        parameters: {
+            query?: {
+                /** @description Defaults to both review statuses. */
+                status?: "REVIEW_REQUIRED" | "UNMATCHED";
+                /** @description Pass true to read the closed cases instead of the open ones. */
+                resolved?: boolean;
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentReviewListDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PaymentsAdminController_resolve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolvePaymentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentReviewDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: INVALID_STATE_TRANSITION */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     CheckinController_scan: {
         parameters: {
             query?: never;
@@ -2840,6 +3000,94 @@ export interface operations {
             };
         };
     };
+    AdminController_hideEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HideEventDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminEventDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: INVALID_STATE_TRANSITION */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AdminController_unhideEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminEventDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: INVALID_STATE_TRANSITION */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     UploadsController_signature: {
         parameters: {
             query?: never;
@@ -2992,94 +3240,6 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AdminController_hideEvent: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["HideEventDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminEventDto"];
-                };
-            };
-            /** @description code: FORBIDDEN_ROLE */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description code: NOT_FOUND */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description code: INVALID_STATE_TRANSITION */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AdminController_unhideEvent: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminEventDto"];
-                };
-            };
-            /** @description code: FORBIDDEN_ROLE */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description code: NOT_FOUND */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description code: INVALID_STATE_TRANSITION */
         responses: {
             200: {
                 headers: {

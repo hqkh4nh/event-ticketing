@@ -27,13 +27,17 @@ export type AdminQueueState =
 export function AdminActionQueues({
   organizerQueue,
   eventQueue,
+  paymentQueue,
   onOpenOrganizers,
   onOpenEvents,
+  onOpenPayments,
 }: {
   organizerQueue: AdminQueueState;
   eventQueue: AdminQueueState;
+  paymentQueue: AdminQueueState;
   onOpenOrganizers: () => void;
   onOpenEvents: () => void;
+  onOpenPayments: () => void;
 }) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
@@ -61,6 +65,14 @@ export function AdminActionQueues({
           state={eventQueue}
           style={{ width: queueWidth }}
           onOpen={onOpenEvents}
+        />
+        <QueueCard
+          icon="account-balance"
+          title={t('admin.overview.paymentReviewQueueTitle')}
+          description={t('admin.overview.paymentReviewQueueDescription')}
+          state={paymentQueue}
+          style={{ width: queueWidth }}
+          onOpen={onOpenPayments}
         />
       </View>
     </View>

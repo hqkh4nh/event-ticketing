@@ -594,6 +594,8 @@ export const en = {
       pendingOrganizerQueueDescription: 'New accounts that need verification.',
       pendingEventQueueTitle: 'Events awaiting approval',
       pendingEventQueueDescription: 'Publication requests that need review.',
+      paymentReviewQueueTitle: 'Payments to reconcile',
+      paymentReviewQueueDescription: 'Money arrived but no ticket was issued.',
       queueLoading: 'Loading request count…',
       queueLoadError: 'Unable to load the request count.',
       queueClear: 'There are no pending requests right now.',
@@ -644,11 +646,12 @@ export const en = {
       feature: 'Feature',
       unfeature: 'Unfeature',
       approveEvent: 'Approve event',
-      approveWithdrawal: 'Approve',
-      rejectWithdrawal: 'Reject',
       hideEvent: 'Hide event',
       unhideEvent: 'Restore event',
+      approveWithdrawal: 'Approve',
+      rejectWithdrawal: 'Reject',
       markWithdrawalPaid: 'Mark as transferred',
+      resolvePayment: 'Mark as handled',
     },
     roles: {
       ORGANIZER: 'Organizer',
@@ -732,9 +735,6 @@ export const en = {
       confirmApproveDescription:
         '“{{event}}” will become public and its Organizer will be notified.',
       approvedSuccess: 'Event published and the Organizer was notified.',
-      openDetail: 'Open details for {{event}}',
-    },
-    eventDetail: {
       confirmHideTitle: 'Take this event off the public listing?',
       confirmHideDescription:
         '“{{event}}” disappears from the public listing, every order still awaiting payment is cancelled, and the Organizer receives the reason you write below.',
@@ -742,6 +742,44 @@ export const en = {
       hideReasonPlaceholder: 'Why does this event have to come down?',
       hiddenSuccess: 'Event hidden and its pending orders were cancelled.',
       unhiddenSuccess: 'Event is back on the public listing.',
+      openDetail: 'Open details for {{event}}',
+    },
+    paymentReviews: {
+      title: 'Payment reconciliation',
+      description: 'Money reached the account but no ticket was issued for it.',
+      filterOpen: 'Open',
+      filterResolved: 'Handled',
+      status: {
+        REVIEW_REQUIRED: 'Needs reconciliation',
+        UNMATCHED: 'No matching order',
+        MATCHED: 'Matched',
+      },
+      orderStatus: {
+        PENDING: 'Awaiting payment',
+        PAID: 'Paid',
+        EXPIRED: 'Expired',
+        CANCELLED: 'Cancelled',
+      },
+      received: 'Received {{at}}',
+      orderContext: '{{event}} · {{status}}',
+      noOrder: 'No matching order',
+      resolvedBy: 'Handled by {{name}} on {{at}}',
+      unknownReviewer: 'An administrator',
+      noteLabel: 'Resolution note',
+      notePlaceholder:
+        'Refunded, contacted the buyer, or no action needed — say which.',
+      confirmResolveTitle: 'Close this reconciliation case?',
+      confirmResolveDescription:
+        'Transaction {{txn}} for {{amount}}. The platform never moves money, so record what you did about it.',
+      loadErrorTitle: 'Unable to load the reconciliation queue',
+      emptyOpenTitle: 'Nothing left to reconcile',
+      emptyOpenDescription:
+        'Every incoming transfer issued tickets against the right order.',
+      emptyResolvedTitle: 'No cases closed yet',
+      emptyResolvedDescription:
+        'Cases you finish are kept here along with your notes.',
+    },
+    eventDetail: {
       title: 'Event details',
       loadErrorTitle: 'Unable to load this event',
       soldLabel: 'Tickets sold',
@@ -756,6 +794,7 @@ export const en = {
       ticketTypesTitle: 'Ticket types',
       ticketTypeSold: '{{sold}}/{{total}} sold',
       noTicketTypes: 'This event has no ticket type yet.',
+      hiddenReasonTitle: 'Why this event is hidden',
     },
     withdrawalFilters: {
       ALL: 'All',
@@ -794,7 +833,6 @@ export const en = {
         '{{organizer}} will be told that {{amount}} is ready to transfer. Approving does not move any money.',
       approvedSuccess: 'Request approved and the Organizer was notified.',
       confirmRejectTitle: 'Reject this withdrawal?',
-      hiddenReasonTitle: 'Why this event is hidden',
       confirmRejectDescription:
         '{{organizer}} will see the reason you give and the amount returns to their balance.',
       reasonLabel: 'Reason for rejection',
@@ -967,6 +1005,10 @@ export const en = {
       lockedDescription:
         'Move the event back to draft before editing details, cover image, or ticket types.',
     },
+    hidden: {
+      title: 'This event is hidden',
+      noReason: 'An administrator took this event off the public listing.',
+    },
     ticketTypes: {
       heading: 'Ticket types',
       empty: 'No ticket types yet. Add one to enable publishing.',
@@ -991,6 +1033,7 @@ export const en = {
       withdrawReview: 'Withdraw review request',
       cancelWithdrawal: 'Cancel request',
       unpublish: 'Unpublish',
+      fixHidden: 'Move back to draft to fix',
       cancel: 'Cancel event',
       delete: 'Delete',
       confirmDeleteTitle: 'Delete this event?',
@@ -1005,10 +1048,6 @@ export const en = {
       descriptionRequired: 'Please enter a description',
       venueRequired: 'Please enter a venue',
       cityRequired: 'Please enter a city',
-    hidden: {
-      title: 'This event is hidden',
-      noReason: 'An administrator took this event off the public listing.',
-    },
       startInvalid: 'Enter a valid start date',
       endInvalid: 'Enter a valid end date',
       endBeforeStart: 'End must be after start',
@@ -1033,7 +1072,6 @@ export const en = {
         REJECTED: 'Rejected',
         CANCELLED: 'Cancelled',
       },
-      fixHidden: 'Move back to draft to fix',
       available: 'Available to withdraw',
       settledRevenue: 'Revenue from finished events',
       held: 'Being processed',

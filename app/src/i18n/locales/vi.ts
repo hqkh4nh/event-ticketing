@@ -590,6 +590,8 @@ export const vi = {
       pendingOrganizerQueueDescription: 'Tài khoản mới cần được xác minh.',
       pendingEventQueueTitle: 'Sự kiện chờ duyệt',
       pendingEventQueueDescription: 'Yêu cầu xuất bản cần được kiểm tra.',
+      paymentReviewQueueTitle: 'Giao dịch cần đối soát',
+      paymentReviewQueueDescription: 'Tiền đã vào nhưng chưa phát hành được vé.',
       queueLoading: 'Đang tải số lượng yêu cầu…',
       queueLoadError: 'Không tải được số lượng yêu cầu.',
       queueClear: 'Hiện không có yêu cầu đang chờ.',
@@ -640,11 +642,12 @@ export const vi = {
       feature: 'Nổi bật',
       unfeature: 'Bỏ nổi bật',
       approveEvent: 'Duyệt sự kiện',
-      approveWithdrawal: 'Duyệt',
-      rejectWithdrawal: 'Từ chối',
       hideEvent: 'Ẩn sự kiện',
       unhideEvent: 'Bỏ ẩn',
+      approveWithdrawal: 'Duyệt',
+      rejectWithdrawal: 'Từ chối',
       markWithdrawalPaid: 'Đã chuyển tiền',
+      resolvePayment: 'Đánh dấu đã xử lý',
     },
     roles: {
       ORGANIZER: 'Organizer',
@@ -728,9 +731,6 @@ export const vi = {
       confirmApproveDescription:
         '“{{event}}” sẽ được xuất bản công khai và Organizer sẽ nhận được thông báo.',
       approvedSuccess: 'Đã duyệt xuất bản sự kiện và thông báo cho Organizer.',
-      openDetail: 'Mở chi tiết sự kiện {{event}}',
-    },
-    eventDetail: {
       confirmHideTitle: 'Ẩn sự kiện khỏi trang công khai?',
       confirmHideDescription:
         '“{{event}}” sẽ biến mất khỏi danh sách công khai, mọi đơn đang chờ thanh toán bị huỷ và Organizer nhận được lý do bạn ghi dưới đây.',
@@ -738,6 +738,42 @@ export const vi = {
       hideReasonPlaceholder: 'Vì sao sự kiện này phải gỡ xuống?',
       hiddenSuccess: 'Đã ẩn sự kiện và huỷ các đơn đang chờ thanh toán.',
       unhiddenSuccess: 'Đã đưa sự kiện trở lại trang công khai.',
+      openDetail: 'Mở chi tiết sự kiện {{event}}',
+    },
+    paymentReviews: {
+      title: 'Đối soát thanh toán',
+      description: 'Tiền đã vào tài khoản nhưng hệ thống không phát hành vé.',
+      filterOpen: 'Chưa xử lý',
+      filterResolved: 'Đã xử lý',
+      status: {
+        REVIEW_REQUIRED: 'Cần đối soát',
+        UNMATCHED: 'Không khớp đơn',
+        MATCHED: 'Đã khớp',
+      },
+      orderStatus: {
+        PENDING: 'Đang chờ thanh toán',
+        PAID: 'Đã thanh toán',
+        EXPIRED: 'Hết hạn',
+        CANCELLED: 'Đã huỷ',
+      },
+      received: 'Nhận lúc {{at}}',
+      orderContext: '{{event}} · {{status}}',
+      noOrder: 'Không khớp đơn hàng nào',
+      resolvedBy: '{{name}} xử lý lúc {{at}}',
+      unknownReviewer: 'Quản trị viên',
+      noteLabel: 'Ghi chú xử lý',
+      notePlaceholder: 'Đã hoàn tiền, đã liên hệ khách, hay không cần làm gì?',
+      confirmResolveTitle: 'Đóng ca đối soát này?',
+      confirmResolveDescription:
+        'Giao dịch {{txn}} trị giá {{amount}}. Hệ thống không tự chuyển tiền, hãy ghi lại bạn đã xử lý ra sao.',
+      loadErrorTitle: 'Không tải được danh sách đối soát',
+      emptyOpenTitle: 'Không còn gì phải đối soát',
+      emptyOpenDescription: 'Mọi khoản tiền vào đều đã phát hành vé đúng đơn.',
+      emptyResolvedTitle: 'Chưa có ca nào được đóng',
+      emptyResolvedDescription:
+        'Các ca bạn xử lý xong sẽ được lưu lại ở đây kèm ghi chú.',
+    },
+    eventDetail: {
       title: 'Chi tiết sự kiện',
       loadErrorTitle: 'Không tải được sự kiện này',
       soldLabel: 'Vé đã bán',
@@ -752,6 +788,7 @@ export const vi = {
       ticketTypesTitle: 'Các hạng vé',
       ticketTypeSold: 'Đã bán {{sold}}/{{total}}',
       noTicketTypes: 'Sự kiện này chưa có hạng vé nào.',
+      hiddenReasonTitle: 'Lý do sự kiện bị ẩn',
     },
     withdrawalFilters: {
       ALL: 'Tất cả',
@@ -788,7 +825,6 @@ export const vi = {
       confirmApproveTitle: 'Duyệt yêu cầu rút tiền này?',
       confirmApproveDescription:
         '{{organizer}} sẽ được báo là {{amount}} đã sẵn sàng để chuyển. Duyệt không tự chuyển tiền.',
-      hiddenReasonTitle: 'Lý do sự kiện bị ẩn',
       approvedSuccess: 'Đã duyệt yêu cầu và thông báo cho Organizer.',
       confirmRejectTitle: 'Từ chối yêu cầu rút tiền này?',
       confirmRejectDescription:
@@ -964,6 +1000,10 @@ export const vi = {
       lockedDescription:
         'Đưa sự kiện về bản nháp trước khi chỉnh sửa thông tin, ảnh bìa hoặc hạng vé.',
     },
+    hidden: {
+      title: 'Sự kiện đang bị ẩn',
+      noReason: 'Quản trị viên đã gỡ sự kiện này khỏi trang công khai.',
+    },
     ticketTypes: {
       heading: 'Hạng vé',
       empty: 'Chưa có hạng vé. Thêm một hạng để có thể xuất bản.',
@@ -988,6 +1028,7 @@ export const vi = {
       withdrawReview: 'Hủy yêu cầu duyệt',
       cancelWithdrawal: 'Huỷ yêu cầu',
       unpublish: 'Gỡ xuất bản',
+      fixHidden: 'Chuyển về nháp để sửa',
       cancel: 'Huỷ sự kiện',
       delete: 'Xoá',
       confirmDeleteTitle: 'Xoá sự kiện này?',
@@ -1000,10 +1041,6 @@ export const vi = {
     error: {
       titleRequired: 'Vui lòng nhập tiêu đề',
       descriptionRequired: 'Vui lòng nhập mô tả',
-    hidden: {
-      title: 'Sự kiện đang bị ẩn',
-      noReason: 'Quản trị viên đã gỡ sự kiện này khỏi trang công khai.',
-    },
       venueRequired: 'Vui lòng nhập địa điểm',
       cityRequired: 'Vui lòng nhập thành phố',
       startInvalid: 'Nhập ngày bắt đầu hợp lệ',
@@ -1028,7 +1065,6 @@ export const vi = {
         APPROVED: 'Đã duyệt, đang chuyển tiền',
         PAID: 'Đã chuyển',
         REJECTED: 'Từ chối',
-      fixHidden: 'Chuyển về nháp để sửa',
         CANCELLED: 'Đã huỷ',
       },
       available: 'Có thể rút',
