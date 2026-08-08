@@ -562,6 +562,22 @@ export const en = {
     },
     overview: {
       greeting: 'Hello, {{name}}',
+      needsActionTitle: 'Needs attention',
+      needsActionDescription:
+        'Requests waiting for an administrator decision.',
+      pendingOrganizerQueueTitle: 'Organizers awaiting approval',
+      pendingOrganizerQueueDescription: 'New accounts that need verification.',
+      pendingEventQueueTitle: 'Events awaiting approval',
+      pendingEventQueueDescription: 'Publication requests that need review.',
+      queueLoading: 'Loading request count…',
+      queueLoadError: 'Unable to load the request count.',
+      queueClear: 'There are no pending requests right now.',
+      reviewNow: 'Open list',
+      platformTitle: 'Platform overview',
+      platformDescription: 'A system-wide view of platform activity.',
+      platformPulse: 'Platform metrics',
+      platformPulseDescription: 'All-time data from across the system.',
+      ticketsIssued: 'Tickets issued',
       systemHealthy: 'All systems operational',
       systemHealthyDescription: 'No critical incidents were detected in the last 24 hours.',
       organizerApiConnected: 'Organizer data connected',
@@ -713,6 +729,7 @@ export const en = {
     },
     overview: {
       title: 'Overview',
+      eventStatus: 'Event status',
       salesAnalytics: 'Ticket sales analytics',
       noSalesTitle: 'No sales data yet',
       noSalesDescription:
@@ -887,6 +904,31 @@ export const en = {
       quantityBelowReserved:
         'Quantity cannot be lower than {{count}} tickets reserved or sold',
     },
+  },
+
+  statistics: {
+    summaryTitle: 'Business performance',
+    allTime: 'All-time figures from paid orders.',
+    loadErrorTitle: 'Unable to load statistics',
+    metrics: {
+      revenue: 'Paid ticket revenue',
+      tickets: 'Tickets sold',
+      orders: 'Paid orders',
+      events: 'Published events',
+    },
+    trendTitle: 'Sales trend',
+    last30Days: 'Last 30 days, based on Vietnam time.',
+    periodTotal: '30-day total',
+    revenue: 'Revenue',
+    tickets: 'Tickets',
+    topEventsTitle: 'Top events by revenue',
+    topEventsDescription: 'The 5 highest-grossing events in the last 30 days.',
+    eventMeta: '{{tickets}} tickets · {{orders}} orders',
+    noSalesTitle: 'No ticket sales yet',
+    noSalesDescription:
+      'Statistics will appear after the system records the first paid order.',
+    noTopEventsTitle: 'No ranked events yet',
+    noTopEventsDescription: 'There were no paid orders in the last 30 days.',
   },
 
   scanner: {

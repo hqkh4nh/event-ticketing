@@ -558,6 +558,22 @@ export const vi = {
     },
     overview: {
       greeting: 'Xin chào, {{name}}',
+      needsActionTitle: 'Cần xử lý',
+      needsActionDescription:
+        'Các yêu cầu đang chờ quyết định của quản trị viên.',
+      pendingOrganizerQueueTitle: 'Organizer chờ duyệt',
+      pendingOrganizerQueueDescription: 'Tài khoản mới cần được xác minh.',
+      pendingEventQueueTitle: 'Sự kiện chờ duyệt',
+      pendingEventQueueDescription: 'Yêu cầu xuất bản cần được kiểm tra.',
+      queueLoading: 'Đang tải số lượng yêu cầu…',
+      queueLoadError: 'Không tải được số lượng yêu cầu.',
+      queueClear: 'Hiện không có yêu cầu đang chờ.',
+      reviewNow: 'Mở danh sách',
+      platformTitle: 'Toàn cảnh hệ thống',
+      platformDescription: 'Tổng hợp hoạt động trên toàn nền tảng.',
+      platformPulse: 'Chỉ số nền tảng',
+      platformPulseDescription: 'Dữ liệu toàn thời gian từ hệ thống.',
+      ticketsIssued: 'Vé đã phát hành',
       systemHealthy: 'Hệ thống đang hoạt động ổn định',
       systemHealthyDescription: 'Không ghi nhận sự cố nghiêm trọng trong 24 giờ qua.',
       organizerApiConnected: 'Đã kết nối dữ liệu Organizer',
@@ -710,6 +726,7 @@ export const vi = {
     },
     overview: {
       title: 'Tổng quan',
+      eventStatus: 'Trạng thái sự kiện',
       salesAnalytics: 'Phân tích bán vé',
       noSalesTitle: 'Chưa có dữ liệu bán vé',
       noSalesDescription:
@@ -884,6 +901,32 @@ export const vi = {
       quantityBelowReserved:
         'Số lượng không thể thấp hơn {{count}} vé đang được giữ hoặc đã bán',
     },
+  },
+
+  statistics: {
+    summaryTitle: 'Kết quả kinh doanh',
+    allTime: 'Số liệu toàn thời gian từ các đơn đã thanh toán.',
+    loadErrorTitle: 'Không tải được thống kê',
+    metrics: {
+      revenue: 'Doanh thu vé đã thanh toán',
+      tickets: 'Vé đã bán',
+      orders: 'Đơn đã thanh toán',
+      events: 'Sự kiện đã xuất bản',
+    },
+    trendTitle: 'Xu hướng bán vé',
+    last30Days: '30 ngày gần nhất, theo giờ Việt Nam.',
+    periodTotal: 'Tổng trong 30 ngày',
+    revenue: 'Doanh thu',
+    tickets: 'Vé bán',
+    topEventsTitle: 'Sự kiện nổi bật về doanh thu',
+    topEventsDescription: '5 sự kiện có doanh thu cao nhất trong 30 ngày.',
+    eventMeta: '{{tickets}} vé · {{orders}} đơn',
+    noSalesTitle: 'Chưa có dữ liệu bán vé',
+    noSalesDescription:
+      'Thống kê sẽ xuất hiện sau khi hệ thống ghi nhận đơn thanh toán đầu tiên.',
+    noTopEventsTitle: 'Chưa có sự kiện trong bảng xếp hạng',
+    noTopEventsDescription:
+      'Chưa có đơn thanh toán nào trong 30 ngày gần nhất.',
   },
 
   scanner: {

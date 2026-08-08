@@ -7,39 +7,63 @@ import {
   Pressable,
   ScrollView,
   Text,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
-  AdminMetricCard,
   AdminScreenHeader,
   AdminSectionHeader,
   AdminStatusBadge,
 } from '@/components/admin/admin-ui';
+import {
+  AdminActionQueues,
+  AdminPlatformOverview,
+} from '@/components/admin/admin-operations-dashboard';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { adminKeys, listAdminOrganizers } from '@/lib/api/admin';
+import {
+  adminKeys,
+  listAdminEvents,
+  listAdminOrganizers,
+} from '@/lib/api/admin';
 import { toUserMessage } from '@/lib/api/error-message';
+import {
+  getAdminStatistics,
+  statisticsKeys,
+} from '@/lib/api/statistics';
 import { useAuthStore } from '@/stores/auth-store';
 
-const PENDING_QUERY = { status: 'PENDING', page: 1, limit: 3 } as const;
+const PENDING_ORGANIZERS_QUERY = {
+  status: 'PENDING',
+  page: 1,
+  limit: 3,
+} as const;
+const PENDING_EVENTS_QUERY = {
+  status: 'PENDING_REVIEW',
+  page: 1,
+  limit: 1,
+} as const;
 
 export default function AdminOverviewScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
-  const { width } = useWindowDimensions();
   const user = useAuthStore((state) => state.user);
-  const metricWidth = width >= 1160 ? '23.5%' : width >= 620 ? '48.5%' : '47.5%';
 
   const pendingQuery = useQuery({
-    queryKey: adminKeys.organizerList(PENDING_QUERY),
-    queryFn: () => listAdminOrganizers(PENDING_QUERY),
+    queryKey: adminKeys.organizerList(PENDING_ORGANIZERS_QUERY),
+    queryFn: () => listAdminOrganizers(PENDING_ORGANIZERS_QUERY),
+  });
+  const pendingEventsQuery = useQuery({
+    queryKey: adminKeys.eventList(PENDING_EVENTS_QUERY),
+    queryFn: () => listAdminEvents(PENDING_EVENTS_QUERY),
+  });
+  const statisticsQuery = useQuery({
+    queryKey: statisticsKeys.admin(),
+    queryFn: getAdminStatistics,
   });
 
   const pendingAccounts = pendingQuery.data?.items ?? [];
-  const pendingTotal = pendingQuery.data?.total;
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-surface">
@@ -67,53 +91,44 @@ export default function AdminOverviewScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerClassName="gap-7 px-container-padding py-6"
         >
-          <View className="flex-row items-center gap-3 rounded-xl border border-success/40 bg-success-container p-4">
-            <View className="h-11 w-11 items-center justify-center rounded-full bg-success">
-              <MaterialIcons name="cloud-done" size={22} className="text-on-success" />
-            </View>
-            <View className="min-w-0 flex-1 gap-0.5">
-              <Text className="font-semibold text-body-md text-on-success-container">
-                {t('admin.overview.organizerApiConnected')}
-              </Text>
-              <Text className="font-sans text-label-sm text-on-success-container">
-                {t('admin.overview.organizerApiConnectedDescription')}
-              </Text>
-            </View>
-          </View>
+          <AdminActionQueues
+            organizerQueue={
+              pendingQuery.isPending
+                ? { status: 'pending' }
+                : pendingQuery.isError
+                  ? {
+                      status: 'error',
+                      onRetry: () => void pendingQuery.refetch(),
+                    }
+                  : { status: 'success', count: pendingQuery.data.total }
+            }
+            eventQueue={
+              pendingEventsQuery.isPending
+                ? { status: 'pending' }
+                : pendingEventsQuery.isError
+                  ? {
+                      status: 'error',
+                      onRetry: () => void pendingEventsQuery.refetch(),
+                    }
+                  : {
+                      status: 'success',
+                      count: pendingEventsQuery.data.total,
+                    }
+            }
+            onOpenOrganizers={() => router.push('/admin/accounts')}
+            onOpenEvents={() => router.push('/admin/events')}
+          />
 
-          <View className="flex-row flex-wrap justify-between gap-y-3">
-            <AdminMetricCard
-              icon="pending-actions"
-              label={t('admin.metrics.pendingOrganizers')}
-              value={pendingTotal === undefined ? '—' : String(pendingTotal)}
-              helper={t('admin.metrics.pendingOrganizersHelper')}
-              tone="warning"
-              style={{ width: metricWidth }}
-            />
-            <AdminMetricCard
-              icon="event-available"
-              label={t('admin.metrics.publishedEvents')}
-              value="—"
-              helper={t('admin.metrics.notConnected')}
-              tone="success"
-              style={{ width: metricWidth }}
-            />
-            <AdminMetricCard
-              icon="qr-code-scanner"
-              label={t('admin.metrics.activeScanners')}
-              value="—"
-              helper={t('admin.metrics.notConnected')}
-              style={{ width: metricWidth }}
-            />
-            <AdminMetricCard
-              icon="receipt-long"
-              label={t('admin.metrics.paymentReviews')}
-              value="—"
-              helper={t('admin.metrics.notConnected')}
-              tone="error"
-              style={{ width: metricWidth }}
-            />
-          </View>
+          <AdminPlatformOverview
+            statistics={statisticsQuery.data}
+            isPending={statisticsQuery.isPending}
+            errorMessage={
+              statisticsQuery.isError
+                ? toUserMessage(statisticsQuery.error, t)
+                : undefined
+            }
+            onRetry={() => void statisticsQuery.refetch()}
+          />
 
           <View className="gap-3">
             <AdminSectionHeader
@@ -186,25 +201,6 @@ export default function AdminOverviewScreen() {
                 description={t('admin.overview.noPendingDescription')}
               />
             )}
-          </View>
-
-          <View className="gap-3">
-            <AdminSectionHeader
-              title={t('admin.overview.integrationTitle')}
-              description={t('admin.overview.integrationDescription')}
-            />
-            <View className="flex-row items-center gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
-              <View className="h-11 w-11 items-center justify-center rounded-lg bg-primary-container">
-                <MaterialIcons
-                  name="hub"
-                  size={22}
-                  className="text-on-primary-container"
-                />
-              </View>
-              <Text className="min-w-0 flex-1 font-sans text-label-md text-on-surface-variant">
-                {t('admin.overview.integrationNote')}
-              </Text>
-            </View>
           </View>
         </ScrollView>
       </View>

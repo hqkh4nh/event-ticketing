@@ -1,9 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { OrganizerStatusSummary } from '@/components/organizer/organizer-status-summary';
+import { SalesStatisticsDashboard } from '@/components/statistics/sales-statistics-dashboard';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import {
@@ -11,14 +13,23 @@ import {
   type OrganizerEventSummary,
 } from '@/lib/api/events-organizer';
 import { toUserMessage } from '@/lib/api/error-message';
+import {
+  getOrganizerStatistics,
+  statisticsKeys,
+} from '@/lib/api/statistics';
 
 const EMPTY_EVENTS: OrganizerEventSummary[] = [];
 
 export default function OrganizerOverviewScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
   const eventsQuery = useQuery({
     queryKey: ['organizer', 'events'],
     queryFn: listMyEvents,
+  });
+  const statisticsQuery = useQuery({
+    queryKey: statisticsKeys.organizer(),
+    queryFn: getOrganizerStatistics,
   });
   const events = eventsQuery.data ?? EMPTY_EVENTS;
 
@@ -35,40 +46,56 @@ export default function OrganizerOverviewScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerClassName="gap-6 px-container-padding py-6"
         >
-          {eventsQuery.isPending ? (
+          <View className="gap-3">
+            <Text className="font-semibold text-headline-md text-on-surface">
+              {t('organizer.overview.eventStatus')}
+            </Text>
+            {eventsQuery.isPending ? (
+              <View className="items-center py-12">
+                <ActivityIndicator className="text-primary" />
+              </View>
+            ) : eventsQuery.isError ? (
+              <EmptyState
+                icon="cloud-off"
+                title={t('organizer.dashboard.loadErrorTitle')}
+                description={toUserMessage(eventsQuery.error, t)}
+                action={
+                  <Button
+                    icon="refresh"
+                    label={t('common.retry')}
+                    onPress={() => void eventsQuery.refetch()}
+                  />
+                }
+              />
+            ) : (
+              <OrganizerStatusSummary events={events} />
+            )}
+          </View>
+
+          {statisticsQuery.isPending ? (
             <View className="items-center py-16">
               <ActivityIndicator className="text-primary" />
             </View>
-          ) : eventsQuery.isError ? (
+          ) : statisticsQuery.isError ? (
             <EmptyState
-              icon="cloud-off"
-              title={t('organizer.dashboard.loadErrorTitle')}
-              description={toUserMessage(eventsQuery.error, t)}
+              icon="query-stats"
+              title={t('statistics.loadErrorTitle')}
+              description={toUserMessage(statisticsQuery.error, t)}
               action={
                 <Button
                   icon="refresh"
                   label={t('common.retry')}
-                  onPress={() => void eventsQuery.refetch()}
+                  onPress={() => void statisticsQuery.refetch()}
                 />
               }
             />
           ) : (
-            <>
-              <OrganizerStatusSummary events={events} />
-
-              <View className="gap-3">
-                <Text className="font-semibold text-headline-md text-on-surface">
-                  {t('organizer.overview.salesAnalytics')}
-                </Text>
-                <View className="rounded-lg border border-outline-variant bg-surface-container-lowest">
-                  <EmptyState
-                    icon="query-stats"
-                    title={t('organizer.overview.noSalesTitle')}
-                    description={t('organizer.overview.noSalesDescription')}
-                  />
-                </View>
-              </View>
-            </>
+            <SalesStatisticsDashboard
+              data={statisticsQuery.data}
+              onEventPress={(event) =>
+                router.push(`/organizer/events/${event.id}`)
+              }
+            />
           )}
         </ScrollView>
       </View>

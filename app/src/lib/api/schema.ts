@@ -672,6 +672,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/statistics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get platform-wide sales statistics. */
+        get: operations["AdminStatisticsController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/organizer/statistics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get sales statistics for my events. */
+        get: operations["OrganizerStatisticsController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1161,6 +1195,31 @@ export interface components {
         };
         CompleteUploadDto: {
             secureUrl: string;
+        };
+        SalesStatisticsSummaryDto: {
+            paidRevenueVnd: number;
+            ticketsSold: number;
+            paidOrders: number;
+            publishedEvents: number;
+        };
+        DailySalesStatisticDto: {
+            /** @example 2026-08-08 */
+            date: string;
+            revenueVnd: number;
+            ticketsSold: number;
+        };
+        TopEventStatisticDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            revenueVnd: number;
+            ticketsSold: number;
+            paidOrders: number;
+        };
+        SalesStatisticsDto: {
+            summary: components["schemas"]["SalesStatisticsSummaryDto"];
+            daily: components["schemas"]["DailySalesStatisticDto"][];
+            topEvents: components["schemas"]["TopEventStatisticDto"][];
         };
     };
     responses: never;
@@ -2563,6 +2622,58 @@ export interface operations {
             };
             /** @description code: MEDIA_UPLOAD_UNAVAILABLE */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AdminStatisticsController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalesStatisticsDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    OrganizerStatisticsController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalesStatisticsDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE | ACCOUNT_PENDING_APPROVAL */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
