@@ -86,6 +86,8 @@ enum NotificationType {
   EVENT_SUBMITTED
   EVENT_APPROVED
   EVENT_FEATURED
+  EVENT_HIDDEN
+  EVENT_UNHIDDEN
   PAYMENT_REVIEW_REQUIRED
   WITHDRAWAL_SUBMITTED
   WITHDRAWAL_APPROVED
@@ -168,6 +170,9 @@ model Event {
   coverImageUrl String?
   status        EventStatus   @default(DRAFT)
   createdAt     DateTime      @default(now()) @db.Timestamptz(3)
+  // Why an admin took the event off the public listing. Cleared on unhide so it
+  // never outlives the moderation it explains.
+  hiddenReason  String?
   updatedAt     DateTime      @updatedAt @db.Timestamptz(3)
 
   ticketTypes TicketType[]

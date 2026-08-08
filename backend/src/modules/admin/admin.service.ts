@@ -6,7 +6,12 @@ import {
 import { PinoLogger } from 'nestjs-pino';
 
 import { ErrorCode } from '../../common/errors/error-code';
-import { EventStatus, Prisma, UserStatus } from '../../generated/prisma';
+import {
+  EventStatus,
+  OrderStatus,
+  Prisma,
+  UserStatus,
+} from '../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AdminEventDetailDto } from './dto/admin-event-detail.dto';
 import { AdminEventDto, AdminEventListDto } from './dto/admin-event.dto';
@@ -14,6 +19,7 @@ import {
   AdminOrganizerDto,
   AdminOrganizerListDto,
 } from './dto/admin-organizer.dto';
+import { HideEventDto } from './dto/hide-event.dto';
 import { ListAdminEventsQueryDto } from './dto/list-admin-events-query.dto';
 import { ListAdminOrganizersQueryDto } from './dto/list-admin-organizers-query.dto';
 import { UpdateEventFeaturedDto } from './dto/update-event-featured.dto';
@@ -44,6 +50,7 @@ const adminEventSelect = {
   status: true,
   featured: true,
   startAt: true,
+  hiddenReason: true,
   organizer: { select: { fullName: true } },
   ticketTypes: {
     select: {
@@ -73,6 +80,7 @@ const adminEventDetailSelect = {
   startAt: true,
   endAt: true,
   coverImageUrl: true,
+  hiddenReason: true,
   organizer: { select: { fullName: true, email: true } },
   ticketTypes: {
     orderBy: { priceVnd: 'asc' as const },
@@ -371,6 +379,143 @@ export class AdminService {
     return toAdminEventDto(event);
   }
 
+  /**
+   * Takes a published event off the public listing. Pending orders are
+   * cancelled in the same transaction so the held seats are released at once; a
+   * transfer that arrives afterwards finds a cancelled order and lands in the
+   * payment review queue rather than issuing a ticket for a blocked event.
+   */
+  async hideEvent(
+    adminId: string,
+    eventId: string,
+    dto: HideEventDto,
+  ): Promise<AdminEventDto> {
+    const { event, cancelledOrders } = await this.prisma.$transaction(
+      async (tx) => {
+        const existing = await tx.event.findUnique({
+          where: { id: eventId },
+          select: adminEventSelect,
+        });
+        if (!existing) {
+          throw new NotFoundException({
+            code: ErrorCode.NOT_FOUND,
+            message: 'Event not found.',
+          });
+        }
+
+        if (existing.status !== EventStatus.PUBLISHED) {
+          throw new ConflictException({
+            code: ErrorCode.INVALID_STATE_TRANSITION,
+            message: 'Only published events can be hidden.',
+          });
+        }
+
+        const changed = await tx.event.updateMany({
+          where: { id: eventId, status: EventStatus.PUBLISHED },
+          data: {
+            status: EventStatus.HIDDEN,
+            // A restored event should not walk straight back into the featured
+            // rail; an admin re-picks it deliberately.
+            featured: false,
+            hiddenReason: dto.reason,
+          },
+        });
+        if (changed.count !== 1) {
+          throw new ConflictException({
+            code: ErrorCode.INVALID_STATE_TRANSITION,
+            message: 'The event is no longer published.',
+          });
+        }
+
+        const cancelled = await tx.order.updateMany({
+          where: { eventId, status: OrderStatus.PENDING },
+          data: { status: OrderStatus.CANCELLED },
+        });
+
+        await tx.notification.create({
+          data: {
+            userId: existing.organizerId,
+            type: 'EVENT_HIDDEN',
+            data: {
+              eventId: existing.id,
+              eventTitle: existing.title,
+              reason: dto.reason,
+              url: `/organizer/events/${existing.id}`,
+            },
+          },
+        });
+
+        return {
+          event: await tx.event.findUniqueOrThrow({
+            where: { id: eventId },
+            select: adminEventSelect,
+          }),
+          cancelledOrders: cancelled.count,
+        };
+      },
+    );
+
+    this.logger.info(
+      { adminId, eventId, cancelledOrders },
+      'Admin hid event from the public listing',
+    );
+    return toAdminEventDto(event);
+  }
+
+  /** Restores a hidden event to the public listing, unfeatured. */
+  async unhideEvent(adminId: string, eventId: string): Promise<AdminEventDto> {
+    const event = await this.prisma.$transaction(async (tx) => {
+      const existing = await tx.event.findUnique({
+        where: { id: eventId },
+        select: adminEventSelect,
+      });
+      if (!existing) {
+        throw new NotFoundException({
+          code: ErrorCode.NOT_FOUND,
+          message: 'Event not found.',
+        });
+      }
+
+      if (existing.status !== EventStatus.HIDDEN) {
+        throw new ConflictException({
+          code: ErrorCode.INVALID_STATE_TRANSITION,
+          message: 'Only hidden events can be restored.',
+        });
+      }
+
+      const changed = await tx.event.updateMany({
+        where: { id: eventId, status: EventStatus.HIDDEN },
+        data: { status: EventStatus.PUBLISHED, hiddenReason: null },
+      });
+      if (changed.count !== 1) {
+        throw new ConflictException({
+          code: ErrorCode.INVALID_STATE_TRANSITION,
+          message: 'The event is no longer hidden.',
+        });
+      }
+
+      await tx.notification.create({
+        data: {
+          userId: existing.organizerId,
+          type: 'EVENT_UNHIDDEN',
+          data: {
+            eventId: existing.id,
+            eventTitle: existing.title,
+            url: `/organizer/events/${existing.id}`,
+          },
+        },
+      });
+
+      return tx.event.findUniqueOrThrow({
+        where: { id: eventId },
+        select: adminEventSelect,
+      });
+    });
+
+    this.logger.info({ adminId, eventId }, 'Admin restored a hidden event');
+    return toAdminEventDto(event);
+  }
+
   private logStatusChange(
     adminId: string,
     organizerId: string,
@@ -427,6 +572,7 @@ function toAdminEventDetailDto(
     startAt: row.startAt.toISOString(),
     endAt: row.endAt.toISOString(),
     coverImageUrl: row.coverImageUrl,
+    hiddenReason: row.hiddenReason,
     ticketTypes,
     sold: ticketTypes.reduce((total, type) => total + type.soldCount, 0),
     capacity: ticketTypes.reduce(
@@ -448,6 +594,7 @@ function toAdminEventDto(row: AdminEventRow): AdminEventDto {
     status: row.status,
     featured: row.featured,
     startAt: row.startAt.toISOString(),
+    hiddenReason: row.hiddenReason,
     sold: row.ticketTypes.reduce(
       (total, ticketType) =>
         total +

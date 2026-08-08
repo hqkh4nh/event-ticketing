@@ -103,6 +103,23 @@ export function updateAdminEventFeatured(
   );
 }
 
+export function hideAdminEvent(
+  id: string,
+  reason: string,
+): Promise<AdminEvent> {
+  return apiFetch<AdminEvent>(`/admin/events/${encodeURIComponent(id)}/hide`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export function unhideAdminEvent(id: string): Promise<AdminEvent> {
+  return apiFetch<AdminEvent>(
+    `/admin/events/${encodeURIComponent(id)}/unhide`,
+    { method: 'POST' },
+  );
+}
+
 export function approveAdminEvent(id: string): Promise<AdminEvent> {
   return apiFetch<AdminEvent>(
     `/admin/events/${encodeURIComponent(id)}/approve`,

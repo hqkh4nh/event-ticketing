@@ -672,6 +672,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/events/{id}/hide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Hide a published event and cancel its pending orders. */
+        post: operations["AdminController_hideEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/events/{id}/unhide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore a hidden event to the public listing. */
+        post: operations["AdminController_unhideEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/uploads": {
         parameters: {
             query?: never;
@@ -1084,6 +1118,8 @@ export interface components {
              */
             priceVnd: number;
             /** @example 500 */
+            /** @description Why an admin hid this event; null unless the status is HIDDEN. */
+            hiddenReason: string | null;
             quantityTotal: number;
             /** Format: date-time */
             salesStartAt?: Record<string, never> | null;
@@ -1185,7 +1221,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** @enum {string} */
-            type: "TICKET_ISSUED" | "EVENT_SUBMITTED" | "EVENT_APPROVED" | "EVENT_FEATURED" | "PAYMENT_REVIEW_REQUIRED" | "WITHDRAWAL_SUBMITTED" | "WITHDRAWAL_APPROVED" | "WITHDRAWAL_REJECTED" | "WITHDRAWAL_PAID";
+            type: "TICKET_ISSUED" | "EVENT_SUBMITTED" | "EVENT_APPROVED" | "EVENT_FEATURED" | "EVENT_HIDDEN" | "EVENT_UNHIDDEN" | "PAYMENT_REVIEW_REQUIRED" | "WITHDRAWAL_SUBMITTED" | "WITHDRAWAL_APPROVED" | "WITHDRAWAL_REJECTED" | "WITHDRAWAL_PAID";
             data: {
                 [key: string]: unknown;
             } | null;
@@ -1407,6 +1443,8 @@ export interface components {
             secureUrl: string;
         };
         SalesStatisticsSummaryDto: {
+            /** @description Why the event was hidden; null unless the status is HIDDEN. */
+            hiddenReason: string | null;
             paidRevenueVnd: number;
             ticketsSold: number;
             paidOrders: number;
@@ -1447,6 +1485,8 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
+            /** @description Why the event was hidden; null unless the status is HIDDEN. */
+            hiddenReason: string | null;
             organizerId: string;
             organizerName: string;
             organizerEmail?: string | null;
@@ -1458,6 +1498,10 @@ export interface components {
             bankAccountNumber: string;
             bankAccountHolder: string;
             organizerNote?: string | null;
+        HideEventDto: {
+            /** @description Shown to the organizer, so it must explain the takedown. */
+            reason: string;
+        };
             rejectionReason?: string | null;
             transferReference?: string | null;
             adminNote?: string | null;
@@ -2948,6 +2992,94 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AdminController_hideEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HideEventDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminEventDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: INVALID_STATE_TRANSITION */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AdminController_unhideEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminEventDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: INVALID_STATE_TRANSITION */
         responses: {
             200: {
                 headers: {

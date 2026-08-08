@@ -200,6 +200,14 @@ export const en = {
         title: 'Event approved as featured',
         body: '“{{eventTitle}}” has been approved as featured.',
       },
+      EVENT_HIDDEN: {
+        title: 'Event has been hidden',
+        body: '“{{eventTitle}}” was taken off the public listing: {{reason}}',
+      },
+      EVENT_UNHIDDEN: {
+        title: 'Event is visible again',
+        body: '“{{eventTitle}}” is back on the public listing.',
+      },
       PAYMENT_REVIEW_REQUIRED: {
         title: 'Payment needs review',
         body: 'Transfer {{sepayTxnId}} did not match any order.',
@@ -638,6 +646,8 @@ export const en = {
       approveEvent: 'Approve event',
       approveWithdrawal: 'Approve',
       rejectWithdrawal: 'Reject',
+      hideEvent: 'Hide event',
+      unhideEvent: 'Restore event',
       markWithdrawalPaid: 'Mark as transferred',
     },
     roles: {
@@ -725,6 +735,13 @@ export const en = {
       openDetail: 'Open details for {{event}}',
     },
     eventDetail: {
+      confirmHideTitle: 'Take this event off the public listing?',
+      confirmHideDescription:
+        '“{{event}}” disappears from the public listing, every order still awaiting payment is cancelled, and the Organizer receives the reason you write below.',
+      hideReasonLabel: 'Reason for hiding',
+      hideReasonPlaceholder: 'Why does this event have to come down?',
+      hiddenSuccess: 'Event hidden and its pending orders were cancelled.',
+      unhiddenSuccess: 'Event is back on the public listing.',
       title: 'Event details',
       loadErrorTitle: 'Unable to load this event',
       soldLabel: 'Tickets sold',
@@ -777,6 +794,7 @@ export const en = {
         '{{organizer}} will be told that {{amount}} is ready to transfer. Approving does not move any money.',
       approvedSuccess: 'Request approved and the Organizer was notified.',
       confirmRejectTitle: 'Reject this withdrawal?',
+      hiddenReasonTitle: 'Why this event is hidden',
       confirmRejectDescription:
         '{{organizer}} will see the reason you give and the amount returns to their balance.',
       reasonLabel: 'Reason for rejection',
@@ -987,6 +1005,10 @@ export const en = {
       descriptionRequired: 'Please enter a description',
       venueRequired: 'Please enter a venue',
       cityRequired: 'Please enter a city',
+    hidden: {
+      title: 'This event is hidden',
+      noReason: 'An administrator took this event off the public listing.',
+    },
       startInvalid: 'Enter a valid start date',
       endInvalid: 'Enter a valid end date',
       endBeforeStart: 'End must be after start',
@@ -1011,6 +1033,7 @@ export const en = {
         REJECTED: 'Rejected',
         CANCELLED: 'Cancelled',
       },
+      fixHidden: 'Move back to draft to fix',
       available: 'Available to withdraw',
       settledRevenue: 'Revenue from finished events',
       held: 'Being processed',

@@ -43,6 +43,13 @@ export class OrganizerEventDto {
   @ApiProperty({ format: 'date-time' }) startAt!: string;
   @ApiProperty({ format: 'date-time' }) endAt!: string;
   @ApiProperty({ type: String, nullable: true }) coverImageUrl!: string | null;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description:
+      'Why an admin hid this event; null unless the status is HIDDEN.',
+  })
+  hiddenReason!: string | null;
   @ApiProperty({ type: [OrganizerTicketTypeDto] })
   ticketTypes!: OrganizerTicketTypeDto[];
   @ApiProperty({

@@ -34,6 +34,8 @@ const NOTIFICATION_ICON: Record<
   EVENT_APPROVED: 'verified',
   PAYMENT_REVIEW_REQUIRED: 'error-outline',
   EVENT_FEATURED: 'star',
+  EVENT_HIDDEN: 'visibility-off',
+  EVENT_UNHIDDEN: 'visibility',
   WITHDRAWAL_SUBMITTED: 'account-balance-wallet',
   WITHDRAWAL_APPROVED: 'verified',
   WITHDRAWAL_REJECTED: 'block',

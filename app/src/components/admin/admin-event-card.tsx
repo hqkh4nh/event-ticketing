@@ -12,10 +12,13 @@ export function AdminEventCard({
   featureLabel,
   unfeatureLabel,
   approveLabel,
+  hideLabel,
+  unhideLabel,
   openLabel,
   formattedDate,
   onToggleFeatured,
   onApprove,
+  onToggleHidden,
   onOpen,
   busy = false,
 }: {
@@ -26,10 +29,13 @@ export function AdminEventCard({
   featureLabel: string;
   unfeatureLabel: string;
   approveLabel: string;
+  hideLabel: string;
+  unhideLabel: string;
   openLabel: string;
   formattedDate: string;
   onToggleFeatured: () => void;
   onApprove: () => void;
+  onToggleHidden: () => void;
   onOpen: () => void;
   busy?: boolean;
 }) {
@@ -91,6 +97,17 @@ export function AdminEventCard({
             {soldLabel}
           </Text>
         </View>
+        {event.hiddenReason ? (
+          <View className="flex-row items-start gap-2">
+            <MaterialIcons name="visibility-off" size={17} className="text-warning" />
+            <Text
+              numberOfLines={2}
+              className="min-w-0 flex-1 font-sans text-label-sm text-warning"
+            >
+              {event.hiddenReason}
+            </Text>
+          </View>
+        ) : null}
       </View>
 
       <View className="flex-row gap-2 border-t border-outline-variant p-3">
@@ -128,6 +145,28 @@ export function AdminEventCard({
             </Text>
           </Pressable>
         )}
+
+        {event.status === 'PUBLISHED' || event.status === 'HIDDEN' ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ busy, disabled: busy }}
+            disabled={busy}
+            onPress={onToggleHidden}
+            className={[
+              'h-touch-target-min flex-1 flex-row items-center justify-center gap-2 rounded-full border border-outline active:bg-surface-container',
+              busy ? 'opacity-40' : '',
+            ].join(' ')}
+          >
+            <MaterialIcons
+              name={event.status === 'HIDDEN' ? 'visibility' : 'visibility-off'}
+              size={18}
+              className="text-on-surface"
+            />
+            <Text className="font-semibold text-label-sm text-on-surface">
+              {event.status === 'HIDDEN' ? unhideLabel : hideLabel}
+            </Text>
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );

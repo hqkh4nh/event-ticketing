@@ -196,6 +196,14 @@ export const vi = {
         title: 'Sự kiện được duyệt nổi bật',
         body: 'Sự kiện “{{eventTitle}}” đã được duyệt nổi bật.',
       },
+      EVENT_HIDDEN: {
+        title: 'Sự kiện đã bị ẩn',
+        body: 'Sự kiện “{{eventTitle}}” đã bị gỡ khỏi trang công khai: {{reason}}',
+      },
+      EVENT_UNHIDDEN: {
+        title: 'Sự kiện đã được hiện lại',
+        body: 'Sự kiện “{{eventTitle}}” đã trở lại trang công khai.',
+      },
       PAYMENT_REVIEW_REQUIRED: {
         title: 'Giao dịch cần kiểm tra',
         body: 'Giao dịch {{sepayTxnId}} không khớp đơn hàng nào.',
@@ -634,6 +642,8 @@ export const vi = {
       approveEvent: 'Duyệt sự kiện',
       approveWithdrawal: 'Duyệt',
       rejectWithdrawal: 'Từ chối',
+      hideEvent: 'Ẩn sự kiện',
+      unhideEvent: 'Bỏ ẩn',
       markWithdrawalPaid: 'Đã chuyển tiền',
     },
     roles: {
@@ -721,6 +731,13 @@ export const vi = {
       openDetail: 'Mở chi tiết sự kiện {{event}}',
     },
     eventDetail: {
+      confirmHideTitle: 'Ẩn sự kiện khỏi trang công khai?',
+      confirmHideDescription:
+        '“{{event}}” sẽ biến mất khỏi danh sách công khai, mọi đơn đang chờ thanh toán bị huỷ và Organizer nhận được lý do bạn ghi dưới đây.',
+      hideReasonLabel: 'Lý do ẩn',
+      hideReasonPlaceholder: 'Vì sao sự kiện này phải gỡ xuống?',
+      hiddenSuccess: 'Đã ẩn sự kiện và huỷ các đơn đang chờ thanh toán.',
+      unhiddenSuccess: 'Đã đưa sự kiện trở lại trang công khai.',
       title: 'Chi tiết sự kiện',
       loadErrorTitle: 'Không tải được sự kiện này',
       soldLabel: 'Vé đã bán',
@@ -771,6 +788,7 @@ export const vi = {
       confirmApproveTitle: 'Duyệt yêu cầu rút tiền này?',
       confirmApproveDescription:
         '{{organizer}} sẽ được báo là {{amount}} đã sẵn sàng để chuyển. Duyệt không tự chuyển tiền.',
+      hiddenReasonTitle: 'Lý do sự kiện bị ẩn',
       approvedSuccess: 'Đã duyệt yêu cầu và thông báo cho Organizer.',
       confirmRejectTitle: 'Từ chối yêu cầu rút tiền này?',
       confirmRejectDescription:
@@ -982,6 +1000,10 @@ export const vi = {
     error: {
       titleRequired: 'Vui lòng nhập tiêu đề',
       descriptionRequired: 'Vui lòng nhập mô tả',
+    hidden: {
+      title: 'Sự kiện đang bị ẩn',
+      noReason: 'Quản trị viên đã gỡ sự kiện này khỏi trang công khai.',
+    },
       venueRequired: 'Vui lòng nhập địa điểm',
       cityRequired: 'Vui lòng nhập thành phố',
       startInvalid: 'Nhập ngày bắt đầu hợp lệ',
@@ -1006,6 +1028,7 @@ export const vi = {
         APPROVED: 'Đã duyệt, đang chuyển tiền',
         PAID: 'Đã chuyển',
         REJECTED: 'Từ chối',
+      fixHidden: 'Chuyển về nháp để sửa',
         CANCELLED: 'Đã huỷ',
       },
       available: 'Có thể rút',

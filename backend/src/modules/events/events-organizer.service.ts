@@ -23,7 +23,9 @@ const ALLOWED_TRANSITIONS: Record<EventStatus, EventStatus[]> = {
   PENDING_REVIEW: [EventStatus.DRAFT, EventStatus.PUBLISHED],
   PUBLISHED: [EventStatus.DRAFT, EventStatus.CANCELLED],
   CANCELLED: [],
-  HIDDEN: [],
+  // An admin hid this event. The organizer's only move is back to DRAFT to fix
+  // it and resubmit; returning it to PUBLISHED is the admin's call alone.
+  HIDDEN: [EventStatus.DRAFT],
 };
 
 /**
@@ -497,6 +499,7 @@ export class EventsOrganizerService {
         startAt: true,
         endAt: true,
         coverImageUrl: true,
+        hiddenReason: true,
         ticketTypes: {
           orderBy: { priceVnd: 'asc' },
           select: ticketTypeSelect,
@@ -527,6 +530,7 @@ export class EventsOrganizerService {
       startAt: event.startAt.toISOString(),
       endAt: event.endAt.toISOString(),
       coverImageUrl: event.coverImageUrl,
+      hiddenReason: event.hiddenReason,
       ticketTypes: event.ticketTypes.map(toTicketTypeDto),
       checkedInCount,
     };

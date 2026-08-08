@@ -18,12 +18,16 @@ import { AdminScreenHeader } from '@/components/admin/admin-ui';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
+import { PromptDialog } from '@/components/ui/prompt-dialog';
+import { TextField } from '@/components/ui/text-field';
 import {
   adminKeys,
   approveAdminEvent,
   type AdminEvent,
   type AdminEventStatus,
+  hideAdminEvent,
   listAdminEvents,
+  unhideAdminEvent,
   updateAdminEventFeatured,
 } from '@/lib/api/admin';
 import { toUserMessage } from '@/lib/api/error-message';
@@ -58,6 +62,10 @@ export default function AdminEventsScreen() {
     useState<AdminEvent | null>(null);
   const [pendingApprovalEvent, setPendingApprovalEvent] =
     useState<AdminEvent | null>(null);
+  const [pendingHideEvent, setPendingHideEvent] = useState<AdminEvent | null>(
+    null,
+  );
+  const [hideReason, setHideReason] = useState('');
 
   useEffect(() => {
     const timeout = setTimeout(
@@ -102,6 +110,36 @@ export default function AdminEventsScreen() {
     },
     onError: (error) => {
       setPendingFeatureEvent(null);
+      setFeedback({ tone: 'error', message: toUserMessage(error, t) });
+    },
+  });
+
+  const hideMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      hideAdminEvent(id, reason),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: adminKeys.events() });
+      setPendingHideEvent(null);
+      setHideReason('');
+      setFeedback({ tone: 'success', message: t('admin.events.hiddenSuccess') });
+    },
+    onError: (error) => {
+      setPendingHideEvent(null);
+      setHideReason('');
+      setFeedback({ tone: 'error', message: toUserMessage(error, t) });
+    },
+  });
+
+  const unhideMutation = useMutation({
+    mutationFn: (id: string) => unhideAdminEvent(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: adminKeys.events() });
+      setFeedback({
+        tone: 'success',
+        message: t('admin.events.unhiddenSuccess'),
+      });
+    },
+    onError: (error) => {
       setFeedback({ tone: 'error', message: toUserMessage(error, t) });
     },
   });
@@ -287,7 +325,9 @@ export default function AdminEventsScreen() {
                   (featuredMutation.isPending &&
                     featuredMutation.variables?.id === event.id) ||
                   (approvalMutation.isPending &&
-                    approvalMutation.variables === event.id);
+                    approvalMutation.variables === event.id) ||
+                  (unhideMutation.isPending &&
+                    unhideMutation.variables === event.id);
 
                 return (
                   <View key={event.id} className="w-full md:w-[48%]">
@@ -303,6 +343,8 @@ export default function AdminEventsScreen() {
                       featureLabel={t('admin.actions.feature')}
                       unfeatureLabel={t('admin.actions.unfeature')}
                       approveLabel={t('admin.actions.approveEvent')}
+                      hideLabel={t('admin.actions.hideEvent')}
+                      unhideLabel={t('admin.actions.unhideEvent')}
                       openLabel={t('admin.events.openDetail', {
                         event: event.title,
                       })}
@@ -324,6 +366,14 @@ export default function AdminEventsScreen() {
                       onApprove={() => {
                         setFeedback(null);
                         setPendingApprovalEvent(event);
+                      }}
+                      onToggleHidden={() => {
+                        setFeedback(null);
+                        if (event.status === 'HIDDEN') {
+                          unhideMutation.mutate(event.id);
+                        } else {
+                          setPendingHideEvent(event);
+                        }
                       }}
                       onOpen={() => router.push(`/admin/events/${event.id}`)}
                     />
@@ -378,6 +428,38 @@ export default function AdminEventsScreen() {
           approvalMutation.mutate(pendingApprovalEvent.id);
         }}
       />
+      <PromptDialog
+        visible={pendingHideEvent !== null}
+        title={t('admin.events.confirmHideTitle')}
+        description={t('admin.events.confirmHideDescription', {
+          event: pendingHideEvent?.title ?? '',
+        })}
+        cancelLabel={t('common.cancel')}
+        confirmLabel={t('admin.actions.hideEvent')}
+        icon="visibility-off"
+        loading={hideMutation.isPending}
+        confirmDisabled={hideReason.trim().length === 0}
+        onCancel={() => {
+          setPendingHideEvent(null);
+          setHideReason('');
+        }}
+        onConfirm={() => {
+          if (!pendingHideEvent) return;
+          hideMutation.mutate({
+            id: pendingHideEvent.id,
+            reason: hideReason.trim(),
+          });
+        }}
+      >
+        <TextField
+          label={t('admin.events.hideReasonLabel')}
+          placeholder={t('admin.events.hideReasonPlaceholder')}
+          value={hideReason}
+          onChangeText={setHideReason}
+          multiline
+          maxLength={500}
+        />
+      </PromptDialog>
     </SafeAreaView>
   );
 }

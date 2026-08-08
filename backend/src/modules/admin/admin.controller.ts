@@ -32,6 +32,7 @@ import {
   AdminOrganizerDto,
   AdminOrganizerListDto,
 } from './dto/admin-organizer.dto';
+import { HideEventDto } from './dto/hide-event.dto';
 import { ListAdminEventsQueryDto } from './dto/list-admin-events-query.dto';
 import { ListAdminOrganizersQueryDto } from './dto/list-admin-organizers-query.dto';
 import { UpdateEventFeaturedDto } from './dto/update-event-featured.dto';
@@ -119,5 +120,36 @@ export class AdminController {
     @Param('id') id: string,
   ): Promise<AdminEventDto> {
     return this.admin.approveEvent(user.id, id);
+  }
+
+  @Post('events/:id/hide')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Hide a published event and cancel its pending orders.',
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOkResponse({ type: AdminEventDto })
+  @ApiNotFoundResponse({ description: 'code: NOT_FOUND' })
+  @ApiConflictResponse({ description: 'code: INVALID_STATE_TRANSITION' })
+  hideEvent(
+    @CurrentUser() user: CurrentUserData,
+    @Param('id') id: string,
+    @Body() dto: HideEventDto,
+  ): Promise<AdminEventDto> {
+    return this.admin.hideEvent(user.id, id, dto);
+  }
+
+  @Post('events/:id/unhide')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Restore a hidden event to the public listing.' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOkResponse({ type: AdminEventDto })
+  @ApiNotFoundResponse({ description: 'code: NOT_FOUND' })
+  @ApiConflictResponse({ description: 'code: INVALID_STATE_TRANSITION' })
+  unhideEvent(
+    @CurrentUser() user: CurrentUserData,
+    @Param('id') id: string,
+  ): Promise<AdminEventDto> {
+    return this.admin.unhideEvent(user.id, id);
   }
 }

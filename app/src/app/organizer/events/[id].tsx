@@ -179,6 +179,24 @@ export default function EditEventScreen() {
               </View>
             ) : null}
 
+            {event.status === 'HIDDEN' ? (
+              <View className="flex-row items-start gap-3 rounded-md bg-warning-container px-4 py-4">
+                <MaterialIcons
+                  name="visibility-off"
+                  size={22}
+                  className="text-on-warning-container"
+                />
+                <View className="min-w-0 flex-1 gap-1">
+                  <Text className="font-semibold text-body-md text-on-warning-container">
+                    {t('organizer.hidden.title')}
+                  </Text>
+                  <Text className="font-sans text-label-md text-on-warning-container">
+                    {event.hiddenReason ?? t('organizer.hidden.noReason')}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
+
             {event.status === 'DRAFT' ? (
               <EventForm
                 initial={{
@@ -247,13 +265,16 @@ export default function EditEventScreen() {
               ) : null}
 
               {event.status === 'PUBLISHED' ||
-              event.status === 'PENDING_REVIEW' ? (
+              event.status === 'PENDING_REVIEW' ||
+              event.status === 'HIDDEN' ? (
                 <Button
                   variant="outline"
                   label={t(
                     event.status === 'PENDING_REVIEW'
                       ? 'organizer.actions.withdrawReview'
-                      : 'organizer.actions.unpublish',
+                      : event.status === 'HIDDEN'
+                        ? 'organizer.actions.fixHidden'
+                        : 'organizer.actions.unpublish',
                   )}
                   loading={unpublish.isPending}
                   disabled={busy}

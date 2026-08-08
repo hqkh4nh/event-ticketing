@@ -11,10 +11,14 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { DetailScreenShell } from '@/components/ui/detail-screen-shell';
 import { EmptyState } from '@/components/ui/empty-state';
+import { PromptDialog } from '@/components/ui/prompt-dialog';
+import { TextField } from '@/components/ui/text-field';
 import {
   adminKeys,
   approveAdminEvent,
   getAdminEvent,
+  hideAdminEvent,
+  unhideAdminEvent,
   updateAdminEventFeatured,
 } from '@/lib/api/admin';
 import { toUserMessage } from '@/lib/api/error-message';
@@ -57,9 +61,10 @@ export default function AdminEventDetailScreen() {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [confirming, setConfirming] = useState<'approve' | 'feature' | null>(
-    null,
-  );
+  const [confirming, setConfirming] = useState<
+    'approve' | 'feature' | 'hide' | null
+  >(null);
+  const [hideReason, setHideReason] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const eventQuery = useQuery({
@@ -70,6 +75,7 @@ export default function AdminEventDetailScreen() {
   function onSettled() {
     void queryClient.invalidateQueries({ queryKey: adminKeys.events() });
     setConfirming(null);
+    setHideReason('');
   }
 
   const approvalMutation = useMutation({
@@ -88,6 +94,22 @@ export default function AdminEventDetailScreen() {
       setConfirming(null);
       setError(toUserMessage(mutationError, t));
     },
+  });
+
+  const hideMutation = useMutation({
+    mutationFn: (reason: string) => hideAdminEvent(id, reason),
+    onSuccess: onSettled,
+    onError: (mutationError) => {
+      setConfirming(null);
+      setHideReason('');
+      setError(toUserMessage(mutationError, t));
+    },
+  });
+
+  const unhideMutation = useMutation({
+    mutationFn: () => unhideAdminEvent(id),
+    onSuccess: onSettled,
+    onError: (mutationError) => setError(toUserMessage(mutationError, t)),
   });
 
   const event = eventQuery.data;
@@ -122,7 +144,11 @@ export default function AdminEventDetailScreen() {
     );
   }
 
-  const busy = approvalMutation.isPending || featuredMutation.isPending;
+  const busy =
+    approvalMutation.isPending ||
+    featuredMutation.isPending ||
+    hideMutation.isPending ||
+    unhideMutation.isPending;
 
   return (
     <DetailScreenShell title={t('admin.eventDetail.title')}>
@@ -180,6 +206,24 @@ export default function AdminEventDetailScreen() {
           <Text className="min-w-0 flex-1 font-medium text-label-md text-on-error-container">
             {error}
           </Text>
+        </View>
+      ) : null}
+
+      {event.hiddenReason ? (
+        <View className="flex-row items-start gap-3 rounded-xl bg-warning-container px-4 py-4">
+          <MaterialIcons
+            name="visibility-off"
+            size={21}
+            className="text-on-warning-container"
+          />
+          <View className="min-w-0 flex-1 gap-1">
+            <Text className="font-semibold text-body-md text-on-warning-container">
+              {t('admin.eventDetail.hiddenReasonTitle')}
+            </Text>
+            <Text className="font-sans text-label-md text-on-warning-container">
+              {event.hiddenReason}
+            </Text>
+          </View>
         </View>
       ) : null}
 
@@ -315,6 +359,55 @@ export default function AdminEventDetailScreen() {
           }}
         />
       ) : null}
+
+      {event.status === 'PUBLISHED' || event.status === 'HIDDEN' ? (
+        <Button
+          variant="outline"
+          icon={event.status === 'HIDDEN' ? 'visibility' : 'visibility-off'}
+          label={
+            event.status === 'HIDDEN'
+              ? t('admin.actions.unhideEvent')
+              : t('admin.actions.hideEvent')
+          }
+          loading={hideMutation.isPending || unhideMutation.isPending}
+          disabled={busy}
+          onPress={() => {
+            setError(null);
+            if (event.status === 'HIDDEN') {
+              unhideMutation.mutate();
+            } else {
+              setConfirming('hide');
+            }
+          }}
+        />
+      ) : null}
+
+      <PromptDialog
+        visible={confirming === 'hide'}
+        title={t('admin.events.confirmHideTitle')}
+        description={t('admin.events.confirmHideDescription', {
+          event: event.title,
+        })}
+        cancelLabel={t('common.cancel')}
+        confirmLabel={t('admin.actions.hideEvent')}
+        icon="visibility-off"
+        loading={hideMutation.isPending}
+        confirmDisabled={hideReason.trim().length === 0}
+        onCancel={() => {
+          setConfirming(null);
+          setHideReason('');
+        }}
+        onConfirm={() => hideMutation.mutate(hideReason.trim())}
+      >
+        <TextField
+          label={t('admin.events.hideReasonLabel')}
+          placeholder={t('admin.events.hideReasonPlaceholder')}
+          value={hideReason}
+          onChangeText={setHideReason}
+          multiline
+          maxLength={500}
+        />
+      </PromptDialog>
 
       <ConfirmDialog
         visible={confirming === 'approve'}

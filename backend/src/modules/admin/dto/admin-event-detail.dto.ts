@@ -26,6 +26,12 @@ export class AdminEventDetailDto {
   @ApiProperty({ format: 'date-time' }) startAt!: string;
   @ApiProperty({ format: 'date-time' }) endAt!: string;
   @ApiProperty({ type: String, nullable: true }) coverImageUrl!: string | null;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'Why the event was hidden; null unless the status is HIDDEN.',
+  })
+  hiddenReason!: string | null;
   @ApiProperty({ type: [AdminEventTicketTypeDto] })
   ticketTypes!: AdminEventTicketTypeDto[];
   @ApiProperty({ minimum: 0 }) sold!: number;
