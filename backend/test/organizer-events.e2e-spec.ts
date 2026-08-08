@@ -167,7 +167,7 @@ describe('Organizer events (e2e)', () => {
     expect(res.body.code).toBe(ErrorCode.EVENT_NOT_PUBLISHABLE);
   });
 
-  it('publishes an event with a ticket type and lists it publicly', async () => {
+  it('lists an event publicly only once an admin approves the review', async () => {
     const created = await request(app.getHttpServer())
       .post('/api/organizer/events')
       .set(auth(organizerAToken))
@@ -181,11 +181,24 @@ describe('Organizer events (e2e)', () => {
       .send({ name: 'GA', priceVnd: 200000, quantityTotal: 100 })
       .expect(201);
 
-    const published = await request(app.getHttpServer())
+    const submitted = await request(app.getHttpServer())
       .post(`/api/organizer/events/${eventId}/publish`)
       .set(auth(organizerAToken))
       .expect(200);
-    expect(published.body.status).toBe('PUBLISHED');
+    expect(submitted.body.status).toBe('PENDING_REVIEW');
+
+    const beforeApproval = await request(app.getHttpServer())
+      .get('/api/events')
+      .expect(200);
+    expect(
+      beforeApproval.body.some((e: { id: string }) => e.id === eventId),
+    ).toBe(false);
+
+    // Admin approval is covered by the admin slice; simulate the outcome here.
+    await prisma.event.update({
+      where: { id: eventId },
+      data: { status: 'PUBLISHED' },
+    });
 
     const publicList = await request(app.getHttpServer())
       .get('/api/events')
@@ -271,7 +284,7 @@ describe('Organizer events (e2e)', () => {
     expect(res.body.code).toBe(ErrorCode.INVALID_STATE_TRANSITION);
   });
 
-  it('blocks removing the last ticket type of a PUBLISHED event', async () => {
+  it('blocks removing a ticket type once the event leaves DRAFT', async () => {
     const created = await request(app.getHttpServer())
       .post('/api/organizer/events')
       .set(auth(organizerAToken))
@@ -292,7 +305,7 @@ describe('Organizer events (e2e)', () => {
       .delete(`/api/organizer/events/${created.body.id}/ticket-types/${typeId}`)
       .set(auth(organizerAToken))
       .expect(409);
-    expect(res.body.code).toBe(ErrorCode.LAST_TICKET_TYPE);
+    expect(res.body.code).toBe(ErrorCode.INVALID_STATE_TRANSITION);
   });
 
   it('unpublishes a PUBLISHED event back to DRAFT', async () => {

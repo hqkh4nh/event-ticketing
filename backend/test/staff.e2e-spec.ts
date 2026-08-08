@@ -101,6 +101,11 @@ describe('Staff device onboarding (e2e)', () => {
       .post(`/api/organizer/events/${eventId}/publish`)
       .set(auth(token))
       .expect(200);
+    // Publishing only asks for review; admin approval is out of this slice.
+    await prisma.event.update({
+      where: { id: eventId },
+      data: { status: 'PUBLISHED' },
+    });
 
     return { eventId, ticketTypeId };
   }
