@@ -26,6 +26,8 @@ export const envValidationSchema = Joi.object({
 
   ORDER_HOLD_MINUTES: Joi.number().default(15),
 
+  WITHDRAWAL_MIN_AMOUNT_VND: Joi.number().integer().min(0).default(100000),
+
   SEPAY_WEBHOOK_API_KEY: Joi.string().allow('').default(''),
   SEPAY_BANK: Joi.string().allow('').default(''),
   SEPAY_ACCOUNT_NUMBER: Joi.string().allow('').default(''),

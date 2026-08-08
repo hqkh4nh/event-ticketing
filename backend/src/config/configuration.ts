@@ -22,6 +22,12 @@ export default () => ({
   order: {
     holdMinutes: parseInt(process.env.ORDER_HOLD_MINUTES ?? '15', 10),
   },
+  withdrawal: {
+    minAmountVnd: parseInt(
+      process.env.WITHDRAWAL_MIN_AMOUNT_VND ?? '100000',
+      10,
+    ),
+  },
   sepay: {
     webhookApiKey: process.env.SEPAY_WEBHOOK_API_KEY ?? '',
     bank: process.env.SEPAY_BANK ?? '',

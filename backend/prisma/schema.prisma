@@ -73,12 +73,24 @@ enum Locale {
   EN
 }
 
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  PAID
+  REJECTED
+  CANCELLED
+}
+
 enum NotificationType {
   TICKET_ISSUED
   EVENT_SUBMITTED
   EVENT_APPROVED
   EVENT_FEATURED
   PAYMENT_REVIEW_REQUIRED
+  WITHDRAWAL_SUBMITTED
+  WITHDRAWAL_APPROVED
+  WITHDRAWAL_REJECTED
+  WITHDRAWAL_PAID
 }
 
 model User {
@@ -100,15 +112,17 @@ model User {
   createdAt       DateTime   @default(now()) @db.Timestamptz(3)
   updatedAt       DateTime   @updatedAt @db.Timestamptz(3)
 
-  events           Event[]            @relation("OrganizerEvents")
-  orders           Order[]
-  scannedTickets   Ticket[]           @relation("TicketScanner")
-  staffAssignments EventStaff[]
-  checkins         CheckinLog[]
-  notifications    Notification[]
-  managedStaff     User[]             @relation("ManagedStaff")
-  connectCodes     StaffConnectCode[]
-  authSessions     AuthSession[]
+  events              Event[]             @relation("OrganizerEvents")
+  orders              Order[]
+  scannedTickets      Ticket[]            @relation("TicketScanner")
+  staffAssignments    EventStaff[]
+  checkins            CheckinLog[]
+  notifications       Notification[]
+  managedStaff        User[]              @relation("ManagedStaff")
+  connectCodes        StaffConnectCode[]
+  authSessions        AuthSession[]
+  withdrawals         WithdrawalRequest[] @relation("OrganizerWithdrawals")
+  reviewedWithdrawals WithdrawalRequest[] @relation("ReviewedWithdrawals")
 
   @@index([role, status])
   @@index([managedById])
@@ -254,6 +268,34 @@ model Payment {
 
   @@index([orderId, status])
   @@index([status, receivedAt])
+}
+
+/// An organizer's request to receive settled ticket revenue. The platform never
+/// moves money itself: an admin transfers it by hand and records the result.
+model WithdrawalRequest {
+  id                String           @id @default(uuid(7)) @db.Uuid
+  organizerId       String           @db.Uuid
+  organizer         User             @relation("OrganizerWithdrawals", fields: [organizerId], references: [id])
+  amountVnd         BigInt
+  status            WithdrawalStatus @default(PENDING)
+  // Snapshot taken at submission so history stays true to the transfer that was
+  // actually made, even after the organizer starts using another account.
+  bankName          String
+  bankAccountNumber String
+  bankAccountHolder String
+  organizerNote     String?
+  reviewedById      String?          @db.Uuid
+  reviewedBy        User?            @relation("ReviewedWithdrawals", fields: [reviewedById], references: [id])
+  reviewedAt        DateTime?        @db.Timestamptz(3)
+  rejectionReason   String?
+  transferReference String?
+  adminNote         String?
+  paidAt            DateTime?        @db.Timestamptz(3)
+  createdAt         DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime         @updatedAt @db.Timestamptz(3)
+
+  @@index([organizerId, status, createdAt])
+  @@index([status, createdAt])
 }
 
 model Ticket {

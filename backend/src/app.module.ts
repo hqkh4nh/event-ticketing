@@ -23,6 +23,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { MailModule } from './modules/mail/mail.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { StatisticsModule } from './modules/statistics/statistics.module';
+import { WithdrawalsModule } from './modules/withdrawals/withdrawals.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { StatisticsModule } from './modules/statistics/statistics.module';
     MailModule,
     UploadsModule,
     StatisticsModule,
+    WithdrawalsModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: JwtAuthGuard }],

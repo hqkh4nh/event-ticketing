@@ -706,6 +706,126 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/organizer/withdrawals/balance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the withdrawable balance from events that have ended. */
+        get: operations["WithdrawalsOrganizerController_getBalance"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/organizer/withdrawals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the organizer's own withdrawal requests. */
+        get: operations["WithdrawalsOrganizerController_list"];
+        put?: never;
+        /** Submit a withdrawal request for admin review. */
+        post: operations["WithdrawalsOrganizerController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/organizer/withdrawals/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel a withdrawal request still under review. */
+        post: operations["WithdrawalsOrganizerController_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/withdrawals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List withdrawal requests for manual processing. */
+        get: operations["WithdrawalsAdminController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/withdrawals/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve a withdrawal request so it can be transferred. */
+        post: operations["WithdrawalsAdminController_approve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/withdrawals/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject a withdrawal request with a reason. */
+        post: operations["WithdrawalsAdminController_reject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/withdrawals/{id}/mark-paid": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record that the approved amount has been transferred by hand. */
+        post: operations["WithdrawalsAdminController_markPaid"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1014,7 +1134,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** @enum {string} */
-            type: "TICKET_ISSUED" | "EVENT_SUBMITTED" | "EVENT_APPROVED" | "EVENT_FEATURED" | "PAYMENT_REVIEW_REQUIRED";
+            type: "TICKET_ISSUED" | "EVENT_SUBMITTED" | "EVENT_APPROVED" | "EVENT_FEATURED" | "PAYMENT_REVIEW_REQUIRED" | "WITHDRAWAL_SUBMITTED" | "WITHDRAWAL_APPROVED" | "WITHDRAWAL_REJECTED" | "WITHDRAWAL_PAID";
             data: {
                 [key: string]: unknown;
             } | null;
@@ -1220,6 +1340,72 @@ export interface components {
             summary: components["schemas"]["SalesStatisticsSummaryDto"];
             daily: components["schemas"]["DailySalesStatisticDto"][];
             topEvents: components["schemas"]["TopEventStatisticDto"][];
+        };
+        WithdrawalBalanceDto: {
+            /** @description Paid revenue from events that have already ended. Revenue from upcoming events is not withdrawable yet. */
+            settledRevenueVnd: number;
+            /** @description Held by requests that are submitted or approved but not paid. */
+            pendingVnd: number;
+            /** @description Already transferred out. */
+            withdrawnVnd: number;
+            /** @description settledRevenueVnd minus pendingVnd and withdrawnVnd. */
+            availableVnd: number;
+            /** @description Smallest amount a request may ask. */
+            minAmountVnd: number;
+        };
+        WithdrawalDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            organizerId: string;
+            organizerName: string;
+            organizerEmail?: string | null;
+            /** @description VND, integer */
+            amountVnd: number;
+            /** @enum {string} */
+            status: "PENDING" | "APPROVED" | "PAID" | "REJECTED" | "CANCELLED";
+            bankName: string;
+            bankAccountNumber: string;
+            bankAccountHolder: string;
+            organizerNote?: string | null;
+            rejectionReason?: string | null;
+            transferReference?: string | null;
+            adminNote?: string | null;
+            /** Format: date-time */
+            reviewedAt?: string | null;
+            /** Format: date-time */
+            paidAt?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        WithdrawalListDto: {
+            items: components["schemas"]["WithdrawalDto"][];
+            total: number;
+            page: number;
+            limit: number;
+        };
+        CreateWithdrawalDto: {
+            /**
+             * @description VND, integer
+             * @example 500000
+             */
+            amountVnd: number;
+            /** @example Vietcombank */
+            bankName: string;
+            /** @example 0071000123456 */
+            bankAccountNumber: string;
+            /** @example HUYNH QUOC KHANH */
+            bankAccountHolder: string;
+            organizerNote?: string;
+        };
+        RejectWithdrawalDto: {
+            /** @description Shown to the organizer, so it must explain the decision. */
+            reason: string;
+        };
+        MarkWithdrawalPaidDto: {
+            /** @description Bank reference of the manual transfer, for reconciliation. */
+            transferReference?: string;
+            adminNote?: string;
         };
     };
     responses: never;
@@ -2674,6 +2860,314 @@ export interface operations {
             };
             /** @description code: FORBIDDEN_ROLE | ACCOUNT_PENDING_APPROVAL */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WithdrawalsOrganizerController_getBalance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WithdrawalBalanceDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE | ACCOUNT_PENDING_APPROVAL */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WithdrawalsOrganizerController_list: {
+        parameters: {
+            query?: {
+                status?: "PENDING" | "APPROVED" | "PAID" | "REJECTED" | "CANCELLED";
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WithdrawalListDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE | ACCOUNT_PENDING_APPROVAL */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WithdrawalsOrganizerController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateWithdrawalDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WithdrawalDto"];
+                };
+            };
+            /** @description code: VALIDATION_FAILED | WITHDRAWAL_AMOUNT_TOO_SMALL */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: FORBIDDEN_ROLE | ACCOUNT_PENDING_APPROVAL */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: WITHDRAWAL_REQUEST_ALREADY_OPEN | WITHDRAWAL_AMOUNT_EXCEEDS_BALANCE */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WithdrawalsOrganizerController_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WithdrawalDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE | ACCOUNT_PENDING_APPROVAL */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: INVALID_STATE_TRANSITION */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WithdrawalsAdminController_list: {
+        parameters: {
+            query?: {
+                status?: "PENDING" | "APPROVED" | "PAID" | "REJECTED" | "CANCELLED";
+                /** @description Case-insensitive match against organizer name or email. */
+                search?: string;
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WithdrawalListDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WithdrawalsAdminController_approve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WithdrawalDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: INVALID_STATE_TRANSITION */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WithdrawalsAdminController_reject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectWithdrawalDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WithdrawalDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: INVALID_STATE_TRANSITION */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WithdrawalsAdminController_markPaid: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkWithdrawalPaidDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WithdrawalDto"];
+                };
+            };
+            /** @description code: FORBIDDEN_ROLE */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description code: INVALID_STATE_TRANSITION */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

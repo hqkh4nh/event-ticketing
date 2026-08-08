@@ -11,6 +11,7 @@ import {
   getUnreadNotificationCount,
   notificationsKeys,
 } from '@/lib/api/notifications';
+import { listAdminWithdrawals, withdrawalKeys } from '@/lib/api/withdrawals';
 
 const SIDEBAR_BREAKPOINT = 900;
 const PENDING_COUNT_QUERY = { status: 'PENDING', page: 1, limit: 1 } as const;
@@ -26,6 +27,11 @@ export default function AdminTabsLayout() {
     queryFn: () => listAdminOrganizers(PENDING_COUNT_QUERY),
   });
   const pendingCount = pendingQuery.data?.total;
+  const pendingWithdrawalsQuery = useQuery({
+    queryKey: withdrawalKeys.adminList(PENDING_COUNT_QUERY),
+    queryFn: () => listAdminWithdrawals(PENDING_COUNT_QUERY),
+  });
+  const pendingWithdrawalCount = pendingWithdrawalsQuery.data?.total;
   const unreadQuery = useQuery({
     queryKey: notificationsKeys.unread(),
     queryFn: getUnreadNotificationCount,
@@ -96,6 +102,16 @@ export default function AdminTabsLayout() {
         options={{
           title: t('admin.tabs.events'),
           tabBarIcon: (props) => <AppTabIcon name="event-note" {...props} />,
+        }}
+      />
+      <Tabs.Screen
+        name="withdrawals"
+        options={{
+          title: t('admin.tabs.withdrawals'),
+          tabBarBadge: pendingWithdrawalCount ? pendingWithdrawalCount : undefined,
+          tabBarIcon: (props) => (
+            <AppTabIcon name="account-balance-wallet" {...props} />
+          ),
         }}
       />
       <Tabs.Screen

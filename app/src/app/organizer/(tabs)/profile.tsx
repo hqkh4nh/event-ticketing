@@ -143,6 +143,12 @@ export default function OrganizerAccountScreen() {
                 onPress={showComingSoon}
               />
               <AccountRow
+                icon="account-balance-wallet"
+                label={t('organizer.account.withdrawals')}
+                description={t('organizer.account.withdrawalsDescription')}
+                onPress={() => router.push('/organizer/withdrawals')}
+              />
+              <AccountRow
                 icon="security"
                 label={t('organizer.account.security')}
                 description={t('organizer.account.securityDescription')}
