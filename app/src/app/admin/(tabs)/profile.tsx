@@ -38,7 +38,7 @@ function AdminProfileRow({
 }: {
   icon: keyof typeof MaterialIcons.glyphMap;
   label: string;
-  description: string;
+  description?: string;
   last?: boolean;
   onPress: () => void;
 }) {
@@ -57,9 +57,14 @@ function AdminProfileRow({
       </View>
       <View className="min-w-0 flex-1 gap-0.5">
         <Text className="font-medium text-body-md text-on-surface">{label}</Text>
-        <Text numberOfLines={1} className="font-sans text-label-sm text-on-surface-variant">
-          {description}
-        </Text>
+        {description ? (
+          <Text
+            numberOfLines={1}
+            className="font-sans text-label-sm text-on-surface-variant"
+          >
+            {description}
+          </Text>
+        ) : null}
       </View>
       <MaterialIcons name="chevron-right" size={22} className="text-outline" />
     </Pressable>
@@ -238,6 +243,30 @@ export default function AdminProfileScreen() {
                   })}
                 </View>
               </View>
+            </View>
+          </View>
+
+          <View className="gap-3">
+            <Text className="font-semibold text-headline-md text-on-surface">
+              {t('profile.supportSection')}
+            </Text>
+            <View className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest">
+              <AdminProfileRow
+                icon="help-outline"
+                label={t('profile.helpCenter')}
+                onPress={() => router.push('/support/help')}
+              />
+              <AdminProfileRow
+                icon="description"
+                label={t('profile.terms')}
+                onPress={() => router.push('/support/terms')}
+              />
+              <AdminProfileRow
+                icon="privacy-tip"
+                label={t('profile.privacy')}
+                last
+                onPress={() => router.push('/support/privacy')}
+              />
             </View>
           </View>
 
