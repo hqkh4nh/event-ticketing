@@ -2,10 +2,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { WIDE_BREAKPOINT, WIDE_WIDTH } from '@/constants/breakpoints';
 import { useTokens } from '@/hooks/use-tokens';
-
-const WIDE_BREAKPOINT = 768;
-const CONTENT_WIDTH = 800;
 
 type IconName = keyof typeof MaterialIcons.glyphMap;
 
@@ -47,9 +45,12 @@ export function useAppTabScreenOptions() {
       borderBottomColor: tokens['outline-variant'],
       ...(isWide
         ? {
+            // Matches the browse width the screens themselves use. At the old
+            // 800px the bar and the content below it were centred on two
+            // different axes, which reads as a rendering fault.
             height: 64,
             width: '100%' as const,
-            maxWidth: CONTENT_WIDTH,
+            maxWidth: WIDE_WIDTH,
             alignSelf: 'center' as const,
           }
         : {

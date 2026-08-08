@@ -7,17 +7,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CategorySelector } from '@/components/discovery/category-selector';
 import { CityPickerSheet } from '@/components/discovery/city-picker-sheet';
-import { CompactEventCard } from '@/components/discovery/compact-event-card';
 import { DiscoveryHeader } from '@/components/discovery/discovery-header';
 import { DiscoverySection } from '@/components/discovery/discovery-section';
 import { DiscoverySkeleton } from '@/components/discovery/discovery-skeleton';
 import { EventFilterSheet } from '@/components/discovery/event-filter-sheet';
 import { EventResultCard } from '@/components/discovery/event-result-card';
 import { EventSearchBar } from '@/components/discovery/event-search-bar';
+import { EventShelf } from '@/components/discovery/event-shelf';
 import { FeaturedEventCarousel } from '@/components/event/featured-event-carousel';
 import { FeaturedEventCard } from '@/components/event/featured-event-card';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
+import { WIDE_BREAKPOINT, WIDE_WIDTH } from '@/constants/breakpoints';
 import {
   getVietnamProvince,
   VIETNAM_PROVINCES,
@@ -46,8 +47,17 @@ const GRID_CONTENT_STYLE = {
 } as const;
 const GRID_COLUMN_STYLE = { gap: 16 } as const;
 const LIST_HEADER_STYLE = { marginBottom: 16 } as const;
-const HORIZONTAL_CONTENT_STYLE = { gap: 12, paddingRight: CONTAINER_PADDING } as const;
 const EMPTY_EVENTS: EventSummary[] = [];
+/** Widths where another poster still has room to be worth looking at. */
+const THREE_COLUMN_WIDTH = 1024;
+const FOUR_COLUMN_WIDTH = 1400;
+
+function columnsFor(width: number): number {
+  if (width < WIDE_BREAKPOINT) return 1;
+  if (width < THREE_COLUMN_WIDTH) return 2;
+  if (width < FOUR_COLUMN_WIDTH) return 3;
+  return 4;
+}
 
 function ItemSeparator() {
   return <View className="h-3" />;
@@ -57,11 +67,11 @@ export default function HomeScreen() {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const listRef = useRef<FlatList<EventSummary>>(null);
-  const isWide = width >= 768;
-  const columns = !isWide ? 1 : width >= 1200 ? 4 : 3;
+  const isWide = width >= WIDE_BREAKPOINT;
+  const columns = columnsFor(width);
   const isGrid = columns > 1;
   const gridCellWidth =
-    (Math.min(width, 1200) -
+    (Math.min(width, WIDE_WIDTH) -
       CONTAINER_PADDING * 2 -
       (columns - 1) * GRID_COLUMN_STYLE.gap) /
     columns;
@@ -158,9 +168,10 @@ export default function HomeScreen() {
           ) : null}
 
           {sections.thisWeek.length > 0 ? (
-            <DiscoverySection
+            <EventShelf
               actionAccessibilityLabel={t('home.seeAllThisWeek')}
               actionLabel={t('home.seeAll')}
+              events={sections.thisWeek}
               onPressAction={() =>
                 applyPreset({
                   ...DEFAULT_DISCOVERY_FILTERS,
@@ -168,22 +179,14 @@ export default function HomeScreen() {
                 })
               }
               title={t('home.thisWeek')}
-            >
-              <FlatList
-                horizontal
-                data={sections.thisWeek}
-                keyExtractor={(event) => event.id}
-                renderItem={({ item }) => <CompactEventCard event={item} />}
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={HORIZONTAL_CONTENT_STYLE}
-              />
-            </DiscoverySection>
+            />
           ) : null}
 
           {sections.free.length > 0 ? (
-            <DiscoverySection
+            <EventShelf
               actionAccessibilityLabel={t('home.seeAllFreeEvents')}
               actionLabel={t('home.seeAll')}
+              events={sections.free}
               onPressAction={() =>
                 applyPreset({
                   ...DEFAULT_DISCOVERY_FILTERS,
@@ -191,16 +194,7 @@ export default function HomeScreen() {
                 })
               }
               title={t('home.freeEvents')}
-            >
-              <FlatList
-                horizontal
-                data={sections.free}
-                keyExtractor={(event) => event.id}
-                renderItem={({ item }) => <CompactEventCard event={item} />}
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={HORIZONTAL_CONTENT_STYLE}
-              />
-            </DiscoverySection>
+            />
           ) : null}
 
           {sections.all.length > 0 ? (

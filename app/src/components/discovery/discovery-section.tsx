@@ -6,6 +6,8 @@ type DiscoverySectionProps = {
   actionLabel?: string;
   actionAccessibilityLabel?: string;
   onPressAction?: () => void;
+  /** Controls for the feed itself, such as step arrows, shown beside the title. */
+  controls?: ReactNode;
   children: ReactNode;
 };
 
@@ -15,6 +17,7 @@ export function DiscoverySection({
   actionLabel,
   actionAccessibilityLabel,
   onPressAction,
+  controls,
   children,
 }: DiscoverySectionProps) {
   const canPressAction = Boolean(actionLabel && onPressAction);
@@ -29,6 +32,8 @@ export function DiscoverySection({
         >
           {title}
         </Text>
+
+        {controls}
 
         {canPressAction ? (
           <Pressable
