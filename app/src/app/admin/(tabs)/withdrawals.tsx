@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AdminScreenHeader } from '@/components/admin/admin-ui';
 import { AdminWithdrawalCard } from '@/components/admin/admin-withdrawal-card';
-import { WithdrawalPromptDialog } from '@/components/admin/withdrawal-prompt-dialog';
+import { PromptDialog } from '@/components/ui/prompt-dialog';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -413,7 +413,7 @@ export default function AdminWithdrawalsScreen() {
         }}
       />
 
-      <WithdrawalPromptDialog
+      <PromptDialog
         visible={pendingRejection !== null}
         title={t('admin.withdrawals.confirmRejectTitle')}
         description={t('admin.withdrawals.confirmRejectDescription', {
@@ -444,9 +444,9 @@ export default function AdminWithdrawalsScreen() {
           multiline
           maxLength={500}
         />
-      </WithdrawalPromptDialog>
+      </PromptDialog>
 
-      <WithdrawalPromptDialog
+      <PromptDialog
         visible={pendingPayment !== null}
         title={t('admin.withdrawals.confirmPaidTitle')}
         description={t('admin.withdrawals.confirmPaidDescription', {
@@ -488,7 +488,7 @@ export default function AdminWithdrawalsScreen() {
           multiline
           maxLength={500}
         />
-      </WithdrawalPromptDialog>
+      </PromptDialog>
     </SafeAreaView>
   );
 }

@@ -22,9 +22,10 @@ type Props = {
 
 /**
  * ConfirmDialog with a form slot, for decisions that need typed input such as a
- * rejection reason or the reference of a transfer made by hand.
+ * rejection reason, the reference of a transfer made by hand, or the reason an
+ * event is being taken down.
  */
-export function WithdrawalPromptDialog({
+export function PromptDialog({
   visible,
   title,
   description,
