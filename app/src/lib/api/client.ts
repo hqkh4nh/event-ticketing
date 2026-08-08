@@ -21,7 +21,7 @@ type ErrorBody = {
   code?: string;
   message?: string;
   fields?: ApiFieldError[];
-}
+};
 
 /**
  * Thin typed wrapper over fetch: prepends the API base, attaches the bearer
@@ -38,24 +38,39 @@ export async function apiFetch<T>(
 
   const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
 
-  if (!res.ok) {
-    let code = 'INTERNAL_ERROR';
-    let message = res.statusText;
-    let fields: ApiFieldError[] | undefined;
-
-    try {
-      const body = (await res.json()) as ErrorBody;
-      code = body.code ?? code;
-      message = body.message ?? message;
-      fields = body.fields;
-    } catch {
-      // Not JSON, which usually means a proxy or a crash below the app. Keep
-      // the status text and let the generic code stand.
-    }
-
-    throw new ApiError(res.status, code, message, fields);
-  }
+  if (!res.ok) throw await toApiError(res);
 
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
+}
+
+export async function apiFetchBytes(
+  path: string,
+  options: RequestInit = {},
+): Promise<Uint8Array<ArrayBuffer>> {
+  const token = await tokenStorage.get();
+  const headers = new Headers(options.headers);
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+
+  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  if (!res.ok) throw await toApiError(res);
+  return new Uint8Array(await res.arrayBuffer());
+}
+
+async function toApiError(res: Response): Promise<ApiError> {
+  let code = 'INTERNAL_ERROR';
+  let message = res.statusText;
+  let fields: ApiFieldError[] | undefined;
+
+  try {
+    const body = (await res.json()) as ErrorBody;
+    code = body.code ?? code;
+    message = body.message ?? message;
+    fields = body.fields;
+  } catch {
+    // Not JSON, which usually means a proxy or a crash below the app. Keep
+    // the status text and let the generic code stand.
+  }
+
+  return new ApiError(res.status, code, message, fields);
 }

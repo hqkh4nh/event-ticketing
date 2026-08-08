@@ -927,6 +927,30 @@ export const vi = {
     noTopEventsTitle: 'Chưa có sự kiện trong bảng xếp hạng',
     noTopEventsDescription:
       'Chưa có đơn thanh toán nào trong 30 ngày gần nhất.',
+    export: {
+      action: 'Xuất báo cáo doanh thu',
+      title: 'Xuất báo cáo doanh thu',
+      description: 'Chọn khoảng thời gian và loại dữ liệu cần xuất.',
+      period: 'Khoảng thời gian',
+      from: 'Từ ngày',
+      to: 'Đến ngày',
+      preset: {
+        LAST_7_DAYS: '7 ngày',
+        LAST_30_DAYS: '30 ngày',
+        THIS_MONTH: 'Tháng này',
+        CUSTOM: 'Tùy chọn',
+      },
+      rangeSummary: '{{count}} ngày, theo giờ Việt Nam.',
+      invalidRange: 'Chọn khoảng từ 1 đến {{max}} ngày.',
+      reportType: 'Loại báo cáo CSV',
+      summary: 'Tổng hợp theo sự kiện',
+      summaryDescription: 'Số đơn, số vé và doanh thu của từng sự kiện.',
+      detail: 'Chi tiết đơn hàng',
+      detailDescription: 'Từng hạng vé trong các đơn đã thanh toán.',
+      shareTitle: 'Lưu hoặc chia sẻ báo cáo doanh thu',
+      success: 'Báo cáo CSV đã được tạo.',
+      sharingUnavailable: 'Thiết bị này không hỗ trợ chia sẻ tệp.',
+    },
   },
 
   scanner: {

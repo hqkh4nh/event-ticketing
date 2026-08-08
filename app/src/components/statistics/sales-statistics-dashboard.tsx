@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import { EmptyState } from '@/components/ui/empty-state';
+import { Button } from '@/components/ui/button';
 import { formatVndAmount } from '@/lib/format';
 import type {
   DailySalesStatistic,
@@ -23,9 +24,11 @@ type ChartMetric = 'revenue' | 'tickets';
 export function SalesStatisticsDashboard({
   data,
   onEventPress,
+  onExportReport,
 }: {
   data: SalesStatistics;
   onEventPress?: (event: TopEventStatistic) => void;
+  onExportReport?: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const { width } = useWindowDimensions();
@@ -67,10 +70,7 @@ export function SalesStatisticsDashboard({
           <MetricCard
             icon="event-available"
             label={t('statistics.metrics.events')}
-            value={formatVndAmount(
-              data.summary.publishedEvents,
-              i18n.language,
-            )}
+            value={formatVndAmount(data.summary.publishedEvents, i18n.language)}
             tone="primary"
             style={{ width: metricWidth }}
           />
@@ -79,7 +79,7 @@ export function SalesStatisticsDashboard({
 
       {data.summary.paidOrders > 0 ? (
         <>
-          <SalesTrendChart daily={data.daily} />
+          <SalesTrendChart daily={data.daily} onExportReport={onExportReport} />
           <TopEventsSection
             events={data.topEvents}
             currency={currency}
@@ -145,7 +145,13 @@ function MetricCard({
   );
 }
 
-export function SalesTrendChart({ daily }: { daily: DailySalesStatistic[] }) {
+export function SalesTrendChart({
+  daily,
+  onExportReport,
+}: {
+  daily: DailySalesStatistic[];
+  onExportReport?: () => void;
+}) {
   const { t, i18n } = useTranslation();
   const [metric, setMetric] = useState<ChartMetric>('revenue');
   const values = daily.map((day) =>
@@ -216,7 +222,8 @@ export function SalesTrendChart({ daily }: { daily: DailySalesStatistic[] }) {
                 key={daily[index]?.date ?? index}
                 className="flex-1 overflow-hidden rounded-t-sm bg-primary-container"
                 style={{
-                  height: value === 0 ? 0 : `${Math.max(4, (value / max) * 100)}%`,
+                  height:
+                    value === 0 ? 0 : `${Math.max(4, (value / max) * 100)}%`,
                 }}
               >
                 <View className="h-full bg-primary" />
@@ -237,6 +244,14 @@ export function SalesTrendChart({ daily }: { daily: DailySalesStatistic[] }) {
           </View>
         </View>
       </View>
+      {onExportReport ? (
+        <Button
+          icon="file-download"
+          label={t('statistics.export.action')}
+          variant="outline"
+          onPress={onExportReport}
+        />
+      ) : null}
     </View>
   );
 }

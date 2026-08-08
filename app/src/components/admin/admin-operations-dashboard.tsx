@@ -72,11 +72,13 @@ export function AdminPlatformOverview({
   isPending,
   errorMessage,
   onRetry,
+  onExportReport,
 }: {
   statistics?: SalesStatistics;
   isPending: boolean;
   errorMessage?: string;
   onRetry: () => void;
+  onExportReport: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const { width } = useWindowDimensions();
@@ -161,7 +163,10 @@ export function AdminPlatformOverview({
 
           {statistics.summary.paidOrders > 0 ? (
             <>
-              <SalesTrendChart daily={statistics.daily} />
+              <SalesTrendChart
+                daily={statistics.daily}
+                onExportReport={onExportReport}
+              />
               <TopEventsSection
                 events={statistics.topEvents}
                 currency={currency}

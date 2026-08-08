@@ -1,6 +1,6 @@
 import 'dotenv/config';
 
-import { createHash } from 'crypto';
+import { createHash, createHmac } from 'crypto';
 
 import { PrismaPg } from '@prisma/adapter-pg';
 import { hash } from 'bcryptjs';
@@ -8,16 +8,26 @@ import {
   EventCategory,
   EventStatus,
   Locale,
+  OrderStatus,
+  PaymentProvider,
+  PaymentStatus,
   PrismaClient,
   Role,
+  TicketStatus,
   UserStatus,
 } from '../src/generated/prisma';
 
 const databaseUrl = process.env.DATABASE_URL;
+const ticketHmacSecret = process.env.TICKET_HMAC_SECRET;
 
 if (!databaseUrl) {
   throw new Error('DATABASE_URL is required to seed the database.');
 }
+
+if (!ticketHmacSecret) {
+  throw new Error('TICKET_HMAC_SECRET is required to seed signed tickets.');
+}
+const seedTicketHmacSecret = ticketHmacSecret;
 
 const defaultDevelopmentPassword = 'ChangeMe123!';
 const seedPassword = process.env.SEED_USER_PASSWORD;
@@ -106,7 +116,8 @@ const events = [
     featured: true,
     startAt: new Date('2026-08-22T01:30:00.000Z'),
     endAt: new Date('2026-08-22T10:30:00.000Z'),
-    coverImageUrl: 'https://loremflickr.com/800/600/technology,conference?lock=12',
+    coverImageUrl:
+      'https://loremflickr.com/800/600/technology,conference?lock=12',
     status: EventStatus.PUBLISHED,
     ticketTypes: [
       {
@@ -219,6 +230,74 @@ const events = [
   },
 ];
 
+const salesOrders = [
+  {
+    transferCode: 'SEEDREV001',
+    daysAgo: 1,
+    eventId: events[0].id,
+    items: [
+      {
+        ticketTypeId: events[0].ticketTypes[0].id,
+        quantity: 2,
+        unitPriceVnd: 200_000n,
+      },
+    ],
+  },
+  {
+    transferCode: 'SEEDREV002',
+    daysAgo: 4,
+    eventId: events[0].id,
+    items: [
+      {
+        ticketTypeId: events[0].ticketTypes[1].id,
+        quantity: 1,
+        unitPriceVnd: 500_000n,
+      },
+    ],
+  },
+  {
+    transferCode: 'SEEDREV003',
+    daysAgo: 9,
+    eventId: events[1].id,
+    items: [
+      {
+        ticketTypeId: events[1].ticketTypes[0].id,
+        quantity: 3,
+        unitPriceVnd: 500_000n,
+      },
+    ],
+  },
+  {
+    transferCode: 'SEEDREV004',
+    daysAgo: 16,
+    eventId: events[4].id,
+    items: [
+      {
+        ticketTypeId: events[4].ticketTypes[0].id,
+        quantity: 2,
+        unitPriceVnd: 150_000n,
+      },
+    ],
+  },
+  {
+    transferCode: 'SEEDREV005',
+    daysAgo: 24,
+    eventId: events[3].id,
+    items: [
+      {
+        ticketTypeId: events[3].ticketTypes[0].id,
+        quantity: 1,
+        unitPriceVnd: 200_000n,
+      },
+      {
+        ticketTypeId: events[3].ticketTypes[1].id,
+        quantity: 1,
+        unitPriceVnd: 450_000n,
+      },
+    ],
+  },
+] as const;
+
 const prisma = new PrismaClient({ adapter: new PrismaPg(databaseUrl) });
 
 async function main(): Promise<void> {
@@ -249,9 +328,16 @@ async function main(): Promise<void> {
   const organizer = seededUsers.find(
     (user) => user.email === 'organizer@example.com',
   );
+  const attendee = seededUsers.find(
+    (user) => user.email === 'attendee@example.com',
+  );
 
   if (!organizer) {
     throw new Error('Seed organizer was not created.');
+  }
+
+  if (!attendee) {
+    throw new Error('Seed attendee was not created.');
   }
 
   for (const event of events) {
@@ -272,6 +358,127 @@ async function main(): Promise<void> {
         }),
       ),
     );
+  }
+
+  for (const [orderIndex, order] of salesOrders.entries()) {
+    const paidAt = new Date(Date.now() - order.daysAgo * 24 * 60 * 60 * 1000);
+    paidAt.setUTCMinutes(30, 0, 0);
+    const createdAt = new Date(paidAt.getTime() - 10 * 60 * 1000);
+    const expiresAt = new Date(createdAt.getTime() + 15 * 60 * 1000);
+    const totalVnd = order.items.reduce(
+      (total, item) => total + item.unitPriceVnd * BigInt(item.quantity),
+      0n,
+    );
+
+    await prisma.$transaction(async (tx) => {
+      const seededOrder = await tx.order.upsert({
+        where: { transferCode: order.transferCode },
+        update: {
+          buyerId: attendee.id,
+          eventId: order.eventId,
+          status: OrderStatus.PAID,
+          totalVnd,
+          transferCode: order.transferCode,
+          clientRequestId: `seed-revenue-${orderIndex + 1}`,
+          createdAt,
+          expiresAt,
+          paidAt,
+          expiredAt: null,
+        },
+        create: {
+          buyerId: attendee.id,
+          eventId: order.eventId,
+          status: OrderStatus.PAID,
+          totalVnd,
+          transferCode: order.transferCode,
+          clientRequestId: `seed-revenue-${orderIndex + 1}`,
+          createdAt,
+          expiresAt,
+          paidAt,
+        },
+      });
+
+      for (const [itemIndex, item] of order.items.entries()) {
+        const seededItem = await tx.orderItem.upsert({
+          where: {
+            orderId_ticketTypeId: {
+              orderId: seededOrder.id,
+              ticketTypeId: item.ticketTypeId,
+            },
+          },
+          update: {
+            eventId: order.eventId,
+            quantity: item.quantity,
+            unitPriceVnd: item.unitPriceVnd,
+          },
+          create: {
+            orderId: seededOrder.id,
+            eventId: order.eventId,
+            ticketTypeId: item.ticketTypeId,
+            quantity: item.quantity,
+            unitPriceVnd: item.unitPriceVnd,
+          },
+        });
+
+        for (let sequence = 1; sequence <= item.quantity; sequence += 1) {
+          const code = `TK_SEED_${orderIndex + 1}_${itemIndex + 1}_${sequence}`;
+          const signature = createHmac('sha256', seedTicketHmacSecret)
+            .update(code)
+            .digest('base64url');
+          await tx.ticket.upsert({
+            where: {
+              orderItemId_sequence: {
+                orderItemId: seededItem.id,
+                sequence,
+              },
+            },
+            update: {
+              code,
+              signature,
+              status: TicketStatus.ISSUED,
+              issuedAt: paidAt,
+              usedAt: null,
+              usedByStaffId: null,
+            },
+            create: {
+              orderItemId: seededItem.id,
+              sequence,
+              code,
+              signature,
+              status: TicketStatus.ISSUED,
+              issuedAt: paidAt,
+            },
+          });
+        }
+      }
+
+      await tx.payment.upsert({
+        where: { sepayTxnId: `SEED-TXN-${orderIndex + 1}` },
+        update: {
+          orderId: seededOrder.id,
+          provider: PaymentProvider.SEPAY,
+          amountVnd: totalVnd,
+          transferContent: order.transferCode,
+          status: PaymentStatus.MATCHED,
+          rawPayload: { source: 'seed' },
+          receivedAt: paidAt,
+          matchedAt: paidAt,
+          reviewReason: null,
+          reviewedAt: null,
+        },
+        create: {
+          orderId: seededOrder.id,
+          provider: PaymentProvider.SEPAY,
+          sepayTxnId: `SEED-TXN-${orderIndex + 1}`,
+          amountVnd: totalVnd,
+          transferContent: order.transferCode,
+          status: PaymentStatus.MATCHED,
+          rawPayload: { source: 'seed' },
+          receivedAt: paidAt,
+          matchedAt: paidAt,
+        },
+      });
+    });
   }
 
   // Demo scanner device: owned by the seed organizer, assigned to the Summer
@@ -310,7 +517,7 @@ async function main(): Promise<void> {
   });
 
   console.log(
-    `Seeded ${users.length} development users and ${events.length} events.`,
+    `Seeded ${users.length} development users, ${events.length} events, and ${salesOrders.length} paid orders.`,
   );
   console.log(
     `Scanner device "Gate 1" ready: connect code ${connectCode} (expires ${codeExpiresAt.toISOString()}).`,
