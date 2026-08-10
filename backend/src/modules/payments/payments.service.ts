@@ -7,6 +7,8 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { TicketsService } from '../tickets/tickets.service';
 import { SepayWebhookDto } from './dto/sepay-webhook.dto';
 
+const TRANSFER_CODE_PATTERN = /^[A-Z0-9]{8}$/;
+
 @Injectable()
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
@@ -36,7 +38,10 @@ export class PaymentsService {
     if (seen) return;
 
     const amountVnd = BigInt(body.transferAmount);
-    const transferCode = body.code ?? '';
+    const transferContent = body.content.trim().toUpperCase();
+    const transferCode = TRANSFER_CODE_PATTERN.test(transferContent)
+      ? transferContent
+      : '';
     const order = transferCode
       ? await this.prisma.order.findUnique({
           where: { transferCode },

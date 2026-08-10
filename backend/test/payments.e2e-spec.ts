@@ -51,18 +51,19 @@ const futureEvent = () => ({
   ).toISOString(),
 });
 
-/** Builds a SePay webhook body; `code` carries the order's transferCode. */
+/** Builds a SePay webhook body whose payment reference lives in `content`. */
 const sepayBody = (
   txnId: number,
   amount: number,
-  code: string,
+  content: string,
+  code: string | null = null,
 ): Record<string, unknown> => ({
   id: txnId,
   gateway: 'MBBank',
   transactionDate: '2026-07-20 10:00:00',
   accountNumber: '0123456789',
   code,
-  content: `${code} thanh toan ve`,
+  content,
   transferType: 'in',
   transferAmount: amount,
   accumulated: 0,
@@ -211,7 +212,7 @@ describe('Payments / SePay webhook (e2e)', () => {
     await app.close();
   });
 
-  it('issues tickets when a transfer matches a PENDING order', async () => {
+  it('issues tickets from transfer content when SePay code is empty', async () => {
     const sendTickets = jest.spyOn(
       app.get(TicketEmailService),
       'sendTicketsIssued',
@@ -228,7 +229,7 @@ describe('Payments / SePay webhook (e2e)', () => {
     await request(app.getHttpServer())
       .post('/api/payments/sepay/webhook')
       .set(apikey(WEBHOOK_API_KEY))
-      .send(sepayBody(txn, amountVnd, transferCode))
+      .send(sepayBody(txn, amountVnd, transferCode, ''))
       .expect(200);
 
     const order = await request(app.getHttpServer())

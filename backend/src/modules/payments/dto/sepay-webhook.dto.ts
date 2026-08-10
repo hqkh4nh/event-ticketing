@@ -4,7 +4,7 @@ import { IsInt, IsOptional, IsString, Min } from 'class-validator';
 /**
  * SePay transaction webhook payload. Every field SePay sends is declared so the
  * global `forbidNonWhitelisted` pipe does not reject the request; only `id`,
- * `transferAmount`, `code`, and `content` drive matching.
+ * `transferAmount`, and `content` drive matching.
  */
 export class SepayWebhookDto {
   @ApiProperty({ description: 'SePay transaction id; stable across retries.' })
