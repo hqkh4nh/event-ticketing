@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { randomInt } from 'node:crypto';
 
 import {
   ConflictException,
@@ -33,6 +33,8 @@ type OrderWithDetails = Prisma.OrderGetPayload<{
 }>;
 
 const MAX_PENDING_ORDERS_PER_BUYER = 3;
+const TRANSFER_CODE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const TRANSFER_CODE_LENGTH = 8;
 
 @Injectable()
 export class OrdersService {
@@ -334,6 +336,10 @@ export class OrdersService {
   }
 
   private newTransferCode(): string {
-    return `EVT${randomBytes(9).toString('base64url')}`;
+    let code = '';
+    while (code.length < TRANSFER_CODE_LENGTH) {
+      code += TRANSFER_CODE_ALPHABET[randomInt(TRANSFER_CODE_ALPHABET.length)];
+    }
+    return code;
   }
 }

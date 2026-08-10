@@ -277,7 +277,8 @@ describe('Orders / free ticket booking (e2e)', () => {
     expect(res.body.payment).toBeDefined();
     expect(res.body.payment.amountVnd).toBe(400000);
     expect(typeof res.body.payment.transferCode).toBe('string');
-    expect(res.body.payment.transferCode.length).toBeGreaterThan(0);
+    expect(res.body.payment.transferCode).toHaveLength(8);
+    expect(res.body.payment.transferCode).toMatch(/^[A-Z0-9]{8}$/);
     expect(new Date(res.body.payment.expiresAt).getTime()).toBeGreaterThan(
       Date.now(),
     );
