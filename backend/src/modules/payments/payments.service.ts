@@ -39,12 +39,17 @@ export class PaymentsService {
 
     const amountVnd = BigInt(body.transferAmount);
     const transferContent = body.content.trim().toUpperCase();
-    const transferCode = TRANSFER_CODE_PATTERN.test(transferContent)
-      ? transferContent
-      : '';
-    const order = transferCode
-      ? await this.prisma.order.findUnique({
-          where: { transferCode },
+    const transferCodeCandidates = new Set<string>();
+    for (let start = 0; start <= transferContent.length - 8; start += 1) {
+      const candidate = transferContent.slice(start, start + 8);
+      if (TRANSFER_CODE_PATTERN.test(candidate)) {
+        transferCodeCandidates.add(candidate);
+      }
+    }
+    const matchingOrders = transferCodeCandidates.size
+      ? await this.prisma.order.findMany({
+          where: { transferCode: { in: [...transferCodeCandidates] } },
+          take: 2,
           select: {
             id: true,
             status: true,
@@ -54,7 +59,8 @@ export class PaymentsService {
             event: { select: { title: true } },
           },
         })
-      : null;
+      : [];
+    const order = matchingOrders.length === 1 ? matchingOrders[0] : null;
 
     const base = {
       sepayTxnId,

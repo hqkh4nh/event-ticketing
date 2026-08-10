@@ -212,7 +212,7 @@ describe('Payments / SePay webhook (e2e)', () => {
     await app.close();
   });
 
-  it('issues tickets from transfer content when SePay code is empty', async () => {
+  it('issues tickets when transfer content contains the order code', async () => {
     const sendTickets = jest.spyOn(
       app.get(TicketEmailService),
       'sendTicketsIssued',
@@ -229,7 +229,14 @@ describe('Payments / SePay webhook (e2e)', () => {
     await request(app.getHttpServer())
       .post('/api/payments/sepay/webhook')
       .set(apikey(WEBHOOK_API_KEY))
-      .send(sepayBody(txn, amountVnd, transferCode, ''))
+      .send(
+        sepayBody(
+          txn,
+          amountVnd,
+          `MBVCB.${transferCode}.Thanh toan ve su kien`,
+          '',
+        ),
+      )
       .expect(200);
 
     const order = await request(app.getHttpServer())
