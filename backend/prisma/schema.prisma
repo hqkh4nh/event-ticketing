@@ -358,18 +358,3 @@ model Notification {
 
   @@index([userId, read, createdAt])
 }
-
-model OutboxEvent {
-  id            String    @id @default(uuid(7)) @db.Uuid
-  eventType     String
-  aggregateType String
-  aggregateId   String    @db.Uuid
-  payload       Json
-  attempts      Int       @default(0)
-  availableAt   DateTime  @default(now()) @db.Timestamptz(3)
-  publishedAt   DateTime? @db.Timestamptz(3)
-  createdAt     DateTime  @default(now()) @db.Timestamptz(3)
-
-  @@index([publishedAt, availableAt])
-  @@index([aggregateType, aggregateId])
-}
