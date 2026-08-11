@@ -763,18 +763,6 @@ async function main(): Promise<void> {
 
   await seedOrder(
     {
-      buyerId: USER.attendee,
-      eventId: EVENT.tech,
-      ticketTypeId: TYPE.techStandard,
-      quantity: 1,
-      unitPriceVnd: 590_000n,
-      daysAgo: 0,
-      status: OrderStatus.PENDING,
-    },
-    paidOrders.length,
-  );
-  await seedOrder(
-    {
       buyerId: USER.buyerThree,
       eventId: EVENT.music,
       ticketTypeId: TYPE.musicEarly,
@@ -783,7 +771,7 @@ async function main(): Promise<void> {
       daysAgo: 2,
       status: OrderStatus.EXPIRED,
     },
-    paidOrders.length + 1,
+    paidOrders.length,
   );
 
   const usedTicketId = seededTicketIds[0]?.[0];
@@ -826,7 +814,7 @@ async function main(): Promise<void> {
     ],
   });
 
-  const expiredOrderId = id(3, paidOrders.length + 2);
+  const expiredOrderId = id(3, paidOrders.length + 1);
   await prisma.payment.createMany({
     data: [
       {
