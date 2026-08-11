@@ -116,7 +116,7 @@ sequenceDiagram
     U->>D: save coverImageUrl only when event DRAFT
   end
   O->>E: POST/PATCH ticket-types
-  E->>D: lock event FOR UPDATE; require DRAFT
+  E->>D: lock event FOR UPDATE, require DRAFT
   E->>E: validate sales window / reserved quantity
   E->>D: create/update/delete TicketType
   O->>E: POST /organizer/events/:id/publish
@@ -230,7 +230,7 @@ sequenceDiagram
     O->>D: create PENDING order/items, expiresAt=now+holdMinutes
   end
   O->>D: COMMIT
-  O-->>A: order; pending includes VietQR payment info
+  O-->>A: order, pending includes VietQR payment info
 ```
 
 Các invariant cần học:
@@ -257,7 +257,7 @@ sequenceDiagram
   B-->>A: bank/account/amount/transferCode/qrImageUrl/expiresAt
   Note over A,S: User transfers exact amount with transferCode
   S->>P: webhook(id, code, transferAmount, content)
-  P->>P: constant-time API key check; idempotency by sepayTxnId
+  P->>P: constant-time API key check, idempotency by sepayTxnId
   P->>D: find transferCode + verify amount
   alt PENDING and not expired
     P->>D: guarded PENDING -> PAID
@@ -267,7 +267,7 @@ sequenceDiagram
   else mismatch/late/cancelled/expired
     P->>D: record UNMATCHED or REVIEW_REQUIRED
     P->>D: notify admins for review when required
-    P-->>S: success; no ticket
+    P-->>S: success, no ticket
   end
 ```
 
@@ -428,7 +428,7 @@ sequenceDiagram
   O->>S: GET balance
   S->>D: sum PAID orders of ended events - open requests - paid withdrawals
   O->>S: POST request bank snapshot + amount
-  S->>D: lock organizer user; one open request; min/available balance
+  S->>D: lock organizer user, one open request, min/available balance
   S->>D: create PENDING request + notify active admins
   A->>S: approve/reject/mark-paid
   S->>D: CAS state transition + organizer notification
