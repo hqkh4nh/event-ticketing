@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import {
   Pressable,
   Text,
-  useWindowDimensions,
   View,
   type ViewProps,
 } from 'react-native';
@@ -31,8 +30,6 @@ export function SalesStatisticsDashboard({
   onExportReport?: () => void;
 }) {
   const { t, i18n } = useTranslation();
-  const { width } = useWindowDimensions();
-  const metricWidth = width >= 900 ? '23.5%' : width >= 620 ? '48.5%' : '47.5%';
   const currency = (amount: number) =>
     t('event.price', {
       price: formatVndAmount(amount, i18n.language),
@@ -51,28 +48,28 @@ export function SalesStatisticsDashboard({
             label={t('statistics.metrics.revenue')}
             value={currency(data.summary.paidRevenueVnd)}
             tone="primary"
-            style={{ width: metricWidth }}
+            style={{ width: '48.5%' }}
           />
           <MetricCard
             icon="confirmation-number"
             label={t('statistics.metrics.tickets')}
             value={formatVndAmount(data.summary.ticketsSold, i18n.language)}
             tone="success"
-            style={{ width: metricWidth }}
+            style={{ width: '48.5%' }}
           />
           <MetricCard
             icon="receipt-long"
             label={t('statistics.metrics.orders')}
             value={formatVndAmount(data.summary.paidOrders, i18n.language)}
             tone="warning"
-            style={{ width: metricWidth }}
+            style={{ width: '48.5%' }}
           />
           <MetricCard
             icon="event-available"
             label={t('statistics.metrics.events')}
             value={formatVndAmount(data.summary.publishedEvents, i18n.language)}
             tone="primary"
-            style={{ width: metricWidth }}
+            style={{ width: '48.5%' }}
           />
         </View>
       </View>
