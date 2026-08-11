@@ -152,6 +152,8 @@ AsyncStorage         = user preference/profile cached/city
 - `queryClient.clear()` khi sign in/out để tránh user mới thấy cache user cũ.
 - `useRef` camera lock vì `setState` async, barcode callback có thể bắn nhiều lần trước rerender.
 - App maps stable backend `ErrorCode` sang i18n string, không hiển thị raw server message là chính.
+- Notification list/unread badge của Attendee, Organizer và Admin poll mỗi 3 giây; `AppState` + `focusManager` dừng polling khi app native chạy nền.
+- Với URL `.ngrok-free.app`, API client gắn `ngrok-skip-browser-warning`; đây chỉ là hỗ trợ tunnel phát triển, không phải cơ chế bảo mật.
 
 ## 11. Những đường dẫn/file quan trọng
 
@@ -172,17 +174,18 @@ AsyncStorage         = user preference/profile cached/city
 | Statistics/CSV | `backend/src/modules/statistics/statistics.service.ts` |
 | Withdrawal | `backend/src/modules/withdrawals/withdrawals.service.ts` |
 | App API client | `app/src/lib/api/client.ts` |
+| Notification polling | `app/src/lib/api/notifications.ts`, role tab layouts, `notification-center-screen.tsx` |
 | Auth client store | `app/src/stores/auth-store.ts` |
 | App root provider | `app/src/app/_layout.tsx` |
 
 ## 12. Hạn chế thật – đừng trả lời quá
 
 1. Chưa Google OAuth, chỉ email/password + scanner connect code.
-2. Notification là in-app database, chưa push OS.
+2. Notification là in-app database và poll 3 giây cho Attendee/Organizer/Admin, chưa push OS; Scanner chưa có notification tab.
 3. Ticket `VOID` chưa có action/refund flow set status đó.
 4. Sales window có input/validation thứ tự nhưng checkout chưa enforce time window.
 5. Payment review và organizer payout đều cần admin/manual bank action.
-6. Email best effort, chưa outbox worker retry dù schema có `OutboxEvent`.
+6. Email best effort; source chưa có Outbox model hoặc worker retry.
 7. Socket gateway chưa kiểm tra revoked `AuthSession` như HTTP strategy.
 8. BigInt DTO convert Number; scale tiền cực lớn nên chuyển money API thành string/decimal.
 
@@ -203,7 +206,7 @@ AsyncStorage         = user preference/profile cached/city
 13. **Late/mismatch payment:** manual review, không cấp ticket tự động.
 14. **QR HMAC:** code random + signature server secret chống giả.
 15. **Exactly-once check-in:** update ticket only if status ISSUED.
-16. **DB notification:** còn unread/lịch sử sau khi user offline; chưa OS push.
+16. **DB notification:** còn unread/lịch sử sau khi user offline; client poll 3 giây khi active, chưa OS push.
 17. **Signed direct upload:** Cloudinary secret ở server, verify asset trước persist URL.
 18. **TanStack Query vs Zustand:** server cache vs client global state.
 19. **BigInt/price snapshot:** tiền chính xác, lịch sử giá không đổi.

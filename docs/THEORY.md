@@ -348,13 +348,23 @@ Nếu tiền đến muộn, amount/code sai hoặc order không còn pending, se
 
 Server lưu type/data có cấu trúc thay vì câu tiếng Việt/Anh. `NotificationCenterScreen` lấy `type` rồi render bằng i18n key. Nhờ vậy đổi ngôn ngữ không phải tạo lại notification cũ.
 
-### 11.3 Email best effort
+### 11.3 Polling thông báo gần thời gian thực
+
+App không dùng WebSocket hoặc push OS để nhận notification. `NOTIFICATIONS_POLL_INTERVAL_MS` trong `app/src/lib/api/notifications.ts` đặt chu kỳ `3_000` ms:
+
+- layout Attendee, Organizer và Admin gọi lại `GET /notifications/unread-count` để cập nhật badge;
+- `NotificationCenterScreen` gọi lại `GET /notifications` khi màn thông báo đang mở;
+- `refetchIntervalInBackground: false` kết hợp `AppState` và TanStack Query `focusManager` trong root `_layout.tsx` để dừng polling khi app native không active.
+
+Vì client phải đợi lần fetch kế tiếp, đây là **near real-time bằng polling**, không phải realtime push. Độ trễ thông thường tối đa khoảng một chu kỳ cộng thời gian mạng. Scanner hiện không có tab notification nên không tham gia polling này.
+
+### 11.4 Email best effort
 
 Sau commit cấp vé, `TicketEmailService.queueTicketsIssued()` chạy bất đồng bộ. `MailService` bắt lỗi và log, không làm giao dịch bán vé thất bại nếu SMTP chậm/hỏng.
 
-Trade-off: người dùng có thể có vé nhưng email chưa đến. Đây là chủ đích về độ tin cậy transaction; source hiện chưa có retry worker sử dụng `OutboxEvent` dù model đó đã có trong schema.
+Trade-off: người dùng có thể có vé nhưng email chưa đến. Đây là chủ đích về độ tin cậy transaction; source hiện chưa có Outbox model hoặc retry worker. Outbox là một hướng nâng cấp, không phải thành phần đã triển khai.
 
-### 11.4 Socket.IO realtime
+### 11.5 Socket.IO realtime
 
 `CheckinGateway` mở namespace `/realtime`. Client `createSocket('/realtime')` gửi JWT khi handshake; organizer/admin gửi event `subscribe` vào room `event:<eventId>`. Mỗi lần check-in `VALID`, `CheckinService` emit số người đã vào và hạng vé.
 
@@ -457,6 +467,6 @@ Khi trả lời, không nói “đã test hết mọi trường hợp” nếu c
 5. Hệ thống không tự chuyển tiền cho organizer; admin chuyển thủ công rồi ghi `PAID` cho withdrawal.
 6. Không có refund/cancel paid order tự động, không có cổng thanh toán thẻ/MoMo/VNPay.
 7. Socket gateway xác thực chữ ký JWT + user status nhưng không kiểm tra `AuthSession` revoke như HTTP guard; đây là điểm có thể cải tiến.
-8. `OutboxEvent` đã có schema nhưng source chưa có worker retry cho email/notification external side effect.
+8. Source chưa có Outbox model/worker để retry các external side effect như email; đây mới là hướng phát triển.
 
 Đây không phải “lỗi phải che giấu”. Khi được hỏi hạn chế, nêu đúng rồi đề xuất hướng nâng cấp là câu trả lời trưởng thành.

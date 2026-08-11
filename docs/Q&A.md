@@ -62,7 +62,7 @@ Nếu database lộ, plaintext làm lộ toàn bộ account và có thể bị d
 
 ### 15. Vì sao cần notification table?
 
-Để thông báo tồn tại sau khi user offline/logout, có unread badge và lịch sử đọc. Project hiện dùng in-app persisted notification, chưa phải push OS.
+Để thông báo tồn tại sau khi user offline/logout, có unread badge và lịch sử đọc. Project hiện dùng in-app persisted notification; Attendee, Organizer và Admin poll API mỗi 3 giây khi app active, chưa phải push OS.
 
 ### 16. QR ticket lưu gì?
 
@@ -192,9 +192,9 @@ Approval/ticket issuance và notification là cùng business fact. Đặt cùng 
 
 SMTP là external side effect, không tham gia rollback PostgreSQL. Chờ SMTP làm transaction chậm và mail fail có thể rollback ticket đã cấp. Project commit data trước, queue best-effort email sau; trade-off là cần retry/outbox để bảo đảm delivery.
 
-### 47. `OutboxEvent` model để làm gì và hiện dùng chưa?
+### 47. Outbox pattern là gì và project đã dùng chưa?
 
-Outbox là pattern ghi “event cần publish” cùng transaction, worker retry external delivery sau commit. Schema có `OutboxEvent`, nhưng source hiện chưa có worker/publisher dùng model này. Đây là hướng nâng cấp email/push reliable.
+Outbox là pattern ghi “event cần publish” cùng business transaction, sau đó worker xử lý và retry external delivery. Project hiện chưa có Outbox model hoặc worker; email vẫn là best effort sau commit. Đây là hướng nâng cấp cho email/push đáng tin cậy hơn.
 
 ### 48. Vì sao database money dùng BigInt nhưng DTO trả number?
 
@@ -248,6 +248,10 @@ Chưa. Schema có `googleSubject` để mở rộng, nhưng auth controller/serv
 
 Chưa có refund/payment gateways khác/push OS/payout automatic; sales window chưa enforce; email chưa outbox retry; socket session parity chưa đủ. Hướng phát triển: payment gateway, ledger/refund, Expo push token + outbox, enforce sales window, audit/admin action log, analytics pagination/large-money serialization.
 
+### 61. Thông báo “gần realtime” được triển khai thế nào?
+
+TanStack Query gọi lại unread count mỗi 3 giây ở layout Attendee, Organizer và Admin; khi tab thông báo mở, danh sách cũng được poll. Root layout dùng `AppState` + `focusManager` để dừng khi app native chạy nền. Đây là polling nên không phải push OS hoặc WebSocket và có độ trễ khoảng một chu kỳ cộng thời gian mạng.
+
 ---
 
 # TOP 30 CÂU HỎI CẦN HỌC THUỘC
@@ -279,8 +283,8 @@ Chưa có refund/payment gateways khác/push OS/payout automatic; sales window c
 23. Chống scan vé hai lần như thế nào? (36)
 24. Vì sao result check-in sai vẫn trả HTTP 200? (37)
 25. Cloudinary signed direct upload hoạt động ra sao? (40)
-26. In-app notification khác push notification thế nào? (15)
+26. In-app notification khác push và polling 3 giây hoạt động thế nào? (15, 61)
 27. TanStack Query và Zustand dùng khác nhau thế nào? (18–19)
 28. Statistics/CSV chỉ lấy PAID và chống formula injection ra sao? (52–53)
 29. Withdrawal balance và lifecycle thế nào? (50–51)
-30. Các giới hạn hiện tại/hướng phát triển? (56–60)
+30. Các giới hạn hiện tại/hướng phát triển? (56–61)

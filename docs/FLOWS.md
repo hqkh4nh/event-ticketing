@@ -359,20 +359,27 @@ Tất cả kết quả business (`VALID`, `ALREADY_USED`, `INVALID`, `WRONG_EVEN
 
 ## 12. Flow notification in-app
 
-**File cần mở:** `NotificationsService`, `notification-center-screen.tsx`, layouts tabs.
+**File cần mở:** `NotificationsService`, `app/src/lib/api/notifications.ts`, `notification-center-screen.tsx`, layouts tabs và root `_layout.tsx`.
 
 ```mermaid
-flowchart LR
+flowchart TD
   E[Business transaction] --> N[create Notification type + JSON data]
   N --> D[(Notification table)]
-  D --> L[GET /notifications]
-  D --> B[GET /notifications/unread-count]
-  L --> UI[NotificationCenterScreen, localized copy]
-  B --> TAB[Tab badge]
-  UI -->|mark one/all read| D
+  A[App active] --> P[Timer mỗi 3 giây]
+  P --> B[GET /notifications/unread-count]
+  P -->|khi notification screen mounted| L[GET /notifications]
+  B --> D
+  L --> D
+  D --> UI[NotificationCenterScreen, localized copy]
+  D --> TAB[Tab badge]
+  UI -->|PATCH one read / POST read-all| D
+  BG[App native background] --> S[focusManager not focused]
+  S -->|pause| P
 ```
 
 Notification được tạo trong transaction của event approval, ticket issuance, payment review, withdrawal… để tránh event đổi thành công nhưng không có notification tương ứng.
+
+Attendee, Organizer và Admin poll unread badge; khi mở tab thông báo, danh sách cũng được poll. Scanner hiện không có tab này. Cơ chế cho độ trễ khoảng 3 giây cộng thời gian mạng, nên gọi chính xác là **near real-time polling**, không phải push notification hay Socket.IO.
 
 ## 13. Flow doanh thu và xuất CSV
 

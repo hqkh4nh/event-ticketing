@@ -307,6 +307,14 @@ Notification(userId, type, data JSON?, dedupeKey?, read, createdAt)
 
 `markRead` dùng `updateMany({ id, userId })`, không `update({id})`: điều kiện userId bảo đảm không đọc notification của người khác.
 
+### Polling phía client
+
+`app/src/lib/api/notifications.ts` khai báo `NOTIFICATIONS_POLL_INTERVAL_MS = 3_000`. Các layout Attendee, Organizer và Admin dùng chu kỳ này cho query unread count; `NotificationCenterScreen` dùng nó cho query danh sách.
+
+`refetchIntervalInBackground: false` chỉ có tác dụng đúng trên native khi TanStack Query biết app có đang focused hay không. Vì vậy root `app/src/app/_layout.tsx` đồng bộ `AppState.currentState === 'active'` vào `focusManager`. Khi app ra nền, interval dừng; khi active lại, query tiếp tục. Scanner không có notification tab nên không có hai query polling này.
+
+Đây là polling gần thời gian thực: server không chủ động đẩy notification xuống thiết bị, client chủ động hỏi lại sau mỗi 3 giây.
+
 ## 11. Cloudinary upload logic
 
 ### File: `UploadsService`
@@ -377,6 +385,8 @@ Service locks organizer User row, rồi check open request count, min amount con
 
 `apiFetchBytes` không gắn `Content-Type: application/json` vì export CSV nhận binary, nhưng vẫn gắn Authorization.
 
+Khi `config.apiUrl` chứa `.ngrok-free.app`, cả `apiFetch` và `apiFetchBytes` gắn `ngrok-skip-browser-warning: true`. Header này chỉ bỏ trang HTML cảnh báo của ngrok trong môi trường phát triển; JWT và backend authorization vẫn là lớp bảo mật thật.
+
 ### 14.2 `auth-store`
 
 - `hydrate`: Promise.all token/user, sau đó set `isLoading=false` trong `finally`.
@@ -415,4 +425,4 @@ Sau mutation, source thường invalidate key domain thay vì reload cả app:
 | BigInt -> number DTO | VND phạm vi demo an toàn, domain calculation vẫn BigInt | serialize money as string/decimal for large scale |
 | Socket check only JWT/user | đủ để demo live dashboard | validate AuthSession + role/status full parity HTTP |
 | Event sales windows not enforced purchase | field lifecycle có sẵn nhưng chưa close rule | require now inside sales window in `OrdersService.create` |
-| `OutboxEvent` schema unused | chuẩn bị data model cho reliable async | scheduled publisher/consumer with retry |
+| Chưa có Outbox model/worker | Email có thể thất bại sau khi business transaction đã commit | thêm outbox table + publisher/consumer có retry |

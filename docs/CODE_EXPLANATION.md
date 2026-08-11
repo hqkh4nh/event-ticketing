@@ -420,11 +420,17 @@ const headers = new Headers(options.headers);
 headers.set('Content-Type', 'application/json');
 if (token) headers.set('Authorization', `Bearer ${token}`);
 
+if (config.apiUrl.includes('.ngrok-free.app')) {
+  headers.set('ngrok-skip-browser-warning', 'true');
+}
+
 const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
 if (!res.ok) throw await toApiError(res);
 ```
 
-**Nó làm gì?** Một nơi xử lý base URL, auth, JSON và standard errors.
+**Nó làm gì?** Một nơi xử lý base URL, auth, JSON và standard errors. Với ngrok free tunnel, header bổ sung ngăn ngrok trả trang cảnh báo HTML thay vì response API.
+
+**Header ngrok có phải bảo mật không?** Không. Nó chỉ phục vụ tunnel phát triển; JWT, guards và ownership checks vẫn quyết định quyền truy cập.
 
 **Nếu mỗi màn dùng fetch?** Dễ quên token/204/error JSON; message trở nên không thống nhất và đổi API base khó.
 
@@ -444,7 +450,37 @@ export const ordersKeys = {
 
 **Ví dụ:** cancel order optimistic lọc item khỏi pending cache, update detail cache, rồi invalidate pending để reconcile server. UI phản hồi nhanh nhưng server vẫn là final truth.
 
-## 22. Camera callback lock bằng ref
+## 22. Polling notification mỗi 3 giây
+
+**File:** `app/src/lib/api/notifications.ts`, các role tab `_layout.tsx`, `notification-center-screen.tsx`, root `app/src/app/_layout.tsx`.
+
+```ts
+export const NOTIFICATIONS_POLL_INTERVAL_MS = 3_000;
+
+useQuery({
+  queryKey: notificationsKeys.unread(),
+  queryFn: getUnreadNotificationCount,
+  refetchInterval: NOTIFICATIONS_POLL_INTERVAL_MS,
+  refetchIntervalInBackground: false,
+});
+```
+
+Root layout đồng bộ native lifecycle:
+
+```ts
+focusManager.setFocused(AppState.currentState === 'active');
+const subscription = AppState.addEventListener('change', (state) => {
+  focusManager.setFocused(state === 'active');
+});
+```
+
+**Nó làm gì?** Attendee, Organizer và Admin hỏi lại unread count mỗi 3 giây; màn thông báo cũng poll danh sách trong lúc mounted. Badge và nội dung vì thế cập nhật gần thời gian thực.
+
+**Vì sao cần `focusManager`?** TanStack Query cần biết app native có active hay không để `refetchIntervalInBackground: false` dừng timer đúng lúc. Điều này tránh request không cần thiết khi app chạy nền.
+
+**Có phải realtime/push không?** Không. Client chủ động fetch định kỳ nên có độ trễ tối đa khoảng một chu kỳ cộng thời gian mạng. Socket.IO của project chỉ dùng cho check-in dashboard; push OS chưa triển khai.
+
+## 23. Camera callback lock bằng ref
 
 **File:** `app/src/app/scanner/scan/[eventId].tsx`
 
@@ -462,7 +498,7 @@ async function submit(qr: string) {
 
 **Tại sao không dùng `pending` state?** `setPending(true)` schedule rerender, không thay đổi closure ngay lập tức. Camera có thể invoke several callbacks trước rerender.
 
-## 23. Theme token không hardcode màu component
+## 24. Theme token không hardcode màu component
 
 **File:** `app/src/design/tokens.ts`, `themes.ts`, root `_layout.tsx`.
 
@@ -470,7 +506,7 @@ async function submit(qr: string) {
 
 **Lợi ích:** đổi light/dark palette ở central source; component giữ semantic meaning. Hardcode `#...` trong hàng trăm component sẽ khó audit/accessibility/theme.
 
-## 24. Những câu trả lời nên tránh
+## 25. Những câu trả lời nên tránh
 
 - Không nói “Google login đã làm” – schema có `googleSubject` nhưng UI/API OAuth không có.
 - Không nói “có push notification” – có persisted in-app notification/tab badge, chưa có device push delivery.

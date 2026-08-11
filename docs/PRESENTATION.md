@@ -53,7 +53,7 @@ Security: bcrypt, JWT + AuthSession, HMAC QR
 
 ### Cách nói
 
-> Frontend em dùng Expo React Native để chạy mobile và web từ một codebase. TanStack Query quản lý dữ liệu từ API như event, order, notification; Zustand giữ state nhỏ phía client như user đăng nhập, ngôn ngữ và theme.
+> Frontend em dùng Expo React Native để chạy mobile và web từ một codebase. TanStack Query quản lý dữ liệu từ API như event, order, notification; Zustand giữ state nhỏ phía client như user đăng nhập, ngôn ngữ và theme. Riêng notification của Attendee, Organizer và Admin được poll mỗi 3 giây khi app active để cập nhật danh sách và badge gần thời gian thực.
 
 > Backend là NestJS vì có cấu trúc module, controller, service và dependency injection rõ ràng. PostgreSQL dùng cho dữ liệu quan hệ, còn Prisma giúp schema và query type-safe. Với nghiệp vụ vé, em dùng transaction, row lock và guarded update để chống race condition.
 
@@ -77,6 +77,8 @@ flowchart LR
 > App giao tiếp với backend qua REST API và bearer JWT. Backend là nơi duy nhất kiểm tra quyền, giá, số lượng vé và trạng thái đơn. PostgreSQL là nguồn dữ liệu chính.
 
 > Ảnh không upload qua backend mà app xin chữ ký từ backend rồi upload trực tiếp Cloudinary. Sau đó backend verify lại asset trước khi lưu URL. Thanh toán là callback webhook từ SePay, không tin việc user bấm đã thanh toán. Socket.IO chỉ dùng để dashboard check-in cập nhật realtime; trạng thái vé vẫn nằm trong database.
+
+> Notification không đi qua Socket.IO. App chủ động gọi lại REST API mỗi 3 giây và dừng khi chạy nền, nên đây là near real-time polling chứ chưa phải push notification trên thiết bị.
 
 ### Câu có thể bị hỏi ngay
 
@@ -194,7 +196,7 @@ flowchart LR
 1. Login organizer active.
 2. Mở event draft, cho xem hạng vé/ảnh cover, bấm gửi duyệt.
 3. Chuyển admin: thấy event pending, approve.
-4. Quay organizer: tab notification có event đã được duyệt.
+4. Quay organizer và chờ tối đa khoảng một chu kỳ polling: tab notification có event đã được duyệt và badge cập nhật.
 5. Quay attendee: event xuất hiện trong khám phá nếu thời gian event còn ở tương lai.
 
 ### Kịch bản B: vé và check-in
@@ -234,7 +236,7 @@ flowchart LR
 
 ### Cách nói
 
-> Bản hiện tại ưu tiên tính đúng đắn của core ticket flow. Một số phần em chủ động ghi rõ giới hạn: chưa có push OS, refund, payout tự động; email là best effort; sales window đã lưu nhưng chưa chặn checkout. Hướng tiếp theo là dùng outbox cho side effect, tích hợp payment/payout provider, bổ sung ledger và test tải cho inventory/check-in.
+> Bản hiện tại ưu tiên tính đúng đắn của core ticket flow. Một số phần em chủ động ghi rõ giới hạn: notification mới dùng polling 3 giây và chưa có push OS; chưa có refund, payout tự động; email là best effort; sales window đã lưu nhưng chưa chặn checkout. Source cũng chưa có Outbox model/worker. Hướng tiếp theo là bổ sung outbox cho side effect, tích hợp payment/payout provider, bổ sung ledger và test tải cho inventory/check-in.
 
 ## 13. Kết thúc – 15 giây
 

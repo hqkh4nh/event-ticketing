@@ -32,6 +32,7 @@ Không phải mọi mũi tên là đồng bộ:
 - Tạo đơn/duyệt event/check-in là request-response đồng bộ từ app đến API.
 - SePay callback là bất đồng bộ từ bên thứ ba.
 - Email được queue sau commit, không chặn response.
+- Notification tab và unread badge dùng REST polling mỗi 3 giây khi app active; đây là near real-time, không phải push OS.
 - Socket.IO chỉ thông báo realtime; database vẫn là source of truth.
 
 ## 2. Cấu trúc repository
@@ -108,7 +109,7 @@ flowchart TD
 | --- | --- | --- |
 | Cục bộ, ngắn hạn | `useState`, `useRef` | ô search, form, modal, lock camera |
 | Client global | Zustand | token/user, language preference, theme preference |
-| Server/cache | TanStack Query | danh sách events, orders, notifications, statistics |
+| Server/cache | TanStack Query | danh sách events, orders, notifications, statistics; polling notification 3 giây |
 | Lưu lại sau mở app | SecureStore/AsyncStorage | JWT native, user cached, language/theme/city |
 
 Điểm dễ bị hỏi: không đưa toàn bộ API result vào Zustand vì TanStack Query đã giải quyết stale cache, loading, refetch, invalidation tốt hơn cho server state.
@@ -119,8 +120,11 @@ flowchart TD
 
 - lấy JWT bằng `tokenStorage`;
 - gắn `Authorization: Bearer ...`;
+- nếu API URL thuộc `.ngrok-free.app`, gắn `ngrok-skip-browser-warning: true` để bỏ trang cảnh báo tunnel khi phát triển;
 - JSON encode/decode;
 - chuyển lỗi backend đồng nhất thành `ApiError(status, code, message, fields)`.
+
+Header ngrok chỉ hỗ trợ môi trường tunnel, không thay thế JWT, CORS hoặc authorization của backend.
 
 Wrapper theo domain nằm trong `app/src/lib/api/`: `orders.ts`, `events-organizer.ts`, `admin.ts`, `withdrawals.ts`… Các type lấy từ `schema.ts`, được sinh từ OpenAPI bằng script `npm run gen:api` chứ không viết lại tay.
 
