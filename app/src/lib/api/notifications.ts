@@ -10,6 +10,8 @@ export type ListNotificationsQuery = {
   limit?: number;
 };
 
+export const NOTIFICATIONS_POLL_INTERVAL_MS = 3_000;
+
 export const notificationsKeys = {
   all: ['notifications'] as const,
   lists: () => [...notificationsKeys.all, 'list'] as const,

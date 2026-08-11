@@ -9,6 +9,7 @@ import {
 import { useAuthStore } from '@/stores/auth-store';
 import {
   getUnreadNotificationCount,
+  NOTIFICATIONS_POLL_INTERVAL_MS,
   notificationsKeys,
 } from '@/lib/api/notifications';
 
@@ -31,6 +32,8 @@ export default function AttendeeLayout() {
     queryFn: getUnreadNotificationCount,
     enabled: Boolean(token),
     refetchOnMount: 'always',
+    refetchInterval: NOTIFICATIONS_POLL_INTERVAL_MS,
+    refetchIntervalInBackground: false,
   });
   const unreadCount = unreadQuery.data?.count;
 

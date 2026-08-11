@@ -15,11 +15,11 @@ import {
   SpaceGrotesk_700Bold,
 } from '@expo-google-fonts/space-grotesk';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { focusManager, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { AppState, Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { LaunchSplash } from '@/components/brand/launch-splash';
@@ -82,6 +82,17 @@ export default function RootLayout() {
     void hydrateLanguage();
     void hydrateTheme();
   }, [hydrateAuth, hydrateLanguage, hydrateTheme]);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+
+    focusManager.setFocused(AppState.currentState === 'active');
+    const subscription = AppState.addEventListener('change', (state) => {
+      focusManager.setFocused(state === 'active');
+    });
+
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     if (

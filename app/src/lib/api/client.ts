@@ -35,7 +35,10 @@ export async function apiFetch<T>(
   const headers = new Headers(options.headers);
   headers.set('Content-Type', 'application/json');
   if (token) headers.set('Authorization', `Bearer ${token}`);
-
+  
+  if (config.apiUrl.includes('.ngrok-free.app')) {
+    headers.set('ngrok-skip-browser-warning', 'true');
+  }
   const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
 
   if (!res.ok) throw await toApiError(res);
@@ -51,7 +54,11 @@ export async function apiFetchBytes(
   const token = await tokenStorage.get();
   const headers = new Headers(options.headers);
   if (token) headers.set('Authorization', `Bearer ${token}`);
-
+  
+  if (config.apiUrl.includes('.ngrok-free.app')) {
+    headers.set('ngrok-skip-browser-warning', 'true');
+  }
+  
   const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
   if (!res.ok) throw await toApiError(res);
   return new Uint8Array(await res.arrayBuffer());

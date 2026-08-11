@@ -18,6 +18,7 @@ import {
   listNotifications,
   markAllNotificationsRead,
   markNotificationRead,
+  NOTIFICATIONS_POLL_INTERVAL_MS,
   notificationsKeys,
   type AppNotification,
 } from '@/lib/api/notifications';
@@ -76,6 +77,8 @@ export function NotificationCenterScreen() {
   const notificationsQuery = useQuery({
     queryKey: notificationsKeys.list(LIST_QUERY),
     queryFn: () => listNotifications(LIST_QUERY),
+    refetchInterval: NOTIFICATIONS_POLL_INTERVAL_MS,
+    refetchIntervalInBackground: false,
   });
 
   const refresh = () =>
