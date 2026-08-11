@@ -9,6 +9,7 @@ import { useTokens } from '@/hooks/use-tokens';
 import { adminKeys, listAdminOrganizers } from '@/lib/api/admin';
 import {
   getUnreadNotificationCount,
+  NOTIFICATIONS_POLL_INTERVAL_MS,
   notificationsKeys,
 } from '@/lib/api/notifications';
 import { listAdminWithdrawals, withdrawalKeys } from '@/lib/api/withdrawals';
@@ -36,6 +37,8 @@ export default function AdminTabsLayout() {
     queryKey: notificationsKeys.unread(),
     queryFn: getUnreadNotificationCount,
     refetchOnMount: 'always',
+    refetchInterval: NOTIFICATIONS_POLL_INTERVAL_MS,
+    refetchIntervalInBackground: false,
   });
   const unreadCount = unreadQuery.data?.count;
 

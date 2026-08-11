@@ -8,6 +8,7 @@ import {
 } from '@/components/navigation/app-tab-bar';
 import {
   getUnreadNotificationCount,
+  NOTIFICATIONS_POLL_INTERVAL_MS,
   notificationsKeys,
 } from '@/lib/api/notifications';
 
@@ -18,6 +19,8 @@ export default function OrganizerTabsLayout() {
     queryKey: notificationsKeys.unread(),
     queryFn: getUnreadNotificationCount,
     refetchOnMount: 'always',
+    refetchInterval: NOTIFICATIONS_POLL_INTERVAL_MS,
+    refetchIntervalInBackground: false,
   });
   const unreadCount = unreadQuery.data?.count;
 
