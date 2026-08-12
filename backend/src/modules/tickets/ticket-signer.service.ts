@@ -23,6 +23,11 @@ export class TicketSignerService {
   }
 
   sign(code: string): string {
+    /*
+     * HMAC kết hợp code công khai với secret chỉ server biết. Người dùng có thể
+     * đọc/sửa code trong QR nhưng không thể tạo signature mới hợp lệ nếu không
+     * biết secret. HMAC xác thực tính toàn vẹn, không mã hóa nội dung code.
+     */
     return createHmac('sha256', this.secret).update(code).digest('base64url');
   }
 
@@ -37,7 +42,10 @@ export class TicketSignerService {
   verify(code: string, signature: string): boolean {
     const expected = Buffer.from(this.sign(code));
     const actual = Buffer.from(signature);
-    // timingSafeEqual throws on length mismatch, so guard it first.
+    /*
+     * timingSafeEqual giảm rò rỉ qua thời gian so sánh so với so chuỗi tuần tự.
+     * Node ném lỗi nếu hai Buffer khác độ dài, nên phải guard length trước.
+     */
     return (
       expected.length === actual.length && timingSafeEqual(expected, actual)
     );

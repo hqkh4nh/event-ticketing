@@ -36,11 +36,17 @@ export class StaffService {
     eventId: string,
     label: string,
   ): Promise<CreateStaffResponseDto> {
+    // Kiểm tra Event thuộc Organizer trước khi tạo bất kỳ tài khoản nào.
     await this.loadOwnedEvent(organizerId, eventId);
 
     const code = this.generateCode();
     const expiresAt = new Date(Date.now() + CODE_TTL_MS);
 
+    /*
+     * Ba row tạo thành một đơn vị nghiệp vụ: User SCANNER là danh tính thiết bị,
+     * EventStaff là quyền trên event, StaffConnectCode là cách nhận JWT. Thiếu
+     * một trong ba thì thiết bị ở trạng thái dở dang, nên phải cùng transaction.
+     */
     const staff = await this.prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
@@ -53,6 +59,10 @@ export class StaffService {
         select: { id: true, fullName: true, status: true },
       });
       await tx.eventStaff.create({ data: { eventId, userId: user.id } });
+      /*
+       * Chỉ lưu SHA-256 hash. Plaintext code trả đúng một lần cho Organizer;
+       * người đọc database không thể lấy trực tiếp mã còn dùng được.
+       */
       await tx.staffConnectCode.create({
         data: { staffId: user.id, codeHash: this.hashCode(code), expiresAt },
       });
@@ -91,6 +101,11 @@ export class StaffService {
     const staffIds = assignments.map((row) => row.user.id);
     if (staffIds.length === 0) return [];
 
+    /*
+     * Hai query độc lập chạy song song. groupBy lấy scan gần nhất của tất cả
+     * staff trong một query, tránh N+1; activeCodes chỉ lấy mã chưa redeem và
+     * chưa hết hạn.
+     */
     const [lastScans, activeCodes] = await Promise.all([
       this.prisma.checkinLog.groupBy({
         by: ['staffId'],
@@ -106,6 +121,10 @@ export class StaffService {
         select: { staffId: true },
       }),
     ]);
+    /*
+     * Map/Set biến việc ghép aggregate vào assignments thành lookup O(1) cho
+     * từng staff thay vì mỗi lần lại quét toàn bộ kết quả.
+     */
     const lastScanByStaff = new Map(
       lastScans.map((row) => [row.staffId, row._max.scannedAt]),
     );
@@ -133,6 +152,11 @@ export class StaffService {
 
     const code = this.generateCode();
     const expiresAt = new Date(Date.now() + CODE_TTL_MS);
+    /*
+     * Xóa code chưa dùng rồi tạo code mới trong transaction: không có khoảng
+     * thời gian thiết bị có hai plaintext code hợp lệ theo flow của service.
+     * Code đã redeemed được giữ làm audit; reconnect hiện không revoke JWT cũ.
+     */
     await this.prisma.$transaction([
       this.prisma.staffConnectCode.deleteMany({
         where: { staffId, redeemedAt: null },
@@ -162,8 +186,11 @@ export class StaffService {
       select: { id: true, fullName: true, status: true },
     });
 
-    // Blocking also kills any unredeemed code: a circulating one-time secret
-    // must not come back to life when the device is later unblocked.
+    /*
+     * Block đồng thời hủy code chưa dùng. Nếu giữ code đó, người đang cầm mã có
+     * thể chờ Organizer unblock rồi kết nối trái ý muốn. Session đã cấp được
+     * kiểm tra status User ở authentication path nên block có hiệu lực request.
+     */
     if (dto.status === 'BLOCKED') {
       await this.prisma.staffConnectCode.deleteMany({
         where: { staffId, redeemedAt: null },
@@ -196,7 +223,11 @@ export class StaffService {
   }
 
   private generateCode(): string {
-    // 256 is an exact multiple of the 32-char alphabet, so modulo is unbiased.
+    /*
+     * Alphabet có 32 ký tự và loại 0/O/1/I để dễ đọc. Vì 256 chia hết cho 32,
+     * byte % 32 không tạo modulo bias: mỗi ký tự có xác suất xuất hiện như nhau.
+     * randomBytes dùng CSPRNG, phù hợp cho secret dùng một lần.
+     */
     const bytes = randomBytes(CODE_LENGTH);
     let code = '';
     for (const byte of bytes) {
@@ -206,6 +237,7 @@ export class StaffService {
   }
 
   private async loadOwnedStaff(organizerId: string, staffId: string) {
+    // managedById kiểm tra quyền sở hữu; role ngăn thao tác nhầm User thường.
     const staff = await this.prisma.user.findFirst({
       where: { id: staffId, managedById: organizerId, role: 'SCANNER' },
       select: { id: true },

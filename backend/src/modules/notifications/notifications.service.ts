@@ -31,6 +31,10 @@ export class NotificationsService {
   ): Promise<NotificationListDto> {
     const where = { userId };
     const skip = (query.page - 1) * query.limit;
+    /*
+     * Một API trả cả page, total và unreadCount để UI không cần ba round trip.
+     * Mọi query đều scope bằng userId; notification là dữ liệu riêng tư theo user.
+     */
     const [items, total, unreadCount] = await this.prisma.$transaction([
       this.prisma.notification.findMany({
         where,
@@ -59,6 +63,11 @@ export class NotificationsService {
   }
 
   async markRead(userId: string, id: string): Promise<NotificationDto> {
+    /*
+     * updateMany cho phép đặt cả id và owner vào WHERE. Nếu client gửi ID của
+     * người khác, count = 0 và response giống như không tồn tại, không làm lộ dữ
+     * liệu hay cho phép sửa notification ngoài quyền.
+     */
     const updated = await this.prisma.notification.updateMany({
       where: { id, userId },
       data: { read: true },
@@ -91,6 +100,12 @@ export class NotificationsService {
     input: CreateNotificationInput,
     client: Prisma.TransactionClient = this.prisma,
   ): Promise<NotificationDto> {
+    /*
+     * Mặc định dùng PrismaService, nhưng caller có thể truyền TransactionClient.
+     * Khi thông báo mô tả một state transition, truyền tx giúp notification và
+     * nghiệp vụ cùng commit/rollback. dedupeKey cho phép database ngăn thông báo
+     * lặp ở các flow có thể retry như cấp vé sau webhook.
+     */
     const notification = await client.notification.create({
       data: {
         userId: input.userId,
@@ -115,6 +130,11 @@ function toDto(notification: Notification): NotificationDto {
 }
 
 function toObject(value: unknown): Record<string, unknown> | null {
+  /*
+   * Prisma JsonValue có thể là primitive/array/object. API NotificationDto chỉ
+   * công bố object metadata; giá trị không đúng shape được chuẩn hóa thành null
+   * thay vì ép client xử lý nhiều kiểu JSON khác nhau.
+   */
   if (!value || Array.isArray(value) || typeof value !== 'object') return null;
   return value as Record<string, unknown>;
 }

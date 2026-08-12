@@ -46,8 +46,11 @@ export class CheckinGateway implements OnGatewayInit {
   ) {}
 
   afterInit(server: Server): void {
-    // Authenticate during the handshake so `socket.data.user` is set before the
-    // client's first message, avoiding a race with an async connection hook.
+    /*
+     * Xác thực ngay trong handshake middleware để socket.data.user có trước mọi
+     * message. Nếu dùng một connection handler async riêng, client có thể emit
+     * subscribe trước khi quá trình xác thực hoàn tất và tạo race về quyền.
+     */
     server.use((socket: Socket, next: (err?: Error) => void) => {
       void this.authenticate(socket)
         .then((user) => {
@@ -63,6 +66,10 @@ export class CheckinGateway implements OnGatewayInit {
   }
 
   private async authenticate(socket: Socket): Promise<SocketUser | null> {
+    /*
+     * Không chỉ verify chữ ký JWT: đọc lại User để tài khoản vừa bị BLOCKED bị
+     * từ chối ngay. Token hợp lệ về mật mã không đồng nghĩa account còn quyền.
+     */
     const token = socket.handshake.auth?.token as string | undefined;
     if (!token) return null;
     const payload = this.jwt.verify<JwtPayload>(token, {
@@ -85,6 +92,11 @@ export class CheckinGateway implements OnGatewayInit {
     const user = client.data.user as SocketUser | undefined;
     if (!user || !data?.eventId) return { ok: false };
 
+    /*
+     * Room name do server tạo từ eventId sau khi kiểm tra ownership. Client
+     * không thể tự subscribe room của Organizer khác; Admin là ngoại lệ phục vụ
+     * quản trị. Socket chỉ truyền update nhanh, database vẫn là source of truth.
+     */
     const event = await this.prisma.event.findUnique({
       where: { id: data.eventId },
       select: { organizerId: true },

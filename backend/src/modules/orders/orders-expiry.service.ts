@@ -17,6 +17,12 @@ export class OrdersExpiryService {
    */
   @Cron(CronExpression.EVERY_30_SECONDS)
   async sweepExpired(): Promise<void> {
+    /*
+     * Không cần cập nhật một counter tồn kho riêng: các phép tính availability
+     * chỉ cộng PENDING/PAID. Khi cron flip PENDING -> EXPIRED, số vé tự được giải
+     * phóng ở lần query kế tiếp. Điều kiện status là CAS đóng race với webhook;
+     * Order đã PAID sẽ không bị cron ghi đè dù expiresAt đã qua.
+     */
     const count = await this.prisma.$executeRaw`
       UPDATE "Order" SET status = 'EXPIRED', "expiredAt" = now()
       WHERE status = 'PENDING' AND "expiresAt" < now()`;

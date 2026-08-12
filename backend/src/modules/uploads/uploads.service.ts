@@ -46,11 +46,21 @@ export class UploadsService {
     user: CurrentUserData,
     dto: UploadRequestDto,
   ): Promise<UploadSignatureDto> {
+    /*
+     * Backend không nhận file ảnh. Nó kiểm tra quyền, chọn publicId và ký chính
+     * xác tập tham số được phép; app dùng signature này upload trực tiếp lên
+     * Cloudinary. API secret chỉ tồn tại ở backend.
+     */
     const credentials = this.getCredentials();
     const publicId = await this.resolvePublicId(user, dto);
     const timestamp = Math.floor(Date.now() / 1000);
     const overwrite = true;
     const invalidate = true;
+    /*
+     * Ký cả public_id/preset/format/overwrite để client không thể lấy một chữ ký
+     * hợp lệ rồi đổi đích hoặc nới policy upload. timestamp cũng giới hạn tuổi
+     * thực tế của signed request theo cách Cloudinary kiểm tra.
+     */
     const signature = cloudinary.utils.api_sign_request(
       {
         timestamp,
@@ -81,6 +91,11 @@ export class UploadsService {
     user: CurrentUserData,
     dto: CompleteUploadRequestDto,
   ): Promise<CompleteUploadDto> {
+    /*
+     * `/complete` là bước xác nhận hai pha ở tầng ứng dụng: upload Cloudinary
+     * thành công chưa đủ để DB tin URL. Backend tự đọc resource, so asset/version
+     * và policy trước khi lưu secureUrl.
+     */
     this.configureCloudinary();
     const publicId = await this.resolvePublicId(user, dto);
     const secureUrl = await this.verifyUploadedResource(dto, publicId);
@@ -91,6 +106,11 @@ export class UploadsService {
         data: { avatarUrl: secureUrl },
       });
     } else {
+      /*
+       * status DRAFT được đặt lại trong WHERE thay vì chỉ tin lần check ở
+       * resolvePublicId. Nếu event vừa được submit trong lúc file đang upload,
+       * update count = 0 và ảnh không được gắn vào event đang review.
+       */
       const changed = await this.prisma.event.updateMany({
         where: {
           id: dto.eventId,
@@ -113,6 +133,11 @@ export class UploadsService {
     const publicId = await this.resolvePublicId(user, dto);
 
     if (dto.target === UploadTarget.EVENT_COVER) {
+      /*
+       * Với cover, ưu tiên clear DB bằng CAS trước để event không trỏ tới asset
+       * bị xóa. Destroy Cloudinary là best effort; thất bại có thể để orphan file
+       * nhưng không làm Event trỏ tới ảnh đã mất.
+       */
       const changed = await this.prisma.event.updateMany({
         where: {
           id: dto.eventId,
@@ -126,6 +151,11 @@ export class UploadsService {
       return;
     }
 
+    /*
+     * Với avatar, source hiện tại destroy trước rồi mới clear DB. Nếu destroy
+     * lỗi thì giữ URL và báo lỗi; nếu DB update lỗi sau destroy thì URL có thể
+     * tạm trỏ tới asset mất vì Cloudinary và PostgreSQL không có chung transaction.
+     */
     await this.destroyUpload(publicId);
     await this.prisma.user.update({
       where: { id: user.id },
@@ -151,12 +181,18 @@ export class UploadsService {
         ? resource.format.toLowerCase()
         : undefined;
     const secureUrl = resource.secure_url;
+    /*
+     * publicId cố định có overwrite. asset_id + version liên kết `/complete`
+     * với đúng phiên bản app vừa upload, tránh một response cũ xác nhận nhầm
+     * phiên bản mới ở cùng publicId.
+     */
     const resourceMatchesUpload =
       resource.asset_id === dto.assetId && resource.version === dto.version;
     if (!resourceMatchesUpload) {
       throw this.uploadFailed();
     }
 
+    // Client-side validation chỉ để UX; backend xác minh lại nguồn độc lập.
     const imageIsValid =
       typeof secureUrl === 'string' &&
       typeof resource.bytes === 'number' &&
@@ -165,6 +201,7 @@ export class UploadsService {
       ALLOWED_IMAGE_FORMAT_SET.has(format);
 
     if (!imageIsValid) {
+      // Resource vi phạm policy được dọn best effort trước khi trả lỗi gateway.
       await cloudinary.uploader
         .destroy(publicId, { invalidate: true })
         .catch(() => undefined);
@@ -187,6 +224,7 @@ export class UploadsService {
     dto: UploadRequestDto,
   ): Promise<string> {
     if (dto.target === UploadTarget.USER_AVATAR) {
+      // user.id từ JWT quyết định đích; client không thể chọn avatar của user khác.
       return buildUploadPublicId(dto.target, user.id);
     }
 
@@ -204,6 +242,11 @@ export class UploadsService {
       });
     }
 
+    /*
+     * Query đồng thời theo eventId và organizerId kiểm tra ownership mà không
+     * tiết lộ event của người khác. Chỉ DRAFT được đổi cover để nội dung đang
+     * duyệt/public không bị thay ảnh ngoài quy trình moderation.
+     */
     const event = await this.prisma.event.findFirst({
       where: { id: dto.eventId, organizerId: user.id },
       select: { id: true, status: true },
@@ -229,6 +272,7 @@ export class UploadsService {
   }
 
   private assertDraftCoverChange(count: number): void {
+    // count khác 1 cho biết event đã đổi trạng thái giữa check và update.
     if (count !== 1) {
       throw new ConflictException({
         code: ErrorCode.INVALID_STATE_TRANSITION,

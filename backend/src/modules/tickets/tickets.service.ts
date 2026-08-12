@@ -21,8 +21,17 @@ export class TicketsService {
     orderItemId: string,
     quantity: number,
   ): Promise<Ticket[]> {
+    /*
+     * Service nhận TransactionClient từ caller để việc tạo Ticket commit/rollback
+     * cùng Order/Payment. issue() không tự kiểm tra thanh toán; OrdersService và
+     * PaymentsService phải chứng minh đơn đủ điều kiện trước khi gọi hàm này.
+     */
     const tickets: Ticket[] = [];
     for (let sequence = 1; sequence <= quantity; sequence += 1) {
+      /*
+       * Mỗi ghế/vé là một row độc lập và có QR riêng. sequence chỉ là số thứ tự
+       * dễ đọc trong cùng OrderItem; code ngẫu nhiên mới là định danh đưa vào QR.
+       */
       const code = this.signer.newCode();
       tickets.push(
         await tx.ticket.create({
@@ -39,6 +48,7 @@ export class TicketsService {
   }
 
   async listMyTickets(userId: string): Promise<MyTicketDto[]> {
+    // Lọc xuyên relation Order để user chỉ đọc được vé do chính họ mua.
     const tickets = await this.prisma.ticket.findMany({
       where: { orderItem: { order: { buyerId: userId } } },
       orderBy: { issuedAt: 'desc' },

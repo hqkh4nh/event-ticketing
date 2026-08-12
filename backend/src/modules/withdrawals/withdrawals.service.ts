@@ -82,6 +82,7 @@ export function assertWithdrawalTransition(
   from: WithdrawalStatus,
   to: WithdrawalStatus,
 ): void {
+  // Domain guard: chỉ các cạnh khai báo trong ALLOWED_TRANSITIONS được phép.
   if (!ALLOWED_TRANSITIONS[from].includes(to)) {
     throw new ConflictException({
       code: ErrorCode.INVALID_STATE_TRANSITION,
@@ -158,10 +159,20 @@ export class WithdrawalsService {
     const amountVnd = BigInt(dto.amountVnd);
 
     const created = await this.prisma.$transaction(async (tx) => {
+      /*
+       * Khóa User của Organizer để hai request rút tiền cùng tài khoản chạy lần
+       * lượt. Nếu không, cả hai có thể cùng thấy không có request mở và cùng đọc
+       * một available balance, rồi tổng số yêu cầu vượt quá doanh thu.
+       */
       await tx.$queryRaw`
         SELECT id FROM "User" WHERE id = ${organizerId}::uuid FOR UPDATE
       `;
 
+      /*
+       * PENDING và APPROVED đều là nghĩa vụ tiền chưa kết thúc, nên chỉ cho một
+       * request thuộc hai trạng thái này. REJECTED/CANCELLED đã giải phóng số dư;
+       * PAID đã được trừ riêng trong withdrawn.
+       */
       const open = await tx.withdrawalRequest.count({
         where: { organizerId, status: { in: OPEN_STATUSES } },
       });
@@ -179,6 +190,7 @@ export class WithdrawalsService {
         });
       }
 
+      // Tính lại trong transaction, không tin số dư từng hiển thị trước đó ở app.
       const balance = await this.readBalance(tx, organizerId);
       if (amountVnd > balance.availableVnd) {
         throw new ConflictException({
@@ -199,6 +211,10 @@ export class WithdrawalsService {
         select: withdrawalSelect,
       });
 
+      /*
+       * Yêu cầu rút và thông báo Admin commit cùng nhau. Nếu transaction rollback,
+       * không có notification mồ côi trỏ tới withdrawal không tồn tại.
+       */
       const admins = await tx.user.findMany({
         where: { role: 'ADMIN', status: 'ACTIVE' },
         select: { id: true },
@@ -243,6 +259,10 @@ export class WithdrawalsService {
       }
 
       assertWithdrawalTransition(existing.status, WithdrawalStatus.CANCELLED);
+      /*
+       * CAS chỉ cancel khi request vẫn PENDING và thuộc Organizer. Nếu Admin vừa
+       * approve, count = 0 và Organizer không thể ghi đè quyết định đó.
+       */
       const changed = await tx.withdrawalRequest.updateMany({
         where: { id, organizerId, status: WithdrawalStatus.PENDING },
         data: { status: WithdrawalStatus.CANCELLED },
@@ -338,6 +358,11 @@ export class WithdrawalsService {
       }
 
       assertWithdrawalTransition(existing.status, next);
+      /*
+       * So sánh status đã đọc trong WHERE. Hai Admin có thể cùng mở một request,
+       * nhưng chỉ người update trước thắng; người còn lại nhận conflict thay vì
+       * thay đổi kết quả đã được xử lý.
+       */
       const changed = await tx.withdrawalRequest.updateMany({
         where: { id, status: existing.status },
         data: { ...data, status: next },
@@ -349,6 +374,7 @@ export class WithdrawalsService {
         });
       }
 
+      // Notification dùng trạng thái `next` để chọn đúng loại cho Organizer.
       await tx.notification.create({
         data: {
           userId: existing.organizerId,
@@ -407,6 +433,11 @@ export class WithdrawalsService {
     withdrawnVnd: bigint;
     availableVnd: bigint;
   }> {
+    /*
+     * Chỉ Order PAID của Event đã kết thúc được xem là settled revenue. Tiền của
+     * event tương lai chưa cho rút vì vẫn còn rủi ro hủy/hoàn. Ba aggregate độc
+     * lập chạy song song trên cùng transaction client khi được gọi từ create().
+     */
     const [settled, pending, withdrawn] = await Promise.all([
       client.order.aggregate({
         where: {
@@ -428,6 +459,10 @@ export class WithdrawalsService {
     const settledRevenueVnd = settled._sum.totalVnd ?? 0n;
     const pendingVnd = pending._sum.amountVnd ?? 0n;
     const withdrawnVnd = withdrawn._sum.amountVnd ?? 0n;
+    /*
+     * Giữ toàn bộ phép tính ở bigint. max với 0 tránh trả số âm nếu dữ liệu lịch
+     * sử bất nhất; nó không thay thế các validation khi tạo withdrawal.
+     */
     const remaining = settledRevenueVnd - pendingVnd - withdrawnVnd;
 
     return {

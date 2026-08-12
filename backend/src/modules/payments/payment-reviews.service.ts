@@ -59,12 +59,21 @@ export class PaymentReviewsService {
   }
 
   async list(query: ListPaymentReviewsQueryDto): Promise<PaymentReviewListDto> {
+    /*
+     * Mặc định chỉ lấy các Payment status cần con người đối soát. `resolved`
+     * được biểu diễn bằng reviewedAt thay vì một status thanh toán mới: status
+     * nói tiền match thế nào, reviewedAt nói Admin đã xử lý case hay chưa.
+     */
     const where: Prisma.PaymentWhereInput = {
       status: query.status ? query.status : { in: [...REVIEW_STATUSES] },
       reviewedAt: query.resolved ? { not: null } : null,
     };
     const skip = (query.page - 1) * query.limit;
 
+    /*
+     * total đi theo bộ lọc hiện tại để phân trang; openCount luôn đếm toàn bộ
+     * case chưa xử lý để UI hiển thị badge, bất kể trang/filter đang xem.
+     */
     const [rows, total, openCount] = await this.prisma.$transaction([
       this.prisma.payment.findMany({
         where,
@@ -108,6 +117,11 @@ export class PaymentReviewsService {
         });
       }
 
+      /*
+       * CAS trên reviewedAt = null đảm bảo hai Admin không cùng resolve một case.
+       * Service chỉ ghi nhận người/thời gian/note; việc hoàn tiền hay điều chỉnh
+       * thực tế diễn ra ngoài nền tảng và không tự phát hành Ticket ở đây.
+       */
       const changed = await tx.payment.updateMany({
         where: { id, reviewedAt: null },
         data: {

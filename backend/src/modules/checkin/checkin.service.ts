@@ -35,8 +35,14 @@ export class CheckinService {
     qr: string,
     staffId: string,
   ): Promise<CheckinResponseDto> {
+    // resolve() chỉ quyết định và tiêu thụ vé; checkIn() điều phối log/realtime.
     const resolution = await this.resolve(eventId, qr, staffId);
 
+    /*
+     * Ghi tất cả kết quả, không chỉ VALID. Log INVALID/WRONG_EVENT/ALREADY_USED
+     * phục vụ audit, phát hiện gian lận và truy lại thiết bị nào đã quét payload.
+     * ticketId null khi payload giả đến mức không xác định được Ticket.
+     */
     await this.prisma.checkinLog.create({
       data: {
         eventId,
@@ -47,9 +53,11 @@ export class CheckinService {
       },
     });
 
+    // Đếm từ source of truth sau lần scan thay vì tự tăng một counter dễ lệch.
     const checkedInCount = await this.countCheckedIn(eventId);
 
     if (resolution.result === 'VALID' && resolution.ticket) {
+      // Chỉ scan thành công mới làm dashboard Organizer cập nhật realtime.
       this.gateway.emitCheckin(eventId, {
         ticketId: resolution.ticket.id,
         ticketTypeName: resolution.ticket.ticketTypeName,
@@ -70,6 +78,11 @@ export class CheckinService {
     qr: string,
     staffId: string,
   ): Promise<Resolution> {
+    /*
+     * QR có format `code.signature`. indexOf('.') lấy dấu phân cách đầu tiên;
+     * thiếu code, thiếu signature hoặc HMAC sai đều là payload giả/không hợp lệ
+     * và bị loại trước khi query database.
+     */
     const dot = qr.indexOf('.');
     const code = dot > 0 ? qr.slice(0, dot) : '';
     const signature = dot > 0 ? qr.slice(dot + 1) : '';
@@ -77,6 +90,11 @@ export class CheckinService {
       return { result: 'INVALID', ticketId: null };
     }
 
+    /*
+     * Chữ ký hợp lệ chỉ chứng minh payload do server ký, chưa chứng minh vé còn
+     * dùng được. Database vẫn phải cung cấp Ticket hiện tại, Event sở hữu vé và
+     * tên TicketType để kiểm tra nghiệp vụ/trả response.
+     */
     const ticket = await this.prisma.ticket.findUnique({
       where: { code },
       select: {
@@ -92,10 +110,16 @@ export class CheckinService {
     });
     if (!ticket) return { result: 'INVALID', ticketId: null };
 
+    // QR thật nhưng mang tới sai cổng/sai sự kiện là WRONG_EVENT, không phải giả.
     if (ticket.orderItem.order.eventId !== eventId) {
       return { result: 'WRONG_EVENT', ticketId: ticket.id };
     }
 
+    /*
+     * Atomic consume: điều kiện status = ISSUED vừa kiểm tra vừa cập nhật trong
+     * một câu SQL. Hai scanner quét đồng thời có thể cùng đọc Ticket, nhưng chỉ
+     * một câu UPDATE đổi được row sang USED; vì vậy chỉ một request nhận VALID.
+     */
     const updated = await this.prisma.$executeRaw`
       UPDATE "Ticket"
       SET status = 'USED', "usedAt" = now(), "usedByStaffId" = ${staffId}::uuid
@@ -113,8 +137,11 @@ export class CheckinService {
       };
     }
 
-    // Zero rows: the ticket was not ISSUED. Re-read its current state — the
-    // pre-update read may be stale under a concurrent scan.
+    /*
+     * Zero row nghĩa là Ticket không còn ISSUED. Phải đọc lại vì lần đọc trước
+     * không lấy status và dù có lấy thì cũng có thể stale do scanner khác vừa
+     * commit. USED được phân loại ALREADY_USED; VOID/mất row là INVALID.
+     */
     const current = await this.prisma.ticket.findUnique({
       where: { id: ticket.id },
       select: { status: true },

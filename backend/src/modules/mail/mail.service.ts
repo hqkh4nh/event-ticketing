@@ -70,6 +70,11 @@ export class MailService {
   }
 
   async send(message: MailMessage): Promise<void> {
+    /*
+     * Mail là side effect phụ, không phải điều kiện để Ticket hợp lệ. Khi SMTP
+     * chưa cấu hình thì no-op; khi gửi lỗi thì log và swallow exception để lỗi
+     * hạ tầng email không làm request nghiệp vụ chính thất bại/rollback.
+     */
     if (!this.transport) return;
 
     try {

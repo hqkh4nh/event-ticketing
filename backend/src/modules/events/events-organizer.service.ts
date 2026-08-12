@@ -33,6 +33,11 @@ const ALLOWED_TRANSITIONS: Record<EventStatus, EventStatus[]> = {
  * ALLOWED_TRANSITIONS are legal; every other move is a client error.
  */
 export function assertTransition(from: EventStatus, to: EventStatus): void {
+  /*
+   * Đây là domain guard cho state machine, không phải hàm assert có sẵn của
+   * NestJS. Điều kiện đúng thì return void và flow tiếp tục; sai thì trả 409 vì
+   * request hợp lệ về cú pháp nhưng xung đột với trạng thái nghiệp vụ hiện tại.
+   */
   if (!ALLOWED_TRANSITIONS[from].includes(to)) {
     throw new ConflictException({
       code: ErrorCode.INVALID_STATE_TRANSITION,
@@ -45,6 +50,11 @@ export function assertTicketQuantityNotBelowReserved(
   quantityTotal: number,
   reservedQuantity: number,
 ): void {
+  /*
+   * quantityTotal có thể chỉnh khi event về DRAFT, nhưng không được thấp hơn
+   * lượng đã nằm trong Order PENDING/PAID. Nếu cho phép, capacity công bố sẽ nhỏ
+   * hơn nghĩa vụ vé hệ thống đã giữ hoặc đã bán.
+   */
   if (quantityTotal < reservedQuantity) {
     throw new ConflictException({
       code: ErrorCode.TICKET_QUANTITY_BELOW_RESERVED,
@@ -137,10 +147,19 @@ export class EventsOrganizerService {
   ): Promise<OrganizerEventDto> {
     const event = await this.loadOwnedEvent(organizerId, id);
     this.assertEventEditable(event.status);
+    /*
+     * DTO update là partial. Ghép giá trị mới với giá trị đang lưu rồi kiểm tra
+     * cả cặp thời gian; nếu chỉ validate riêng field được gửi, request sửa start
+     * có thể vô tình làm start >= end cũ.
+     */
     const startAt = dto.startAt ?? event.startAt.toISOString();
     const endAt = dto.endAt ?? event.endAt.toISOString();
     this.assertEventDates(startAt, endAt);
 
+    /*
+     * Kiểm tra DRAFT ban đầu giúp báo lỗi rõ; điều kiện DRAFT trong updateMany
+     * là CAS bảo vệ nếu một request khác vừa submit event giữa read và write.
+     */
     const changed = await this.prisma.event.updateMany({
       where: { id, organizerId, status: EventStatus.DRAFT },
       data: {
@@ -177,6 +196,11 @@ export class EventsOrganizerService {
 
   async publish(organizerId: string, id: string): Promise<OrganizerEventDto> {
     await this.prisma.$transaction(async (tx) => {
+      /*
+       * Khóa row Event xuyên suốt việc đọc trạng thái, đếm TicketType, đổi trạng
+       * thái và tạo notification. Nhờ dùng cùng row lock với các thao tác sửa
+       * hạng vé, event không thể được submit trong khi cấu hình vé đang thay đổi.
+       */
       await tx.$queryRaw`
         SELECT id
         FROM "Event"
@@ -196,6 +220,7 @@ export class EventsOrganizerService {
       }
       assertTransition(event.status, EventStatus.PENDING_REVIEW);
 
+      // Event không có hạng vé không thể bán nên chưa đủ điều kiện gửi duyệt.
       const ticketTypeCount = await tx.ticketType.count({
         where: { eventId: id },
       });
@@ -206,6 +231,11 @@ export class EventsOrganizerService {
         });
       }
 
+      /*
+       * Organizer chỉ gửi duyệt: DRAFT -> PENDING_REVIEW. Việc chuyển sang
+       * PUBLISHED thuộc AdminService; tên method publish được giữ theo API cũ
+       * nhưng ở đây không tự công khai event.
+       */
       const changed = await tx.event.updateMany({
         where: { id, organizerId, status: EventStatus.DRAFT },
         data: { status: EventStatus.PENDING_REVIEW },
@@ -217,6 +247,11 @@ export class EventsOrganizerService {
         });
       }
 
+      /*
+       * Notification được ghi trong cùng transaction với state transition.
+       * Nếu tạo notification lỗi thì event cũng rollback về DRAFT, tránh Admin
+       * nhận thông báo về một submission không tồn tại.
+       */
       const admins = await tx.user.findMany({
         where: { role: 'ADMIN', status: 'ACTIVE' },
         select: { id: true },
@@ -242,6 +277,7 @@ export class EventsOrganizerService {
   async unpublish(organizerId: string, id: string): Promise<OrganizerEventDto> {
     const event = await this.loadOwnedEvent(organizerId, id);
     assertTransition(event.status, EventStatus.DRAFT);
+    // Khi quay về DRAFT phải bỏ featured vì event không còn trên public listing.
     const changed = await this.prisma.event.updateMany({
       where: { id, organizerId, status: event.status },
       data: { status: EventStatus.DRAFT, featured: false },
@@ -290,6 +326,7 @@ export class EventsOrganizerService {
     dto: UpdateTicketTypeDto,
   ): Promise<OrganizerEventDto> {
     await this.prisma.$transaction(async (tx) => {
+      // Luôn khóa Event trước rồi TicketType để các transaction lấy lock cùng thứ tự.
       await this.lockEditableEvent(tx, organizerId, eventId);
       await tx.$queryRaw`
         SELECT id
@@ -310,6 +347,11 @@ export class EventsOrganizerService {
         });
       }
 
+      /*
+       * Update DTO là partial, nên ghép window mới/cũ trước khi validate giống
+       * cách update thời gian Event. `undefined` nghĩa là không đổi; null trong
+       * DTO nghĩa là chủ động bỏ giới hạn thời gian bán.
+       */
       const salesStartAt =
         dto.salesStartAt !== undefined
           ? dto.salesStartAt
@@ -321,6 +363,10 @@ export class EventsOrganizerService {
       this.assertSalesWindow(salesStartAt, salesEndAt);
 
       if (dto.quantityTotal !== undefined) {
+        /*
+         * Đếm trong lúc TicketType đang bị lock để không race với OrderService,
+         * vì OrderService cũng phải lock TicketType trước khi giữ thêm vé.
+         */
         const reserved = await tx.orderItem.aggregate({
           where: {
             eventId,
@@ -391,6 +437,10 @@ export class EventsOrganizerService {
    * rather than FORBIDDEN so one organizer cannot probe another's events.
    */
   private async loadOwnedEvent(organizerId: string, id: string) {
+    /*
+     * Lọc owner ngay trong query thay vì tìm theo id rồi trả 403. Response 404
+     * không tiết lộ cho Organizer A rằng một event ID của Organizer B tồn tại.
+     */
     const event = await this.prisma.event.findFirst({
       where: { id, organizerId },
       select: {
@@ -434,6 +484,10 @@ export class EventsOrganizerService {
     organizerId: string,
     eventId: string,
   ): Promise<void> {
+    /*
+     * SELECT FOR UPDATE khóa row trước khi đọc status. findFirst sau đó đọc giá
+     * trị đã ổn định trong transaction; assert bảo đảm chỉ DRAFT được thay đổi.
+     */
     await tx.$queryRaw`
       SELECT id
       FROM "Event"
@@ -455,6 +509,11 @@ export class EventsOrganizerService {
   }
 
   private assertSingleStateChange(count: number): void {
+    /*
+     * updateMany/deleteMany được dùng để đặt owner/status vào WHERE. count khác
+     * 1 nghĩa là row đã bị request khác đổi hoặc xóa; trả conflict thay vì giả
+     * vờ thao tác thành công trên dữ liệu cũ.
+     */
     if (count !== 1) {
       throw new ConflictException({
         code: ErrorCode.INVALID_STATE_TRANSITION,
@@ -484,6 +543,11 @@ export class EventsOrganizerService {
     id: string,
     organizerId: string,
   ): Promise<OrganizerEventDto> {
+    /*
+     * Query lại sau mutation để response phản ánh dữ liệu đã commit. ticket type
+     * dùng shared select/mapper; checkedInCount được tính từ Ticket USED thay vì
+     * lưu counter dẫn xuất có nguy cơ lệch.
+     */
     const event = await this.prisma.event.findFirst({
       where: { id, organizerId },
       select: {

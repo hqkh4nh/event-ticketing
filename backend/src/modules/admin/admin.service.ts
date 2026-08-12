@@ -102,6 +102,11 @@ type AdminEventDetailRow = Prisma.EventGetPayload<{
 }>;
 
 export function assertAdminApprovalTransition(status: EventStatus): void {
+  /*
+   * Chỉ Admin mới sở hữu use case approve, và chỉ event đang chờ review được
+   * chuyển thành public. Hàm tách riêng giúp rule dễ đọc/test; conditional update
+   * trong approveEvent vẫn cần thiết để chống thay đổi đồng thời sau bước assert.
+   */
   if (status !== EventStatus.PENDING_REVIEW) {
     throw new ConflictException({
       code: ErrorCode.INVALID_STATE_TRANSITION,
@@ -137,6 +142,11 @@ export class AdminService {
     };
     const skip = (query.page - 1) * query.limit;
 
+    /*
+     * findMany và count dùng cùng `where` để items/total có cùng nghĩa. Đây là
+     * batch transaction cho hai query độc lập, không phải interactive transaction
+     * chứa business mutation.
+     */
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.user.findMany({
         where,
@@ -238,6 +248,10 @@ export class AdminService {
       });
     }
 
+    /*
+     * Hai aggregate độc lập nên chạy song song: revenue chỉ tính PAID; check-in
+     * chỉ tính Ticket USED. Không lấy các con số này từ dữ liệu client gửi lên.
+     */
     const [paidOrders, checkedInCount] = await Promise.all([
       this.prisma.order.aggregate({
         where: { eventId, status: 'PAID' },
@@ -272,6 +286,7 @@ export class AdminService {
         });
       }
 
+      // Chỉ nội dung đã được duyệt và đang public mới được đưa lên carousel.
       if (dto.featured && existing.status !== EventStatus.PUBLISHED) {
         throw new ConflictException({
           code: ErrorCode.INVALID_STATE_TRANSITION,
@@ -279,8 +294,13 @@ export class AdminService {
         });
       }
 
+      // Idempotent: bấm lại cùng trạng thái không ghi DB và không gửi thông báo lặp.
       if (existing.featured === dto.featured) return existing;
 
+      /*
+       * CAS so sánh cả giá trị featured đã đọc. Khi bật còn kiểm tra PUBLISHED
+       * ngay trong WHERE để event bị ẩn đồng thời không thể trở thành featured.
+       */
       const changed = await tx.event.updateMany({
         where: {
           id: eventId,
@@ -291,6 +311,11 @@ export class AdminService {
       });
 
       if (changed.count !== 1) {
+        /*
+         * Nếu thua race, đọc trạng thái mới nhất. Chỉ throw khi invariant bật
+         * featured bị vi phạm; trường hợp Admin khác vừa đặt đúng giá trị mong
+         * muốn có thể trả current và coi như idempotent.
+         */
         const current = await tx.event.findUniqueOrThrow({
           where: { id: eventId },
           select: adminEventSelect,
@@ -304,6 +329,7 @@ export class AdminService {
         return current;
       }
 
+      // Chỉ thông báo khi event vừa được duyệt nổi bật, không báo khi gỡ nổi bật.
       if (dto.featured) {
         await tx.notification.create({
           data: {
@@ -346,6 +372,11 @@ export class AdminService {
       }
 
       assertAdminApprovalTransition(existing.status);
+      /*
+       * Assert ở trên kiểm tra snapshot và tạo lỗi dễ hiểu; status trong WHERE
+       * là CAS thực sự. Hai Admin cùng duyệt thì chỉ một request đổi được row và
+       * tạo EVENT_APPROVED.
+       */
       const changed = await tx.event.updateMany({
         where: { id: eventId, status: EventStatus.PENDING_REVIEW },
         data: { status: EventStatus.PUBLISHED },
@@ -357,6 +388,7 @@ export class AdminService {
         });
       }
 
+      // Event và notification commit/rollback cùng nhau.
       await tx.notification.create({
         data: {
           userId: existing.organizerId,
@@ -410,6 +442,10 @@ export class AdminService {
           });
         }
 
+        /*
+         * Ẩn event đồng thời bỏ featured để nó biến mất khỏi cả danh sách public
+         * và carousel. hiddenReason giữ lý do moderation cho Organizer.
+         */
         const changed = await tx.event.updateMany({
           where: { id: eventId, status: EventStatus.PUBLISHED },
           data: {
@@ -427,6 +463,11 @@ export class AdminService {
           });
         }
 
+        /*
+         * Hủy toàn bộ Order PENDING trong cùng transaction để giải phóng ghế.
+         * Tiền đến sau đó sẽ gặp Order CANCELLED và đi vào payment review, không
+         * cấp vé cho một event đã bị chặn.
+         */
         const cancelled = await tx.order.updateMany({
           where: { eventId, status: OrderStatus.PENDING },
           data: { status: OrderStatus.CANCELLED },
@@ -483,6 +524,10 @@ export class AdminService {
         });
       }
 
+      /*
+       * Khôi phục chỉ đưa event về PUBLISHED và xóa lý do ẩn. Không bật featured
+       * lại vì quyết định nổi bật phải được Admin thực hiện riêng sau khi review.
+       */
       const changed = await tx.event.updateMany({
         where: { id: eventId, status: EventStatus.HIDDEN },
         data: { status: EventStatus.PUBLISHED, hiddenReason: null },
@@ -530,6 +575,7 @@ export class AdminService {
 }
 
 function toAdminOrganizerDto(row: OrganizerRow): AdminOrganizerDto {
+  // Làm phẳng `_count.events` và đổi Date runtime thành ISO string cho JSON.
   return {
     id: row.id,
     email: row.email,
@@ -546,6 +592,11 @@ function toAdminEventDetailDto(
   revenueVnd: number,
   checkedInCount: number,
 ): AdminEventDetailDto {
+  /*
+   * Mapper kết hợp payload Prisma với hai aggregate tính riêng. soldCount ở màn
+   * moderation tính cả PENDING/PAID theo select chi tiết, tức lượng đã giữ; còn
+   * revenueVnd chỉ đến từ các Order PAID.
+   */
   const ticketTypes = row.ticketTypes.map((ticketType) => ({
     id: ticketType.id,
     name: ticketType.name,
@@ -585,6 +636,7 @@ function toAdminEventDetailDto(
 }
 
 function toAdminEventDto(row: AdminEventRow): AdminEventDto {
+  // Select danh sách chỉ lấy OrderItem thuộc Order PAID nên `sold` là vé đã bán.
   return {
     id: row.id,
     organizerId: row.organizerId,

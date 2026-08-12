@@ -36,11 +36,18 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto): Promise<AuthResponseDto> {
+    // Email được chuẩn hóa để Foo@Mail.com và foo@mail.com không thành hai account.
     const email = dto.email.trim().toLowerCase();
     const role: Role = dto.role ?? 'ATTENDEE';
 
+    /*
+     * Attendee có thể dùng ngay; Organizer phải chờ Admin duyệt. PENDING không
+     * ngăn tạo session, nhưng authorization guard sẽ chặn các use case Organizer
+     * cho tới khi status được đổi thành ACTIVE.
+     */
     const status: UserStatus = role === 'ORGANIZER' ? 'PENDING' : 'ACTIVE';
 
+    // Chỉ lưu bcrypt hash; mật khẩu plaintext không đi vào database.
     const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
 
     try {
@@ -67,7 +74,11 @@ export class AuthService {
 
       return await this.buildSession(user);
     } catch (error) {
-      // P2002: Unique constraint failed on the {constraint}
+      /*
+       * Database unique constraint mới là lớp chống email trùng đáng tin cậy
+       * khi hai register chạy đồng thời. Prisma P2002 được đổi thành error code
+       * ổn định để app không phụ thuộc thông báo lỗi nội bộ của Prisma.
+       */
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
@@ -99,6 +110,12 @@ export class AuthService {
       },
     });
 
+    /*
+     * Email không tồn tại vẫn chạy bcrypt.compare với DUMMY_HASH. Nếu return
+     * ngay, request email sai thường nhanh hơn email đúng và có thể bị dùng để
+     * dò account qua timing. Sau compare, mọi lỗi danh tính/mật khẩu dùng chung
+     * INVALID_CREDENTIALS để không tiết lộ email có tồn tại hay không.
+     */
     const hash = user?.passwordHash ?? DUMMY_HASH;
     const passwordOk = await bcrypt.compare(dto.password, hash);
 
@@ -136,6 +153,11 @@ export class AuthService {
    * whether a code exists, expired, or was already used.
    */
   async staffConnect(rawCode: string): Promise<AuthResponseDto> {
+    /*
+     * StaffService chỉ lưu SHA-256 hash. Chuẩn hóa trim/uppercase trước khi hash
+     * cho phép nhập code không phụ thuộc chữ hoa/thừa khoảng trắng nhưng vẫn tìm
+     * đúng record mà không lưu plaintext secret.
+     */
     const codeHash = createHash('sha256')
       .update(rawCode.trim().toUpperCase())
       .digest('hex');
@@ -168,8 +190,12 @@ export class AuthService {
       throw this.invalidConnectCode();
     }
 
-    // Conditional update is the single-use guard: two devices racing on one
-    // code get exactly one session.
+    /*
+     * Đây là single-use CAS. Hai điện thoại có thể cùng đọc record chưa redeem,
+     * nhưng chỉ một update khớp `redeemedAt: null`; chỉ thiết bị đó được cấp JWT.
+     * Mọi failure dùng cùng INVALID_CONNECT_CODE để không tiết lộ mã tồn tại,
+     * hết hạn, đã dùng hay staff bị block.
+     */
     const redeemed = await this.prisma.staffConnectCode.updateMany({
       where: { id: record.id, redeemedAt: null },
       data: { redeemedAt: new Date() },
@@ -188,6 +214,11 @@ export class AuthService {
    * is the source of truth, so this is a one-way push and never merges.
    */
   async updateMe(userId: string, dto: UpdateMeDto): Promise<AuthUserDto> {
+    /*
+     * Spread có điều kiện phân biệt field không gửi (`undefined`) với yêu cầu
+     * xóa phone (chuỗi rỗng/null -> null). Locale trên thiết bị là source of
+     * truth; bản DB chủ yếu giúp server chọn ngôn ngữ email.
+     */
     const user = await this.prisma.user.update({
       where: { id: userId },
       data: {
@@ -219,6 +250,7 @@ export class AuthService {
     sessionId: string,
     dto: ChangePasswordDto,
   ): Promise<void> {
+    // Luôn verify mật khẩu hiện tại trước khi cho thay đổi credential.
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { passwordHash: true },
@@ -244,6 +276,11 @@ export class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(dto.newPassword, BCRYPT_ROUNDS);
+    /*
+     * Đổi hash và revoke các session khác trong cùng transaction. Session đang
+     * thực hiện request được giữ để user không bị đá khỏi thiết bị hiện tại;
+     * các token trên thiết bị khác mất hiệu lực khi JwtStrategy kiểm tra session.
+     */
     await this.prisma.$transaction([
       this.prisma.user.update({
         where: { id: userId },
@@ -261,6 +298,11 @@ export class AuthService {
   }
 
   async logout(userId: string, sessionId: string): Promise<void> {
+    /*
+     * JWT không thể bị thu hồi chỉ bằng cách xóa token phía app. Ghi revokedAt
+     * vào AuthSession khiến token cũ bị backend từ chối dù `exp` chưa tới hạn.
+     * updateMany giúp logout lặp lại trở thành thao tác idempotent.
+     */
     await this.prisma.authSession.updateMany({
       where: { id: sessionId, userId, revokedAt: null },
       data: { revokedAt: new Date() },
@@ -291,6 +333,11 @@ export class AuthService {
       expiresInOverride ??
       this.config.get<StringValue>('jwt.expiresIn') ??
       '1d';
+    /*
+     * JWT chỉ mang định danh tối thiểu: `sub` là User và `sid` là DB session.
+     * Không nhét role/status cố định vào token; JwtStrategy có thể đọc trạng thái
+     * hiện tại để việc Admin block tài khoản có hiệu lực trước khi token hết hạn.
+     */
     const sessionId = randomUUID();
     const accessToken = this.jwt.sign(
       { sub: user.id, sid: sessionId },
@@ -300,6 +347,11 @@ export class AuthService {
       },
     );
 
+    /*
+     * Lấy chính `exp` của JWT vừa ký để AuthSession.expiresAt không bị lệch nếu
+     * config thời hạn thay đổi. decode ở đây an toàn vì token vừa được server ký;
+     * việc xác minh token của request vẫn do JwtStrategy thực hiện.
+     */
     const payload = this.jwt.decode<{ exp?: number }>(accessToken);
     if (!payload?.exp) {
       throw new Error('Signed access token is missing an expiration.');

@@ -30,6 +30,11 @@ export class TicketEmailService {
    * exit, taking the API server down over a mail problem.
    */
   queueTicketsIssued(orderId: string): void {
+    /*
+     * Chủ động "drop" Promise tại một nơi và gắn catch. Caller có thể gọi sau
+     * commit mà không await; rejection không trở thành unhandled rejection làm
+     * Node process dừng. Đây là in-process best effort, chưa phải durable queue.
+     */
     void this.sendTicketsIssued(orderId).catch(() => undefined);
   }
 
@@ -37,6 +42,11 @@ export class TicketEmailService {
     if (!this.mail.isEnabled) return;
 
     try {
+      /*
+       * Chỉ nhận orderId rồi query lại dữ liệu đã commit, thay vì truyền object
+       * tạm từ transaction. Email vì thế không thể được dựng từ Ticket chưa
+       * commit và luôn dùng cùng dữ liệu source of truth với API.
+       */
       const order = await this.prisma.order.findUnique({
         where: { id: orderId },
         select: {
@@ -59,6 +69,10 @@ export class TicketEmailService {
       // nothing to announce.
       if (!order?.buyer.email) return;
 
+      /*
+       * Mỗi Ticket có QR riêng. qrPayload dùng TicketSignerService giống API/app,
+       * tránh format QR trong email bị lệch với format Scanner xác minh.
+       */
       const tickets = order.items.flatMap((item) =>
         item.tickets.map((ticket) => ({
           ticketTypeName: item.ticketType.name,

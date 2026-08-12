@@ -30,16 +30,27 @@ export class PaymentsService {
   async handleSepayWebhook(body: SepayWebhookDto): Promise<void> {
     const sepayTxnId = String(body.id);
 
-    // Idempotency: a transaction we have already recorded is a no-op.
+    /*
+     * SePay có thể retry cùng webhook nếu lần gọi trước timeout. sepayTxnId là
+     * định danh duy nhất từ SePay; nếu Payment đã tồn tại thì request này là
+     * replay và phải trở thành no-op để không tạo vé/notification lần hai.
+     */
     const seen = await this.prisma.payment.findUnique({
       where: { sepayTxnId },
       select: { id: true },
     });
     if (seen) return;
 
+    // Dùng BigInt để so sánh tiền chính xác tuyệt đối với Order.totalVnd.
     const amountVnd = BigInt(body.transferAmount);
     const transferContent = body.content.trim().toUpperCase();
     const transferCodeCandidates = new Set<string>();
+    /*
+     * Nội dung ngân hàng có thể chứa thêm chữ trước/sau mã. Sliding window lấy
+     * mọi chuỗi dài 8 ký tự hợp lệ thay vì yêu cầu content chỉ chứa mã. Set loại
+     * candidate trùng. Chỉ khi đúng một Order được match mới tự động xử lý để
+     * tránh gán tiền nhầm nếu nội dung chứa nhiều mã có thật.
+     */
     for (let start = 0; start <= transferContent.length - 8; start += 1) {
       const candidate = transferContent.slice(start, start + 8);
       if (TRANSFER_CODE_PATTERN.test(candidate)) {
@@ -70,7 +81,11 @@ export class PaymentsService {
       rawPayload: body as unknown as Prisma.InputJsonValue,
     };
 
-    // No order for this code, or the amount does not match: nothing to issue.
+    /*
+     * Không tìm đúng một Order hoặc số tiền không khớp thì chỉ lưu UNMATCHED.
+     * Tuyệt đối không đoán Order và không cấp vé khi bằng chứng thanh toán chưa
+     * đủ chắc chắn.
+     */
     if (!order || order.totalVnd !== amountVnd) {
       await this.recordPayment({ ...base, status: 'UNMATCHED' });
       return;
@@ -78,12 +93,25 @@ export class PaymentsService {
 
     if (order.status === 'PENDING') {
       const issued = await this.prisma.$transaction(async (tx) => {
+        /*
+         * Conditional flip là điểm quyết định duy nhất cho quyền cấp vé. Nó chỉ
+         * thắng khi Order vẫn PENDING và chưa hết hạn tại thời điểm database
+         * thực thi. Điều này đóng race với cron hết hạn, thao tác hủy và webhook
+         * đồng thời: chỉ một transition có thể đổi row.
+         */
         const flipped = await tx.$executeRaw`
           UPDATE "Order" SET status = 'PAID', "paidAt" = now()
           WHERE id = ${order.id}::uuid
             AND status = 'PENDING'
             AND "expiresAt" > now()`;
         if (flipped === 0) return false;
+
+        /*
+         * Việc đổi PAID, phát hành toàn bộ Ticket, lưu Payment và Notification
+         * nằm trong cùng transaction. Bất kỳ bước nào lỗi sẽ rollback tất cả,
+         * tránh trạng thái Order PAID nhưng không có vé hoặc có vé nhưng không
+         * ghi nhận Payment.
+         */
         const items = await tx.orderItem.findMany({
           where: { orderId: order.id },
           select: { id: true, quantity: true },
@@ -116,11 +144,19 @@ export class PaymentsService {
         this.ticketEmail.queueTicketsIssued(order.id);
         return;
       }
-      // Lost the flip to the expiry sweep; fall through to review.
+      /*
+       * Order được đọc là PENDING nhưng conditional flip thất bại nghĩa là một
+       * thao tác khác vừa đổi trạng thái hoặc thời hạn vừa qua. Không dùng dữ
+       * liệu đọc cũ để cấp vé; chuyển xuống nhánh review thủ công.
+       */
     }
 
-    // Money arrived for an order that is no longer PENDING (expired, cancelled,
-    // already paid, or just-expired). Do not issue; flag for manual review.
+    /*
+     * Tiền đã đến nhưng Order không còn payable: có thể EXPIRED, CANCELLED,
+     * PAID hoặc vừa hết hạn. Hệ thống không tự cấp vé vì có thể đã giải phóng
+     * tồn kho/bán cho người khác. Payment được lưu REVIEW_REQUIRED và Admin
+     * nhận thông báo để hoàn tiền hoặc xử lý ngoài hệ thống.
+     */
     await this.recordPayment({
       ...base,
       status: 'REVIEW_REQUIRED',
@@ -139,6 +175,11 @@ export class PaymentsService {
     try {
       await this.prisma.payment.create({ data });
     } catch (error) {
+      /*
+       * Check `seen` phía đầu tối ưu replay thông thường; unique constraint và
+       * P2002 là lớp bảo vệ cuối khi hai webhook cùng vượt qua check trước khi
+       * một trong hai kịp insert.
+       */
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
@@ -150,6 +191,7 @@ export class PaymentsService {
   }
 
   private async notifyAdmins(sepayTxnId: string): Promise<void> {
+    // Thông báo cho mọi Admin vì case review chưa được gán cho một người cụ thể.
     const admins = await this.prisma.user.findMany({
       where: { role: 'ADMIN' },
       select: { id: true },

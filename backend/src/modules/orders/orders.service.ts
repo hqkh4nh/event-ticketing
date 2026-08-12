@@ -55,8 +55,12 @@ export class OrdersService {
     buyerId: string,
     dto: CreateOrderDto,
   ): Promise<OrderResponseDto> {
-    // Merge duplicate lines so each ticket type maps to one OrderItem
-    // (OrderItem is unique per [orderId, ticketTypeId]).
+    /*
+     * Client có thể vô tình gửi cùng một ticketTypeId nhiều lần. Map gộp các
+     * dòng đó trước khi kiểm tra tồn kho và tạo OrderItem. Ngoài việc làm phép
+     * tính chính xác, bước này còn tuân theo unique constraint
+     * [orderId, ticketTypeId]: mỗi hạng vé chỉ có đúng một dòng trong đơn.
+     */
     const wanted = new Map<string, number>();
     for (const item of dto.items) {
       wanted.set(
@@ -67,11 +71,20 @@ export class OrdersService {
     const ticketTypeIds = [...wanted.keys()];
 
     const created = await this.prisma.$transaction(async (tx) => {
-      // Serialize purchases from one account so concurrent requests cannot
-      // both observe the same pending-order count and exceed the limit.
+      /*
+       * Khóa row User để tuần tự hóa các request đặt vé của cùng một buyer.
+       * Nếu không khóa, hai request đồng thời có thể cùng đếm được 2 đơn
+       * PENDING rồi cùng tạo thêm, làm vượt giới hạn 3 đơn. Lock này chỉ chặn
+       * request của cùng buyer; buyer khác vẫn đặt vé bình thường.
+       */
       await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${buyerId}::uuid FOR UPDATE`;
 
       if (dto.clientRequestId) {
+        /*
+         * clientRequestId là idempotency key do app sinh cho một lần bấm đặt
+         * vé. Khi mạng timeout và app retry, service trả lại Order đã tạo thay
+         * vì tạo đơn và phát hành vé lần hai.
+         */
         const existing = await tx.order.findUnique({
           where: {
             buyerId_clientRequestId: {
@@ -81,10 +94,11 @@ export class OrdersService {
           },
           select: { id: true },
         });
-        // A replayed request issues nothing, so it must not mail anything either.
+        // `issued: false` bảo đảm request replay cũng không gửi lại email vé.
         if (existing) return { id: existing.id, issued: false };
       }
 
+      // Không tin trạng thái đang hiển thị trên app; kiểm tra lại ở database.
       const event = await tx.event.findUnique({
         where: { id: dto.eventId },
         select: { status: true, title: true },
@@ -96,10 +110,20 @@ export class OrdersService {
         });
       }
 
-      // Lock the ticket-type rows (ordered, to avoid deadlocks) so the reserved
-      // count below reflects any order that committed just before us.
+      /*
+       * Khóa tất cả TicketType cần mua trước khi đếm số vé đã giữ. Hai buyer
+       * cùng mua những vé cuối sẽ phải chạy lần lượt: transaction sau chỉ được
+       * đếm tồn kho sau khi transaction trước commit. ORDER BY id tạo thứ tự
+       * lấy nhiều lock thống nhất, giảm nguy cơ deadlock khi hai giỏ chứa nhiều
+       * hạng vé theo thứ tự khác nhau.
+       */
       await tx.$queryRaw`SELECT id FROM "TicketType" WHERE id = ANY(${ticketTypeIds}::uuid[]) ORDER BY id FOR UPDATE`;
 
+      /*
+       * Lọc đồng thời theo id và eventId để ngăn client ghép hạng vé của sự
+       * kiện A vào Order của sự kiện B. So sánh length còn phát hiện ID giả hoặc
+       * ID không tồn tại.
+       */
       const types = await tx.ticketType.findMany({
         where: { id: { in: ticketTypeIds }, eventId: dto.eventId },
         select: { id: true, priceVnd: true, quantityTotal: true },
@@ -114,6 +138,11 @@ export class OrdersService {
         types.map((type) => [type.id, type.priceVnd]),
       );
 
+      /*
+       * PENDING là lượng vé đang được giữ trong thời gian chờ thanh toán;
+       * PAID là lượng đã bán. EXPIRED/CANCELLED không còn giữ tồn kho nên không
+       * xuất hiện trong phép cộng này.
+       */
       const reserved = await tx.orderItem.groupBy({
         by: ['ticketTypeId'],
         where: {
@@ -136,14 +165,24 @@ export class OrdersService {
         }
       }
 
+      /*
+       * Tiền trong schema là BigInt. Giữ phép nhân/cộng ở bigint để không bị
+       * sai số số nguyên như JavaScript number khi giá trị vượt ngưỡng an toàn.
+       */
       let totalVnd = 0n;
       for (const [ticketTypeId, quantity] of wanted) {
         totalVnd += (priceByType.get(ticketTypeId) ?? 0n) * BigInt(quantity);
       }
+      // Tên `isPaid` ở đây nghĩa là "đơn có tiền", chưa phải "đã thanh toán".
       const isPaid = totalVnd > 0n;
 
       const now = new Date();
       if (isPaid) {
+        /*
+         * Chỉ đếm đơn PENDING còn thời hạn. Đơn hết hạn về mặt thời gian không
+         * được chặn buyer tạo đơn mới dù cron chưa kịp đổi nó sang EXPIRED.
+         * Row lock User phía trên làm phép đếm + tạo đơn này an toàn đồng thời.
+         */
         const pendingOrderCount = await tx.order.count({
           where: {
             buyerId,
@@ -164,9 +203,11 @@ export class OrdersService {
         data: {
           buyerId,
           eventId: dto.eventId,
-          // A paid order stays PENDING until the SePay webhook confirms payment;
-          // the PENDING row itself is the inventory hold. A free order is paid
-          // and issued immediately.
+          /*
+           * Đơn có tiền ở PENDING cho tới khi webhook SePay xác nhận; chính
+           * Order PENDING là bản ghi giữ tồn kho. Đơn miễn phí không cần chờ
+           * cổng thanh toán nên được xem là PAID ngay.
+           */
           status: isPaid ? 'PENDING' : 'PAID',
           totalVnd,
           transferCode: this.newTransferCode(),
@@ -190,7 +231,11 @@ export class OrdersService {
           },
           select: { id: true },
         });
-        // Tickets for a paid order are issued only when payment lands.
+        /*
+         * Chỉ đơn miễn phí phát hành Ticket ngay. Đơn có phí mới chỉ tạo
+         * OrderItem để giữ chỗ; PaymentsService sẽ gọi issue() sau khi tiền
+         * thực sự khớp. Nhờ vậy người chưa thanh toán không có QR hợp lệ.
+         */
         if (!isPaid) {
           await this.tickets.issue(tx, orderItem.id, quantity);
         }
@@ -216,9 +261,11 @@ export class OrdersService {
       return { id: order.id, issued: !isPaid };
     });
 
-    // Sent after the commit and never awaited: a slow or dead SMTP server must
-    // not roll back issued tickets or hold up the response. The service
-    // swallows its own failures.
+    /*
+     * Chỉ queue email sau khi transaction đã commit để email không thông báo
+     * một vé bị rollback. Không await SMTP vì email là side effect best effort:
+     * mail server chậm/hỏng không được làm thất bại nghiệp vụ cấp vé chính.
+     */
     if (created.issued) {
       this.ticketEmail.queueTicketsIssued(created.id);
     }
@@ -246,6 +293,11 @@ export class OrdersService {
    * commits first wins, and the loser cannot overwrite it.
    */
   async cancelPending(buyerId: string, orderId: string): Promise<void> {
+    /*
+     * Đây là compare-and-set (CAS): chỉ đổi status khi row vẫn PENDING, còn hạn
+     * và thuộc buyer. Nếu webhook vừa đổi nó thành PAID thì count = 0, thao tác
+     * hủy không thể ghi đè kết quả thanh toán.
+     */
     const cancelled = await this.prisma.order.updateMany({
       where: {
         id: orderId,
@@ -290,6 +342,11 @@ export class OrdersService {
   }
 
   private toResponse(order: OrderWithDetails): OrderResponseDto {
+    /*
+     * Prisma trả cấu trúc Order -> OrderItem -> Ticket. flatMap làm phẳng toàn
+     * bộ Ticket thành một danh sách cho app; qrPayload là chuỗi thực tế được
+     * QR component mã hóa, không phải URL ảnh QR được lưu trong database.
+     */
     return {
       id: order.id,
       status: order.status,
@@ -317,6 +374,7 @@ export class OrdersService {
 
   /** VietQR details for the checkout screen; only meaningful while PENDING. */
   private buildPayment(order: Order): PaymentInfoDto | undefined {
+    // VietQR chỉ có ý nghĩa khi Order vẫn chờ thanh toán.
     if (order.status !== 'PENDING') return undefined;
     const bank = this.config.get<string>('sepay.bank') ?? '';
     const accountNumber = this.config.get<string>('sepay.accountNumber') ?? '';
