@@ -1,6 +1,8 @@
 import { forwardRef } from 'react';
 import { Text, TextInput, type TextInputProps, View } from 'react-native';
 
+import { useTokens } from '@/hooks/use-tokens';
+
 type Props = TextInputProps & {
   label: string;
   error?: string;
@@ -13,6 +15,7 @@ export const TextField = forwardRef<TextInput, Props>(function TextField(
   ref,
 ) {
   const hasError = Boolean(error);
+  const tokens = useTokens();
 
   return (
     <View className="gap-2">
@@ -27,10 +30,7 @@ export const TextField = forwardRef<TextInput, Props>(function TextField(
           // Coral focus ring; error border wins when present.
           hasError ? 'border-error' : 'border-outline focus:border-primary',
         ].join(' ')}
-        // NativeWind maps this back onto `placeholderTextColor`. A literal
-        // colour here cannot follow the scheme, and the light outline this
-        // used to pass would sit at roughly 2:1 against the dark surface.
-        placeholderClassName="text-on-surface-variant"
+        placeholderTextColor={tokens['on-surface-variant']}
         accessibilityLabel={label}
         {...props}
       />
